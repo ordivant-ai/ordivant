@@ -1,0 +1,55 @@
+{
+  "keycloak_version": "26.8.0",
+  "public_origin": "http://127.0.0.1:8093",
+  "app_origin": "http://127.0.0.1:8092",
+  "broker_realm": "ordivant-qa",
+  "upstream_saml_realm": "ordivant-qa-saml",
+  "oidc_client_id": "ordivant-sso-qa",
+  "saml_client_id": "ordivant-saml-qa",
+  "saml_fixture_admin_client_id": "ordivant-sso-saml-fixture-admin",
+  "saml_idp_alias": "qa-saml",
+  "groups": [
+    "qa-work",
+    "qa-knowledge",
+    "qa-code",
+    "qa-restricted"
+  ],
+  "users": [
+    {
+      "email": "qa-browser@example.com",
+      "realm": "ordivant-qa",
+      "subject": "b072d0aa-2987-545d-8742-9af7af8e250f"
+    },
+    {
+      "email": "qa-sso-jit@example.com",
+      "realm": "ordivant-qa",
+      "subject": "aaf8e620-e59d-5443-ad46-9a19c0e57e59"
+    },
+    {
+      "email": "qa-sso-invited@example.com",
+      "realm": "ordivant-qa",
+      "subject": "48eeafb2-4ea1-5cdd-83b9-37e93e88c7e3"
+    },
+    {
+      "email": "qa-sso-group@example.com",
+      "realm": "ordivant-qa",
+      "subject": "3bbdf17a-584d-5081-83cc-5d7d1e842e3c"
+    },
+    {
+      "email": "qa-sso-disabled@example.com",
+      "realm": "ordivant-qa",
+      "subject": "057c6438-1f82-5f82-8dd2-fed33b129198"
+    },
+    {
+      "email": "qa-sso-uninvited@example.com",
+      "realm": "ordivant-qa",
+      "subject": "0d795207-35a4-5df4-aba2-73d58053b36f"
+    },
+    {
+      "email": "qa-sso-saml@example.com",
+      "realm": "ordivant-qa-saml",
+      "subject": "bf5908af-c147-5697-a7dd-9939d3fef6c7"
+    }
+  ],
+  "import_note": "Mount this directory at /opt/keycloak/data/import and start the isolated Keycloak container with --import-realm."
+}

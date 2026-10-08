@@ -1,0 +1,45 @@
+name: 功能建議
+description: 提出可解決明確使用情境的改進建議。
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        請先搜尋既有 Issue，並避免在公開內容中加入公司機密、個人資料或憑證。
+  - type: dropdown
+    id: product
+    attributes:
+      label: 產品或區域
+      options:
+        - Suite / Work
+        - Identity
+        - Knowledge
+        - Code
+        - Runtime
+        - Sandbox
+        - 文件 / 安裝
+        - 不確定
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 使用情境與目前問題
+      description: 誰在什麼情境下遇到什麼阻礙？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 預期行為
+      description: 描述希望使用者能完成的事情，不必預設實作方式。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 已考慮的替代方式或影響
+    validations:
+      required: false

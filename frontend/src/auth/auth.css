@@ -1,0 +1,600 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px 18px;
+  background: #f4f2ef;
+}
+
+.auth-panel {
+  width: min(100%, 440px);
+  padding: 28px;
+  background: #fffefd;
+  border: 1px solid #e6e2dd;
+  border-radius: 6px;
+  box-shadow: 0 12px 36px rgba(38, 37, 42, 0.06);
+}
+
+.auth-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 20px;
+}
+
+.auth-brand-row > div,
+.auth-drawer-identity > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.auth-brand-row strong,
+.auth-drawer-identity strong {
+  color: #26252a;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.auth-brand-row span:not(.brand-mark),
+.auth-drawer-identity span {
+  color: #77747d;
+  font-size: 12px;
+}
+
+.auth-heading {
+  margin-top: 23px;
+}
+
+.auth-heading .eyebrow {
+  display: block;
+  margin-bottom: 7px;
+  color: #6c55c6;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.auth-heading h2.ant-typography {
+  margin: 0 0 5px;
+  font-size: 23px;
+  font-weight: 650;
+}
+
+.auth-heading .ant-typography:not(h2) {
+  margin-bottom: 18px;
+  color: #77747d;
+  font-size: 13px;
+}
+
+.auth-panel .ant-form-item {
+  margin-bottom: 15px;
+}
+
+.auth-panel .ant-form-item-label {
+  padding-bottom: 4px;
+}
+
+.auth-panel .ant-form-item-label > label {
+  color: #46444b;
+  font-size: 12px;
+}
+
+.auth-panel > .ant-form .ant-btn-primary {
+  margin-top: 3px;
+}
+
+.auth-mode-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 8px -8px 0;
+}
+
+.auth-mode-links .ant-btn-link {
+  padding-inline: 8px;
+  font-size: 12px;
+}
+
+.auth-footnote {
+  display: block;
+  margin-top: 15px;
+  color: #77747d;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.auth-alert {
+  margin-bottom: 14px;
+}
+
+.auth-enterprise-login {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.auth-enterprise-login .ant-btn {
+  height: auto;
+  min-height: 40px;
+  white-space: normal;
+}
+
+.auth-enterprise-login .ant-btn > span:last-child {
+  overflow-wrap: anywhere;
+}
+
+.auth-admin-recovery-note {
+  color: #77747d;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.auth-service-state {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: -2px 0 15px;
+  color: #77747d;
+  font-size: 11px;
+}
+
+.auth-service-state .health-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.auth-loading {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: #77747d;
+  background: #f4f2ef;
+}
+
+.auth-access-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-access-panel h3.ant-typography {
+  margin: 0;
+  font-size: 20px;
+}
+
+.auth-current-user {
+  display: grid;
+  gap: 2px;
+}
+
+.auth-access-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-account-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  flex: none;
+}
+
+.auth-account-drawer .ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+
+.auth-account-drawer .ant-drawer-body {
+  min-width: 0;
+  padding: 18px 22px 24px;
+}
+
+.auth-account-drawer .ant-tabs-content-holder,
+.auth-account-drawer .ant-tabs-content,
+.auth-account-drawer .ant-tabs-tabpane {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.auth-account-drawer .ant-tabs-nav {
+  margin-bottom: 17px;
+}
+
+.auth-drawer-identity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 0 17px;
+  border-bottom: 1px solid #e6e2dd;
+}
+
+.auth-drawer-identity > div {
+  flex: 1;
+}
+
+.auth-settings-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  gap: 18px;
+  box-sizing: border-box;
+}
+
+.auth-settings-panel .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.auth-settings-panel .ant-form-item-label {
+  padding-bottom: 3px;
+}
+
+.auth-drawer-alert {
+  margin-bottom: 13px;
+}
+
+.auth-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+  padding: 2px 0 11px;
+  border-bottom: 1px solid #e6e2dd;
+}
+
+.auth-section-heading > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.auth-section-heading strong {
+  color: #26252a;
+  font-size: 13px;
+}
+
+.auth-section-heading span {
+  color: #77747d;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.auth-session-heading {
+  margin-top: 9px;
+}
+
+.auth-session-cell,
+.auth-user-cell {
+  display: grid;
+  gap: 3px;
+}
+
+.auth-session-cell strong,
+.auth-user-cell strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.auth-session-cell span,
+.auth-user-cell span {
+  color: #77747d;
+  font-size: 11px;
+}
+
+.auth-reload-sessions {
+  justify-self: start;
+}
+
+.auth-drawer-signout {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.auth-admin-panel {
+  gap: 14px;
+}
+
+.auth-admin-panel .auth-section-heading {
+  align-items: flex-start;
+}
+
+.auth-sso-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.auth-sso-panel > *,
+.auth-sso-panel .ant-form,
+.auth-sso-grid > *,
+.auth-sso-template-row > *,
+.auth-sso-link-form > *,
+.auth-sso-subsection > * {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.auth-sso-panel .ant-form {
+  width: 100%;
+}
+
+.auth-sso-panel .ant-form-item {
+  min-width: 0;
+}
+
+.auth-sso-panel .ant-form-item-control,
+.auth-sso-panel .ant-form-item-control-input,
+.auth-sso-panel .ant-form-item-control-input-content,
+.auth-sso-panel .ant-select,
+.auth-sso-panel .ant-input,
+.auth-sso-panel textarea {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.auth-sso-loading {
+  display: grid;
+  min-height: 120px;
+  place-items: center;
+}
+
+.auth-sso-note {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 4px 0 14px;
+  box-sizing: border-box;
+}
+
+.auth-sso-note .ant-alert-content,
+.auth-sso-note .ant-alert-message,
+.auth-sso-note .ant-alert-description {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.auth-sso-template-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.auth-sso-provider-hint {
+  display: block;
+  margin: -4px 0 14px;
+  color: #77747d;
+  font-size: 11px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.auth-sso-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.auth-sso-subsection {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 14px 0 18px;
+}
+
+.auth-settings-panel .ant-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.auth-settings-panel .ant-table,
+.auth-settings-panel .ant-table-container,
+.auth-settings-panel .ant-table-content,
+.auth-settings-panel .ant-table-body {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.auth-sso-subsection > .auth-section-heading {
+  margin-bottom: 8px;
+}
+
+.auth-sso-subsection > .ant-btn {
+  margin-top: 10px;
+}
+
+.auth-sso-actions {
+  margin: 5px 0 14px;
+}
+
+.auth-sso-callback,
+.auth-sso-test-details {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 8px 0 14px;
+  line-height: 1.5;
+}
+
+.auth-sso-callback .ant-typography,
+.auth-sso-test-details span {
+  overflow-wrap: anywhere;
+}
+
+.auth-sso-test-result {
+  margin: 8px 0 16px;
+}
+
+.auth-sso-group-name,
+.auth-sso-subject,
+.auth-sso-permission-summary,
+.auth-audit-details {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.auth-sso-link-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.auth-sso-links {
+  padding-top: 6px;
+  border-top: 1px solid #e6e2dd;
+}
+
+.auth-audit-panel .ant-table-cell {
+  overflow-wrap: anywhere;
+}
+
+.auth-sso-mapping-modal.ant-modal {
+  max-width: calc(100vw - 24px);
+}
+
+.auth-scope-refresh {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-scope-refresh .ant-typography {
+  max-width: 300px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.auth-permission-editor {
+  display: grid;
+  gap: 0;
+  margin-top: 12px;
+  border-top: 1px solid #e6e2dd;
+}
+
+.auth-permission-row {
+  display: grid;
+  gap: 9px;
+  padding: 13px 0;
+  border-bottom: 1px solid #e6e2dd;
+}
+
+.auth-permission-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #26252a;
+  font-size: 12px;
+}
+
+.auth-permission-title span {
+  min-width: 0;
+  max-width: 62%;
+  overflow: hidden;
+  color: #77747d;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-permission-fields {
+  display: grid;
+  grid-template-columns: minmax(125px, 0.8fr) minmax(180px, 1.5fr);
+  gap: 8px;
+}
+
+.auth-recovery-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 16px 0 9px;
+}
+
+.auth-recovery-toolbar .ant-typography {
+  font-size: 11px;
+}
+
+.auth-recovery-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.auth-recovery-codes code,
+.auth-one-time-code {
+  overflow-wrap: anywhere;
+  padding: 9px 10px;
+  color: #77747d;
+  background: #f4f2ef;
+  border: 1px solid #e6e2dd;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  user-select: text;
+}
+
+.auth-recovery-codes-visible code,
+.auth-one-time-code-visible {
+  color: #26252a;
+  background: #fffefd;
+}
+
+.auth-one-time-code {
+  margin: 9px 0 12px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 15px;
+}
+
+.auth-recovery-modal .ant-modal-content,
+.auth-permissions-modal .ant-modal-content {
+  max-width: calc(100vw - 24px);
+}
+
+.auth-recovery-modal .ant-modal-body,
+.auth-permissions-modal .ant-modal-body {
+  max-height: min(70vh, 660px);
+  overflow-y: auto;
+}
+
+@media (max-width: 520px) {
+  .auth-page {
+    padding: 12px;
+    align-items: start;
+  }
+
+  .auth-panel {
+    margin-top: 24px;
+    padding: 21px 18px;
+  }
+
+  .auth-permission-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .auth-sso-template-row,
+  .auth-sso-grid,
+  .auth-sso-link-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .auth-sso-template-row {
+    gap: 8px;
+  }
+
+  .auth-scope-refresh {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,31 @@
+[project]
+name = "ordivant-identity"
+version = "0.1.0"
+description = "Independent Ordivant human identity and session service"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "sqlalchemy>=2.0,<3",
+  "psycopg[binary]>=3.2,<4",
+  "pydantic>=2.8,<3",
+  "argon2-cffi>=23.1,<26",
+  "email-validator>=2.2,<3",
+  "httpx>=0.27,<1",
+  "PyJWT[crypto]>=2.10.1,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ordivant_identity"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

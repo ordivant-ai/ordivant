@@ -1,0 +1,573 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Button,
+  Descriptions,
+  Divider,
+  Drawer,
+  Empty,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Spin,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import {
+  BranchesOutlined,
+  CodeOutlined,
+  FileAddOutlined,
+  PlusOutlined,
+  PullRequestOutlined,
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+  SendOutlined,
+} from '@ant-design/icons';
+import { createProductApi, productApiPrefix } from '../shared/productApi';
+import { ProductLogin } from '../shared/ProductLogin';
+import { ProductShell } from '../shared/ProductShell';
+import { AuthProvider, useAuth } from '../../auth/AuthContext';
+import { AuthAccessDenied } from '../../auth/AuthAccessDenied';
+import { ReferenceFields, ReferenceList } from '../shared/References';
+import type { CodeCheck, CodeHealth, CodeProject, PullRequest, PullRequestContext, Repository } from '../shared/types';
+
+const { Paragraph, Title } = Typography;
+const { TextArea } = Input;
+const codeApi = createProductApi(productApiPrefix('code'));
+type CodeSection = 'repositories' | 'pulls';
+
+function dateText(value?: string | null): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? '—' : new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : '發生未預期的錯誤。';
+}
+
+function webUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'https:' || url.protocol === 'http:') && !url.username && !url.password ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+export default function CodeApp() {
+  return <AuthProvider><CodeWorkspace /></AuthProvider>;
+}
+
+function CodeWorkspace() {
+  const auth = useAuth();
+  const [messageApi, messageContext] = message.useMessage();
+  const [health, setHealth] = useState<CodeHealth | null>(null);
+  const [healthStatus, setHealthStatus] = useState<'checking' | 'ok' | 'error'>('checking');
+  const [healthError, setHealthError] = useState('');
+  const [principal, setPrincipal] = useState<import('../shared/types').ProductPrincipal | null>(null);
+  const [principalSessionKey, setPrincipalSessionKey] = useState('');
+  const [principalErrorStatus, setPrincipalErrorStatus] = useState(0);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [projects, setProjects] = useState<CodeProject[]>([]);
+  const [projectId, setProjectId] = useState('');
+  const [projectsBusy, setProjectsBusy] = useState(false);
+  const [projectError, setProjectError] = useState('');
+  const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [repositoriesBusy, setRepositoriesBusy] = useState(false);
+  const [repositoriesError, setRepositoriesError] = useState('');
+  const [repositoryId, setRepositoryId] = useState('');
+  const [section, setSection] = useState<CodeSection>('repositories');
+  const [pulls, setPulls] = useState<PullRequest[]>([]);
+  const [pullsBusy, setPullsBusy] = useState(false);
+  const [pullsError, setPullsError] = useState('');
+  const [selectedPullNumber, setSelectedPullNumber] = useState<number | null>(null);
+  const [pullContext, setPullContext] = useState<PullRequestContext | null>(null);
+  const [pullBusy, setPullBusy] = useState(false);
+  const [pullError, setPullError] = useState('');
+  const [pullDrawerOpen, setPullDrawerOpen] = useState(false);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [repositoryModalOpen, setRepositoryModalOpen] = useState(false);
+  const [branchModalOpen, setBranchModalOpen] = useState(false);
+  const [fileModalOpen, setFileModalOpen] = useState(false);
+  const [pullModalOpen, setPullModalOpen] = useState(false);
+  const [checkModalOpen, setCheckModalOpen] = useState(false);
+  const [projectSaving, setProjectSaving] = useState(false);
+  const [repositorySaving, setRepositorySaving] = useState(false);
+  const [branchSaving, setBranchSaving] = useState(false);
+  const [fileSaving, setFileSaving] = useState(false);
+  const [pullSaving, setPullSaving] = useState(false);
+  const [checkSaving, setCheckSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [projectForm] = Form.useForm();
+  const [repositoryForm] = Form.useForm();
+  const [branchForm] = Form.useForm();
+  const [fileForm] = Form.useForm();
+  const [pullForm] = Form.useForm();
+  const [checkForm] = Form.useForm();
+  const healthRequestId = useRef(0);
+  const selectedProject = projects.find((project) => project.id === projectId) ?? null;
+  const selectedRepository = repositories.find((repository) => repository.id === repositoryId) ?? null;
+  const canWrite = Boolean(principal && ['admin', 'manager', 'writer'].includes(principal.role));
+  const canCreateProject = auth.session?.user.role === 'admin';
+  const giteaConfigured = health?.gitea_configured === true;
+
+  const checkHealth = useCallback(async () => {
+    const requestId = ++healthRequestId.current;
+    setHealthStatus('checking');
+    setHealthError('');
+    try {
+      const result = await codeApi.health();
+      if (requestId !== healthRequestId.current) return;
+      setHealth(result as CodeHealth);
+      setHealthError('');
+      setHealthStatus('ok');
+    } catch (error) {
+      if (requestId !== healthRequestId.current) return;
+      setHealthError(errorMessage(error));
+      setHealthStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkHealth();
+    return () => { healthRequestId.current += 1; };
+  }, [checkHealth]);
+
+  const loadProjects = useCallback(async (selectId?: string) => {
+    setProjectsBusy(true);
+    setProjectError('');
+    try {
+      const result = await codeApi.get<CodeProject[]>('/projects');
+      setProjects(result);
+      if (selectId) setProjectId(selectId);
+      else setProjectId((existing) => result.some((project) => project.id === existing) ? existing : result[0]?.id ?? '');
+    } catch (error) {
+      setProjectError(errorMessage(error));
+    } finally {
+      setProjectsBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (principal) void loadProjects();
+  }, [loadProjects, principal]);
+
+  const loadRepositories = useCallback(async () => {
+    if (!projectId) {
+      setRepositories([]);
+      setRepositoryId('');
+      return;
+    }
+    setRepositoriesBusy(true);
+    setRepositoriesError('');
+    try {
+      const params = new URLSearchParams({ project_id: projectId });
+      const result = await codeApi.get<Repository[]>(`/repositories?${params.toString()}`);
+      setRepositories(result);
+      setRepositoryId((existing) => result.some((repository) => repository.id === existing) ? existing : result[0]?.id ?? '');
+    } catch (error) {
+      setRepositoriesError(errorMessage(error));
+    } finally {
+      setRepositoriesBusy(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (principal) void loadRepositories();
+  }, [loadRepositories, principal]);
+
+  const loadPulls = useCallback(async () => {
+    if (!repositoryId) {
+      setPulls([]);
+      return;
+    }
+    setPullsBusy(true);
+    setPullsError('');
+    try {
+      const result = await codeApi.get<PullRequest[]>(`/repositories/${encodeURIComponent(repositoryId)}/pulls`);
+      setPulls(result);
+      if (selectedPullNumber && !result.some((pull) => pull.number === selectedPullNumber)) setSelectedPullNumber(null);
+    } catch (error) {
+      setPullsError(errorMessage(error));
+    } finally {
+      setPullsBusy(false);
+    }
+  }, [repositoryId, selectedPullNumber]);
+
+  useEffect(() => {
+    if (principal && repositoryId) void loadPulls();
+    else setPulls([]);
+  }, [loadPulls, principal, repositoryId]);
+
+  const loadPullContext = useCallback(async (number = selectedPullNumber) => {
+    if (!repositoryId || !number) return;
+    setPullBusy(true);
+    setPullError('');
+    try {
+      const context = await codeApi.get<PullRequestContext>(`/repositories/${encodeURIComponent(repositoryId)}/pulls/${number}`);
+      setPullContext(context);
+      return context;
+    } catch (error) {
+      setPullError(errorMessage(error));
+      throw error;
+    } finally {
+      setPullBusy(false);
+    }
+  }, [repositoryId, selectedPullNumber]);
+
+  useEffect(() => {
+    if (!pullDrawerOpen || !selectedPullNumber) {
+      setPullContext(null);
+      return;
+    }
+    void loadPullContext().catch(() => undefined);
+  }, [loadPullContext, pullDrawerOpen, selectedPullNumber]);
+
+  useEffect(() => {
+    if (!auth.session) {
+      setPrincipal(null);
+      setPrincipalSessionKey('');
+      setAuthError('');
+      setPrincipalErrorStatus(0);
+      setProjects([]);
+      setProjectId('');
+      setRepositories([]);
+      setRepositoryId('');
+      setPulls([]);
+      setPullContext(null);
+      return;
+    }
+    let current = true;
+    setPrincipal(null);
+    setPrincipalSessionKey(auth.session.csrf_token);
+    setAuthBusy(true);
+    setAuthError('');
+    setPrincipalErrorStatus(0);
+    codeApi.me()
+      .then((result) => { if (current) setPrincipal(result); })
+      .catch((error) => { if (current) { setAuthError(errorMessage(error)); setPrincipalErrorStatus(error instanceof Error && 'status' in error ? Number((error as { status: unknown }).status) : 0); } })
+      .finally(() => { if (current) setAuthBusy(false); });
+    return () => { current = false; };
+  }, [auth.session]);
+
+  async function createProject(values: Record<string, unknown>) {
+    if (auth.session?.user.role !== 'admin') {
+      setProjectModalOpen(false);
+      messageApi.error('只有管理員可以建立 Code project。');
+      return;
+    }
+    setProjectSaving(true);
+    setFormError('');
+    try {
+      const created = await codeApi.post<CodeProject>('/projects', { key: values.key, name: values.name, description: values.description ?? '' });
+      await loadProjects(created.id);
+      setProjectModalOpen(false);
+      projectForm.resetFields();
+      messageApi.success('Code project 已建立。');
+    } catch (error) {
+      setFormError(errorMessage(error));
+    } finally {
+      setProjectSaving(false);
+    }
+  }
+
+  async function createRepository(values: Record<string, unknown>) {
+    if (!projectId) return;
+    setRepositorySaving(true);
+    setFormError('');
+    try {
+      const repository = await codeApi.post<Repository>('/repositories', {
+        project_id: projectId,
+        name: values.name,
+        description: values.description ?? '',
+        private: true,
+      });
+      await loadRepositories();
+      setRepositoryId(repository.id);
+      setRepositoryModalOpen(false);
+      repositoryForm.resetFields();
+      messageApi.success('Private repository 已建立。');
+    } catch (error) {
+      setFormError(errorMessage(error));
+    } finally {
+      setRepositorySaving(false);
+    }
+  }
+
+  async function createBranch(values: Record<string, unknown>) {
+    if (!repositoryId) return;
+    setBranchSaving(true);
+    setFormError('');
+    try {
+      const result = await codeApi.post<{ name: string; commit_sha: string }>(`/repositories/${encodeURIComponent(repositoryId)}/branches`, { name: values.name, from_branch: values.from_branch || undefined });
+      setBranchModalOpen(false);
+      branchForm.resetFields();
+      messageApi.success(`Branch ${result.name} 已建立，起始 commit ${result.commit_sha.slice(0, 8)}。`);
+    } catch (error) {
+      setFormError(errorMessage(error));
+    } finally {
+      setBranchSaving(false);
+    }
+  }
+
+  async function commitFile(values: Record<string, unknown>) {
+    if (!repositoryId) return;
+    setFileSaving(true);
+    setFormError('');
+    try {
+      const result = await codeApi.post<{ path: string; branch: string; commit_sha: string; file_sha: string }>(`/repositories/${encodeURIComponent(repositoryId)}/files`, {
+        branch: values.branch,
+        path: values.path,
+        content: values.content,
+        commit_message: values.commit_message,
+        expected_sha: values.expected_sha || undefined,
+      });
+      setFileModalOpen(false);
+      fileForm.resetFields();
+      messageApi.success(`UTF-8 檔案已提交：${result.commit_sha.slice(0, 8)}。`);
+    } catch (error) {
+      setFormError(errorMessage(error));
+    } finally {
+      setFileSaving(false);
+    }
+  }
+
+  async function createPull(values: Record<string, unknown>) {
+    if (!repositoryId) return;
+    setPullSaving(true);
+    setFormError('');
+    try {
+      const pull = await codeApi.post<PullRequest>(`/repositories/${encodeURIComponent(repositoryId)}/pulls`, {
+        head: values.head,
+        base: values.base || 'main',
+        title: values.title,
+        body: values.body ?? '',
+        source_refs: values.source_refs ?? [],
+      });
+      await loadPulls();
+      setSelectedPullNumber(pull.number);
+      setPullModalOpen(false);
+      setPullDrawerOpen(true);
+      pullForm.resetFields();
+      messageApi.success(`已建立 Gitea PR #${pull.number}。`);
+    } catch (error) {
+      setFormError(errorMessage(error));
+    } finally {
+      setPullSaving(false);
+    }
+  }
+
+  async function reportCheck(values: Record<string, unknown>) {
+    if (!repositoryId) return;
+    setCheckSaving(true);
+    setFormError('');
+    try {
+      await codeApi.post<CodeCheck>(`/repositories/${encodeURIComponent(repositoryId)}/checks`, {
+        commit_sha: values.commit_sha,
+        context: values.context,
+        state: values.state,
+        description: values.description ?? '',
+        target_url: values.target_url || undefined,
+      });
+      setCheckModalOpen(false);
+      checkForm.resetFields();
+      if (selectedPullNumber) await loadPullContext(selectedPullNumber);
+      messageApi.success('狀態已送至 Gitea；紀錄會標示為 Agent 回報。');
+    } catch (error) {
+      setFormError(errorMessage(error));
+    } finally {
+      setCheckSaving(false);
+    }
+  }
+
+  function openCreateRepository() {
+    setFormError('');
+    repositoryForm.resetFields();
+    setRepositoryModalOpen(true);
+  }
+
+  function openBranchModal() {
+    setFormError('');
+    branchForm.resetFields();
+    branchForm.setFieldsValue({ from_branch: selectedRepository?.default_branch || 'main' });
+    setBranchModalOpen(true);
+  }
+
+  function openFileModal() {
+    setFormError('');
+    fileForm.resetFields();
+    fileForm.setFieldsValue({ branch: selectedRepository?.default_branch || 'main', commit_message: 'Add project file' });
+    setFileModalOpen(true);
+  }
+
+  function openPullModal() {
+    setFormError('');
+    pullForm.resetFields();
+    pullForm.setFieldsValue({ base: selectedRepository?.default_branch || 'main', source_refs: [] });
+    setPullModalOpen(true);
+  }
+
+  function openCheckModal() {
+    setFormError('');
+    checkForm.resetFields();
+    checkForm.setFieldsValue({ commit_sha: pullContext?.head_sha || '', context: 'agent/review', state: 'pending' });
+    setCheckModalOpen(true);
+  }
+
+  const projectOptions = projects.map((project) => ({ value: project.id, label: `${project.key} · ${project.name}` }));
+  const repositoryColumns: ColumnsType<Repository> = useMemo(() => [
+    { title: 'Repository', dataIndex: 'name', key: 'name', render: (_: unknown, repository) => <button type="button" className={`repository-list-row${repository.id === repositoryId ? ' repository-selected' : ''}`} onClick={() => { setRepositoryId(repository.id); setSection('repositories'); }}><CodeOutlined /><span><strong>{repository.owner}/{repository.name}</strong><small>{repository.default_branch} · {dateText(repository.created_at)}</small></span><Tag color="purple">Private</Tag></button> },
+  ], [repositoryId]);
+
+  const pullColumns: ColumnsType<PullRequest> = [
+    { title: 'Pull request', dataIndex: 'title', key: 'title', render: (title: string, pull) => <button type="button" className="pull-table-link" onClick={() => { setSelectedPullNumber(pull.number); setPullDrawerOpen(true); }}><span className={`pull-state-mark pull-state-${pull.state}`} /><span><strong>#{pull.number} · {title}</strong><small>{pull.head} → {pull.base}</small></span></button> },
+    { title: '狀態', dataIndex: 'state', key: 'state', width: 90, render: (value: PullRequest['state']) => <Tag color={value === 'open' ? 'green' : 'default'}>{value === 'open' ? '開啟' : '關閉'}</Tag> },
+    { title: '更新', dataIndex: 'updated_at', key: 'updated_at', width: 130, render: dateText },
+    { title: '', key: 'external', width: 80, render: (_: unknown, pull) => { const href = webUrl(pull.web_url); return href ? <Tooltip title="在 Gitea 檢視"><Button type="link" href={href} target="_blank" rel="noreferrer">開啟</Button></Tooltip> : null; } },
+  ];
+
+  if (!auth.session) {
+    return <>{messageContext}<ProductLogin product="code" productName="Code" /></>;
+  }
+  if (authBusy || principalSessionKey !== auth.session.csrf_token) {
+    return <>{messageContext}<div className="product-inline-loading"><Spin /></div></>;
+  }
+  if (!principal) {
+    return <>{messageContext}<AuthAccessDenied product="code" productName="Code" error={authError} forbidden={principalErrorStatus === 403} onRetry={() => window.location.reload()} /></>;
+  }
+
+  return (
+    <>
+      {messageContext}
+      <ProductShell
+        product="code"
+        productLabel="Ordivant Code"
+        principal={principal}
+        sectionLabel="Code"
+        navigation={[
+          { key: 'repositories', label: 'Repositories', icon: <CodeOutlined /> },
+          { key: 'pulls', label: 'Pull requests', icon: <PullRequestOutlined /> },
+        ]}
+        activeSection={section}
+        onSectionChange={(key) => setSection(key as CodeSection)}
+        mode={health?.mode ?? 'unavailable'}
+        serviceStatus={healthStatus}
+        headerExtra={<Space size={7}><Select aria-label="選擇 Code project" className="product-scope-select" placeholder="選擇 Project" value={projectId || undefined} loading={projectsBusy} onChange={(value) => { setProjectId(value); setRepositoryId(''); setSelectedPullNumber(null); }} options={projectOptions} notFoundContent="沒有可存取的 Project" />{canCreateProject && <Button aria-label="建立 Code project" icon={<PlusOutlined />} onClick={() => { projectForm.resetFields(); setFormError(''); setProjectModalOpen(true); }}>新增 Project</Button>}<Button aria-label="重新檢查 Code 與 Gitea 狀態" icon={<ReloadOutlined />} loading={healthStatus === 'checking'} onClick={() => void checkHealth()}>重新檢查</Button></Space>}
+        title={section === 'repositories' ? 'Repositories' : 'Pull requests'}
+        eyebrow={selectedProject ? `${selectedProject.key} · ${selectedProject.name}` : 'CODE'}
+        actions={section === 'repositories' && canWrite ? <Button type="primary" icon={<PlusOutlined />} disabled={!projectId || !giteaConfigured} onClick={openCreateRepository}>新增 Private repository</Button> : undefined}
+      >
+        {healthStatus === 'error' && <Alert className="product-page-alert" type="error" showIcon message="Code API 無法連線" description={healthError} action={<Button size="small" onClick={() => void checkHealth()}>重試</Button>} />}
+        {!giteaConfigured && healthStatus === 'ok' && <Alert className="product-page-alert" type="warning" showIcon message="Gitea 未設定" description="Repository 與 Pull request 中繼資料仍可檢視；新增 repository、branch、commit、PR 與回報狀態目前不可用。Code 服務本身仍可正常啟動。" action={<Button size="small" onClick={() => void checkHealth()}>重新檢查</Button>} />}
+        {projectError && <Alert className="product-page-alert" type="error" showIcon message="Code project 載入失敗" description={projectError} action={<Button size="small" onClick={() => void loadProjects()}>重試</Button>} />}
+        {!projectId ? (
+          <div className="product-empty-state"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={projectsBusy ? '正在載入 Code project' : canCreateProject ? '目前沒有可存取的 Code project' : '目前沒有可存取的 Code project，請聯絡管理員授予 Project 存取權或建立新 Project。'} />{canCreateProject && <Button type="primary" icon={<PlusOutlined />} onClick={() => setProjectModalOpen(true)}>建立 Code project</Button>}</div>
+        ) : section === 'repositories' ? (
+          <div className="code-workspace">
+            <aside className="repository-list-pane">
+              <div className="product-list-head"><span>Repositories</span><span>{repositoriesBusy ? '載入中' : `${repositories.length}`}</span></div>
+              {repositoriesError && <Alert type="error" showIcon message={repositoriesError} action={<Button size="small" onClick={() => void loadRepositories()}>重試</Button>} />}
+              {repositoriesBusy && !repositories.length && <div className="product-inline-loading"><Spin size="small" /></div>}
+              {!repositoriesBusy && repositories.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="此 project 尚無 repository">{canWrite && giteaConfigured && <Button size="small" type="primary" onClick={openCreateRepository}>建立 Private repository</Button>}</Empty>}
+              {repositories.length > 0 && <Table<Repository> rowKey="id" columns={repositoryColumns} dataSource={repositories} showHeader={false} pagination={false} size="small" />}
+            </aside>
+            <main className="repository-detail-pane">
+              {!selectedRepository && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="選取 repository 以檢視分支與 PR" />}
+              {selectedRepository && <>
+                <div className="repository-header"><div><div className="repository-path">{selectedRepository.owner}/{selectedRepository.name}</div><Title level={3}>{selectedRepository.name}</Title><Paragraph>{selectedRepository.project_id.slice(0, 8)} · Gitea private repository</Paragraph></div><Space wrap><Button icon={<ReloadOutlined />} onClick={() => { void loadRepositories(); void loadPulls(); }}>重新整理</Button>{giteaConfigured && canWrite && <Button icon={<BranchesOutlined />} onClick={openBranchModal}>建立 branch</Button>}{giteaConfigured && canWrite && <Button icon={<FileAddOutlined />} onClick={openFileModal}>提交檔案</Button>}{giteaConfigured && canWrite && <Button type="primary" icon={<PullRequestOutlined />} onClick={openPullModal}>建立 PR</Button>}</Space></div>
+                <Descriptions className="repository-metadata" size="small" column={{ xs: 1, sm: 2 }}>
+                  <Descriptions.Item label="Provider">Gitea</Descriptions.Item><Descriptions.Item label="Default branch"><Tag>{selectedRepository.default_branch}</Tag></Descriptions.Item>
+                  <Descriptions.Item label="Web URL">{webUrl(selectedRepository.web_url) ? <a href={webUrl(selectedRepository.web_url) ?? undefined} target="_blank" rel="noreferrer">{selectedRepository.web_url}</a> : selectedRepository.web_url}</Descriptions.Item>
+                  <Descriptions.Item label="Clone URL"><span className="clone-url">{selectedRepository.clone_url}</span></Descriptions.Item>
+                  <Descriptions.Item label="建立時間">{dateText(selectedRepository.created_at)}</Descriptions.Item>
+                </Descriptions>
+                {!giteaConfigured && <div className="gitea-unavailable-inline"><SafetyCertificateOutlined /><span>服務尚未連接 Gitea。現有 repository binding 可供查閱，寫入操作需先完成服務端 Gitea 設定。</span></div>}
+                <div className="repository-pr-heading"><div><span className="eyebrow">REVIEW WORKFLOW</span><h3>Pull requests</h3></div><Button type="link" icon={<PullRequestOutlined />} onClick={() => setSection('pulls')}>檢視清單</Button></div>
+                {pullsError && <Alert type="error" showIcon message="PR 清單載入失敗" description={pullsError} action={<Button size="small" onClick={() => void loadPulls()}>重試</Button>} />}
+                {pullsBusy && !pulls.length && <Spin size="small" />}
+                {!pullsBusy && pulls.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="此 repository 尚無 PR" />}
+                {pulls.slice(0, 6).map((pull) => <button key={pull.id} type="button" className="repository-pr-row" onClick={() => { setSelectedPullNumber(pull.number); setPullDrawerOpen(true); }}><span className={`pull-state-mark pull-state-${pull.state}`} /><span><strong>#{pull.number} · {pull.title}</strong><small>{pull.head} → {pull.base}</small></span><Tag color={pull.state === 'open' ? 'green' : 'default'}>{pull.state === 'open' ? '開啟' : '關閉'}</Tag></button>)}
+              </>}
+            </main>
+          </div>
+        ) : (
+          <section className="code-pull-list">
+            <div className="product-list-head"><span>Pull requests {selectedRepository ? `· ${selectedRepository.owner}/${selectedRepository.name}` : ''}</span><Space><Select aria-label="篩選 repository" allowClear placeholder="所有 Repositories" value={repositoryId || undefined} onChange={(value) => { setRepositoryId(value ?? ''); setSelectedPullNumber(null); setPullContext(null); }} options={repositories.map((repository) => ({ value: repository.id, label: `${repository.owner}/${repository.name}` }))} /><Button icon={<ReloadOutlined />} onClick={() => void loadPulls()}>重新整理</Button></Space></div>
+            {pullsError && <Alert className="product-page-alert" type="error" showIcon message="PR 清單載入失敗" description={pullsError} action={<Button size="small" onClick={() => void loadPulls()}>重試</Button>} />}
+            {pullsBusy && !pulls.length && <div className="product-inline-loading"><Spin /></div>}
+            {!repositoryId && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="請先選擇 repository" />}
+            {repositoryId && !pullsBusy && pulls.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="沒有 Pull request" />}
+            <Table<PullRequest> rowKey="id" columns={pullColumns} dataSource={pulls} loading={pullsBusy} pagination={{ pageSize: 12, showSizeChanger: false }} scroll={{ x: 670 }} />
+          </section>
+        )}
+      </ProductShell>
+
+      {canCreateProject && <Modal title="建立 Code project" open={projectModalOpen} onCancel={() => setProjectModalOpen(false)} onOk={() => projectForm.submit()} confirmLoading={projectSaving} okText="建立 Project" cancelText="取消" destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
+        <Form form={projectForm} layout="vertical" onFinish={(values) => void createProject(values)}><Form.Item name="key" label="Project 代碼" rules={[{ required: true }]}><Input maxLength={24} /></Form.Item><Form.Item name="name" label="名稱" rules={[{ required: true }]}><Input maxLength={120} /></Form.Item><Form.Item name="description" label="描述"><TextArea rows={3} /></Form.Item></Form>
+      </Modal>}
+
+      <Modal title="建立 Private repository" open={repositoryModalOpen} onCancel={() => setRepositoryModalOpen(false)} onOk={() => repositoryForm.submit()} confirmLoading={repositorySaving} okText="建立 Repository" cancelText="取消" destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
+        <Form form={repositoryForm} layout="vertical" onFinish={(values) => void createRepository(values)}><Form.Item label="Code project">{selectedProject?.key} · {selectedProject?.name}</Form.Item><Form.Item name="name" label="Repository 名稱" rules={[{ required: true, whitespace: true }]}><Input maxLength={100} /></Form.Item><Form.Item name="description" label="描述"><TextArea rows={3} /></Form.Item><Alert type="info" showIcon message="Private · main branch · auto-init README" description="建立要求會送至服務端綁定的 Gitea 帳號。其 upstream token 不會送回瀏覽器。" /></Form>
+      </Modal>
+
+      <Modal title={`建立 branch · ${selectedRepository?.name ?? ''}`} open={branchModalOpen} onCancel={() => setBranchModalOpen(false)} onOk={() => branchForm.submit()} confirmLoading={branchSaving} okText="建立 Branch" cancelText="取消" destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
+        <Form form={branchForm} layout="vertical" onFinish={(values) => void createBranch(values)}><Form.Item name="name" label="Branch 名稱" rules={[{ required: true, whitespace: true }]}><Input placeholder="feature/short-description" /></Form.Item><Form.Item name="from_branch" label="來源 Branch"><Input /></Form.Item></Form>
+      </Modal>
+
+      <Modal title={`提交 UTF-8 檔案 · ${selectedRepository?.name ?? ''}`} open={fileModalOpen} onCancel={() => setFileModalOpen(false)} onOk={() => fileForm.submit()} confirmLoading={fileSaving} okText="建立 Commit" cancelText="取消" width={720} destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
+        <Form form={fileForm} layout="vertical" onFinish={(values) => void commitFile(values)}><Form.Item name="branch" label="Target branch" rules={[{ required: true }]}><Input /></Form.Item><Form.Item name="path" label="Repository path" rules={[{ required: true, whitespace: true }]}><Input placeholder="src/README.md" /></Form.Item><Form.Item name="content" label="檔案內容（UTF-8）" rules={[{ required: true, message: '檔案內容不得空白' }]}><TextArea rows={12} spellCheck /></Form.Item><Form.Item name="commit_message" label="Commit message" rules={[{ required: true, whitespace: true }]}><Input maxLength={200} /></Form.Item><Form.Item name="expected_sha" label="更新既有檔案時的 expected SHA"><Input placeholder="新增檔案時留空" /></Form.Item><div className="form-note">內容會以 UTF-8 編碼送交服務端，再由 Gitea Contents API 建立 commit。</div></Form>
+      </Modal>
+
+      <Modal title={`建立 Pull request · ${selectedRepository?.name ?? ''}`} open={pullModalOpen} onCancel={() => setPullModalOpen(false)} onOk={() => pullForm.submit()} confirmLoading={pullSaving} okText="建立 PR" cancelText="取消" width={720} destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
+        <Form form={pullForm} layout="vertical" onFinish={(values) => void createPull(values)}><Form.Item name="head" label="Head branch" rules={[{ required: true }]}><Input placeholder="feature/short-description" /></Form.Item><Form.Item name="base" label="Base branch" rules={[{ required: true }]}><Input /></Form.Item><Form.Item name="title" label="PR 標題" rules={[{ required: true, whitespace: true }]}><Input maxLength={250} /></Form.Item><Form.Item name="body" label="描述"><TextArea rows={4} /></Form.Item><Divider orientation="left" plain>Work / Knowledge / 外部來源</Divider><ReferenceFields /></Form>
+      </Modal>
+
+      <Modal title="回報 Commit 狀態" open={checkModalOpen} onCancel={() => setCheckModalOpen(false)} onOk={() => checkForm.submit()} confirmLoading={checkSaving} okText="送出狀態" cancelText="取消" destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
+        <Alert className="product-form-alert" type="warning" showIcon message="此為 Agent 回報" description="狀態會送至 Gitea 並保留為 agent_reported receipt；不表示 CI runner 實際執行過測試。" />
+        <Form form={checkForm} layout="vertical" onFinish={(values) => void reportCheck(values)}><Form.Item name="commit_sha" label="Commit SHA" rules={[{ required: true }]}><Input /></Form.Item><Form.Item name="context" label="Context" rules={[{ required: true }]}><Input maxLength={100} /></Form.Item><Form.Item name="state" label="狀態" rules={[{ required: true }]}><Select options={[{ value: 'pending', label: 'Pending' }, { value: 'success', label: 'Success' }, { value: 'failure', label: 'Failure' }, { value: 'error', label: 'Error' }]} /></Form.Item><Form.Item name="description" label="說明"><TextArea rows={2} /></Form.Item><Form.Item name="target_url" label="Target URL"><Input /></Form.Item></Form>
+      </Modal>
+
+      <Drawer title={pullContext ? `PR #${pullContext.number} · ${pullContext.title}` : 'Pull request'} open={pullDrawerOpen} onClose={() => setPullDrawerOpen(false)} width={620} className="code-pr-drawer">
+        {pullError && <Alert type="error" showIcon message="Pull request 載入失敗" description={pullError} action={<Button size="small" onClick={() => void loadPullContext()}>重試</Button>} />}
+        {pullBusy && !pullContext && <div className="product-inline-loading"><Spin /></div>}
+        {pullContext && <PullDetail context={pullContext} canReport={canWrite && giteaConfigured} onReport={() => openCheckModal()} />}
+      </Drawer>
+    </>
+  );
+}
+
+function PullDetail({ context, canReport, onReport }: { context: PullRequestContext; canReport: boolean; onReport: () => void }) {
+  const href = webUrl(context.web_url);
+  return (
+    <div className="pull-detail">
+      <div className="pull-detail-top"><Tag color={context.state === 'open' ? 'green' : 'default'}>{context.state === 'open' ? '開啟' : '關閉'}</Tag><span>{context.head} → {context.base}</span>{href && <a href={href} target="_blank" rel="noreferrer">在 Gitea 開啟</a>}</div>
+      <Paragraph>{context.body || '沒有 PR 描述。'}</Paragraph>
+      <Descriptions size="small" column={1} colon={false}><Descriptions.Item label="Head SHA"><code>{context.head_sha}</code></Descriptions.Item><Descriptions.Item label="建立時間">{dateText(context.created_at)}</Descriptions.Item><Descriptions.Item label="更新時間">{dateText(context.updated_at)}</Descriptions.Item></Descriptions>
+      <div className="code-detail-section-head"><div><span className="eyebrow">SOURCE REFS</span><h3>來源與 provenance</h3></div><span>{context.source_refs.length}</span></div>
+      <ReferenceList references={context.source_refs} />
+      <div className="code-detail-section-head check-section-head"><div><span className="eyebrow">COMMIT RECEIPTS</span><h3>Checks 與狀態</h3></div><Button size="small" icon={<SendOutlined />} disabled={!canReport} onClick={onReport}>回報狀態</Button></div>
+      <div className="check-receipt-note">source=agent_reported 代表 Agent 提交的狀態回報；source=gitea_webhook 代表已驗證 webhook。這些資訊不會被標示成實際 CI 執行結果。</div>
+      {!context.checks.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="此 PR 尚無 check receipt" />}
+      {context.checks.map((check) => <CheckRow key={check.id} check={check} />)}
+    </div>
+  );
+}
+
+function CheckRow({ check }: { check: CodeCheck }) {
+  const color = ({ pending: 'gold', success: 'green', failure: 'red', error: 'volcano' })[check.state];
+  return <div className="check-row"><div className="check-row-head"><Tag color={color}>{check.state}</Tag><strong>{check.context}</strong><Tag color={check.source === 'agent_reported' ? 'orange' : 'blue'}>{check.source === 'agent_reported' ? 'Agent 回報' : 'Gitea webhook'}</Tag><time>{dateText(check.created_at)}</time></div>{check.description && <Paragraph>{check.description}</Paragraph>}{check.target_url && webUrl(check.target_url) && <a href={webUrl(check.target_url) ?? undefined} target="_blank" rel="noreferrer">查看 target</a>}<div className="check-commit">{check.commit_sha}</div></div>;
+}

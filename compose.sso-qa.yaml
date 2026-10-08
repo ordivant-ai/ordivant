@@ -1,0 +1,7 @@
+# Owned QA only: generated synthetic users and client secret, never production.
+services:
+  identity-broker:
+    command: [start, --http-enabled=true, --import-realm]
+    volumes:
+      - ${ORDIVANT_SSO_QA_IMPORT_DIR:-./.data/sso-fixture/import}/ordivant-qa-realm.json:/opt/keycloak/data/import/ordivant-qa-realm.json:ro
+      - ${ORDIVANT_SSO_QA_IMPORT_DIR:-./.data/sso-fixture/import}/ordivant-qa-saml-realm.json:/opt/keycloak/data/import/ordivant-qa-saml-realm.json:ro

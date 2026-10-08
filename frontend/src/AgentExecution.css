@@ -1,0 +1,17 @@
+.agent-execution-alert { margin: 0 0 12px; }
+.agent-execution-fields { margin: 17px 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.agent-execution-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
+.agent-execution-heading strong { color: #35323a; font-size: 14px; font-weight: 650; }
+.agent-execution-heading .ant-typography { font-size: 11px; }
+.agent-execution-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.agent-execution-grid .ant-form-item { min-width: 0; }
+.agent-execution-grid .full-width { width: 100%; }
+.agent-execution-modal { max-width: calc(100vw - 24px); }
+.agent-execution-modal .ant-modal-content { max-height: calc(100dvh - 24px); overflow: auto; }
+
+@media (max-width: 700px) {
+  .agent-execution-grid { grid-template-columns: minmax(0, 1fr); }
+  .agent-execution-heading { align-items: flex-start; flex-direction: column; }
+  .agent-execution-modal .ant-modal { width: calc(100vw - 16px) !important; max-width: calc(100vw - 16px); margin-inline: 8px; }
+  .agent-execution-modal .ant-modal-body { padding: 12px; }
+}

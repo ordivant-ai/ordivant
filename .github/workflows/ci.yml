@@ -1,0 +1,216 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python / ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Work
+            project: backend
+            dependency-mode: extra
+          - name: Identity
+            project: products/identity/backend
+            dependency-mode: extra
+          - name: Knowledge
+            project: products/knowledge/backend
+            dependency-mode: extra
+          - name: Code
+            project: products/code/backend
+            dependency-mode: extra
+          - name: Sandbox
+            project: sandbox
+            dependency-mode: group
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.project }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.20"
+          enable-cache: true
+          cache-dependency-glob: "**/uv.lock"
+
+      - name: Install development dependencies
+        if: matrix.dependency-mode == 'extra'
+        run: uv sync --frozen --extra dev
+
+      - name: Install sandbox development dependencies
+        if: matrix.dependency-mode == 'group'
+        run: uv sync --frozen --group dev
+
+      - name: Run tests
+        if: matrix.project != 'sandbox'
+        run: uv run --frozen --no-sync pytest
+
+      - name: Run Sandbox tests
+        if: matrix.project == 'sandbox'
+        run: uv run --frozen --no-sync python -c "import sys; sys.path.insert(0, '..'); import pytest; raise SystemExit(pytest.main())"
+
+  runtime:
+    name: Runtime / Node 24
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: runtime/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: runtime
+
+      - name: Build and test
+        run: npm test
+        working-directory: runtime
+
+  frontend:
+    name: Frontend / four product builds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build Suite
+        run: npm run build:suite
+        working-directory: frontend
+
+      - name: Build Work
+        run: npm run build:work
+        working-directory: frontend
+
+      - name: Build Knowledge
+        run: npm run build:knowledge
+        working-directory: frontend
+
+      - name: Build Code
+        run: npm run build:code
+        working-directory: frontend
+
+  integration:
+    name: Work REST / MCP / Pi integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ORDIVANT_RUNTIME_MODE: demo
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.20"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: runtime/package-lock.json
+
+      - name: Install Work test dependencies
+        run: uv sync --project backend --frozen --extra dev
+
+      - name: Build Runtime
+        run: |
+          npm ci
+          npm run build
+        working-directory: runtime
+
+      - name: Run integration acceptance
+        run: uv run --project backend --frozen --no-sync python scripts/integration.py
+
+      - name: Check paid acceptance opt-in guards
+        run: uv run --project backend --no-sync python -m pytest tests/test_live_acceptance_configuration.py -q
+
+  product-smoke:
+    name: Knowledge / Code local smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.20"
+          enable-cache: true
+          cache-dependency-glob: |
+            products/knowledge/backend/uv.lock
+            products/code/backend/uv.lock
+
+      - name: Install Knowledge dependencies
+        run: uv sync --project products/knowledge/backend --frozen
+
+      - name: Install Code dependencies
+        run: uv sync --project products/code/backend --frozen
+
+      - name: Run product smoke acceptance
+        run: uv run --project products/knowledge/backend --frozen --no-sync python scripts/product_smoke.py --product all

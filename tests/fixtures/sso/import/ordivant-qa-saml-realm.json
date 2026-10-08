@@ -1,0 +1,155 @@
+{
+  "realm": "ordivant-qa-saml",
+  "displayName": "Ordivant isolated SAML upstream QA",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "groups": [
+    {
+      "name": "qa-work",
+      "path": "/qa-work"
+    },
+    {
+      "name": "qa-knowledge",
+      "path": "/qa-knowledge"
+    },
+    {
+      "name": "qa-code",
+      "path": "/qa-code"
+    },
+    {
+      "name": "qa-restricted",
+      "path": "/qa-restricted"
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "ordivant-saml-qa",
+      "name": "Ordivant broker SAML service provider",
+      "enabled": true,
+      "protocol": "saml",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://127.0.0.1:8093/realms/ordivant-qa/broker/qa-saml/endpoint"
+      ],
+      "attributes": {
+        "saml_name_id_format": "email",
+        "saml_force_name_id_format": "true",
+        "saml.assertion.signature": "true",
+        "saml.server.signature": "true",
+        "saml.client.signature": "false",
+        "saml_force_post_binding": "true",
+        "saml_assertion_consumer_url_post": "http://127.0.0.1:8093/realms/ordivant-qa/broker/qa-saml/endpoint",
+        "saml.authnstatement": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "email attribute",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "email",
+            "attribute.name": "email",
+            "attribute.nameformat": "Basic",
+            "friendly.name": "email",
+            "single": "true"
+          }
+        },
+        {
+          "name": "groups attribute",
+          "protocol": "saml",
+          "protocolMapper": "saml-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "attribute.name": "groups",
+            "attribute.nameformat": "Basic",
+            "friendly.name": "groups",
+            "single": "true",
+            "full.path": "false"
+          }
+        },
+        {
+          "name": "first name attribute",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "firstName",
+            "attribute.name": "firstName",
+            "attribute.nameformat": "Basic",
+            "friendly.name": "firstName"
+          }
+        },
+        {
+          "name": "last name attribute",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "lastName",
+            "attribute.name": "lastName",
+            "attribute.nameformat": "Basic",
+            "friendly.name": "lastName"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "ordivant-sso-saml-fixture-admin",
+      "name": "Disposable SAML fixture user administrator",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "synthetic-ordivant-sso-saml-admin-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "id": "bf5908af-c147-5697-a7dd-9939d3fef6c7",
+      "username": "qa-sso-saml@example.com",
+      "email": "qa-sso-saml@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "QA SAML Broker",
+      "lastName": "Fixture",
+      "groups": [
+        "/qa-work",
+        "/qa-knowledge"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Ordivant-QA-Fixture-2026!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "da4f589a-3092-5da2-9ef4-215960e11f67",
+      "username": "service-account-ordivant-sso-saml-fixture-admin",
+      "enabled": true,
+      "serviceAccountClientId": "ordivant-sso-saml-fixture-admin",
+      "clientRoles": {
+        "realm-management": [
+          "query-users",
+          "view-users",
+          "manage-users",
+          "query-groups",
+          "view-clients",
+          "query-clients"
+        ]
+      }
+    }
+  ]
+}

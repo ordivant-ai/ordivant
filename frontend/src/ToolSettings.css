@@ -1,0 +1,46 @@
+.tool-settings-page { min-width: 0; }
+.tool-settings-tabs { margin-bottom: 16px; }
+.tool-settings-panel { min-width: 0; }
+.tool-settings-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 5px 0 13px; }
+.tool-settings-heading > div:first-child { display: grid; gap: 3px; }
+.tool-settings-heading h4.ant-typography { margin: 0 0 4px; color: #343139; font-size: 14px; font-weight: 640; }
+.tool-settings-heading .ant-typography-secondary { font-size: 11px; }
+.tool-settings-alert { margin-bottom: 12px; }
+.tool-settings-table-shell { overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); }
+.tool-settings-table-shell .ant-table-thead > tr > th { height: 42px; padding: 10px 13px; color: #79757e; background: #faf9f7; font-size: 11px; font-weight: 650; }
+.tool-settings-table-shell .ant-table-tbody > tr > td { padding: 10px 13px; font-size: 12px; }
+.tool-name-cell { display: grid; min-width: 150px; gap: 4px; }
+.tool-name-cell strong { color: #343139; font-size: 12px; font-weight: 620; }
+.tool-name-cell code, .tool-name-cell span { overflow-wrap: anywhere; color: #837e87; font-size: 11px; }
+.tool-limit-values { font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tool-security-note, .sandbox-policy-note { margin-bottom: 13px; }
+.tool-security-note .ant-alert-message, .sandbox-policy-note .ant-alert-message { font-size: 11px; }
+.tool-security-note .ant-alert-description, .sandbox-policy-note .ant-alert-description { font-size: 12px; }
+.tool-form-inline { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; }
+.tool-form-inline .ant-form-item { min-width: 0; }
+.tool-field-note { display: block; margin-top: -7px; font-size: 11px; }
+.tool-test-result { margin-top: 18px; padding-top: 13px; border-top: 1px solid var(--line); }
+.tool-settings-subheading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.tool-settings-subheading strong { color: #35323a; font-size: 14px; }
+.tool-settings-subheading .ant-tag { margin: 0; font-size: 11px; }
+.tool-discovery-list { display: grid; }
+.tool-discovery-list article { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 12px; padding: 10px 0; border-bottom: 1px solid #eeeae6; }
+.tool-discovery-list article > div { display: grid; min-width: 0; gap: 4px; }
+.tool-discovery-list code { overflow-wrap: anywhere; color: #4e4770; font-size: 12px; }
+.tool-discovery-list .ant-typography { font-size: 11px; }
+.tool-discovery-list details summary { color: #706a75; cursor: pointer; font-size: 11px; }
+.tool-discovery-list pre, .tool-safe-result { overflow: auto; max-width: 100%; max-height: 260px; margin: 7px 0 0; padding: 9px; border: 1px solid var(--line); border-radius: 5px; color: #423e47; background: #f8f7f5; font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tool-limits-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.tool-limits-grid .ant-form-item { min-width: 0; }
+.full-width { width: 100%; }
+.tool-editor-modal { max-width: calc(100vw - 24px); }
+.tool-editor-modal .ant-modal-content { max-height: calc(100dvh - 24px); overflow: auto; }
+
+@media (max-width: 700px) {
+  .tool-settings-heading { align-items: flex-start; flex-direction: column; }
+  .tool-settings-heading > .ant-space { width: 100%; }
+  .tool-form-inline, .tool-limits-grid { grid-template-columns: minmax(0, 1fr); }
+  .tool-discovery-list article { grid-template-columns: minmax(0, 1fr); }
+  .tool-editor-modal .ant-modal { width: calc(100vw - 16px) !important; max-width: calc(100vw - 16px); margin-inline: 8px; }
+  .tool-editor-modal .ant-modal-body { padding: 12px; }
+}

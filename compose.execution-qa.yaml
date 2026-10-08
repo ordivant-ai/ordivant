@@ -1,0 +1,31 @@
+# Synthetic fixture is enabled only by -ExecutionQaFixture on an owned *-qa project.
+services:
+  work-api:
+    environment:
+      ORDIVANT_TOOL_ALLOWED_HOSTS: mcp-fixture
+      ORDIVANT_TOOL_HTTP_HOSTS: mcp-fixture
+      ORDIVANT_TOOL_PRIVATE_HOSTS: mcp-fixture
+  runtime:
+    environment:
+      ORDIVANT_TOOL_ALLOWED_HOSTS: mcp-fixture
+      ORDIVANT_TOOL_HTTP_HOSTS: mcp-fixture
+      ORDIVANT_TOOL_PRIVATE_HOSTS: mcp-fixture
+  mcp-fixture:
+    profiles: [runtime]
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/work-api:${ORDIVANT_IMAGE_TAG:-local}
+    command: [python, /fixture/execution_mcp_fixture.py]
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - ./scripts/execution_mcp_fixture.py:/fixture/execution_mcp_fixture.py:ro
+    tmpfs: ["/tmp:size=8m,mode=1777"]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8050/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 20

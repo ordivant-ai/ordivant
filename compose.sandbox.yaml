@@ -1,0 +1,60 @@
+# Optional trusted executor; only this service holds the Docker daemon socket.
+# Model/runtime/browser containers cannot select Docker flags, images or host mounts.
+services:
+  sandbox-job-image:
+    profiles: [sandbox]
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/sandbox-job:${ORDIVANT_IMAGE_TAG:-local}
+    build: {context: ./sandbox, dockerfile: job.Dockerfile}
+    command: ["/bin/true"]
+    network_mode: none
+    restart: "no"
+
+  sandbox-api:
+    profiles: [sandbox]
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/sandbox-api:${ORDIVANT_IMAGE_TAG:-local}
+    build: {context: ./sandbox, target: production}
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    pids_limit: 64
+    environment:
+      ORDIVANT_SANDBOX_TOKEN_FILE: /run/secrets/sandbox_service_token
+      ORDIVANT_SANDBOX_DATA_DIR: /data
+      ORDIVANT_SANDBOX_OWNER: ${COMPOSE_PROJECT_NAME}
+      ORDIVANT_SANDBOX_IMAGE: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/sandbox-job:${ORDIVANT_IMAGE_TAG:-local}
+      ORDIVANT_SANDBOX_MAX_JOBS: ${ORDIVANT_SANDBOX_MAX_JOBS:-4}
+      PYTHONDONTWRITEBYTECODE: "1"
+    secrets: [sandbox_service_token]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - sandbox_data:/data
+    tmpfs: ["/tmp:size=32m,mode=1777"]
+    networks: [sandbox-control]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8040/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 20
+
+  runtime:
+    environment:
+      ORDIVANT_SANDBOX_URL: http://sandbox-api:8040
+      ORDIVANT_SANDBOX_TOKEN_FILE: /run/secrets/sandbox_service_token
+    secrets: [sandbox_service_token]
+    networks: [default, sandbox-control]
+    depends_on:
+      sandbox-api: {condition: service_healthy}
+
+volumes:
+  sandbox_data:
+
+networks:
+  sandbox-control:
+    internal: true
+
+secrets:
+  sandbox_service_token: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/sandbox_service_token"}

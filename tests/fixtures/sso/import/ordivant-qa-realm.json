@@ -1,0 +1,279 @@
+{
+  "realm": "ordivant-qa",
+  "displayName": "Ordivant isolated SSO QA",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "groups": [
+    {
+      "name": "qa-work",
+      "path": "/qa-work"
+    },
+    {
+      "name": "qa-knowledge",
+      "path": "/qa-knowledge"
+    },
+    {
+      "name": "qa-code",
+      "path": "/qa-code"
+    },
+    {
+      "name": "qa-restricted",
+      "path": "/qa-restricted"
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "ordivant-sso-qa",
+      "name": "Ordivant SSO isolated QA",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "synthetic-ordivant-sso-client-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:8092/auth-api/oidc/callback"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:8092"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "backchannel.logout.url": "http://identity-api:8030/api/auth/oidc/backchannel-logout",
+        "backchannel.logout.session.required": "false",
+        "post.logout.redirect.uris": "http://127.0.0.1:8092"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "ordivant-sso-fixture-admin",
+      "name": "Disposable SSO fixture group administrator",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "synthetic-ordivant-sso-admin-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "qa-saml",
+      "displayName": "QA SAML upstream",
+      "providerId": "saml",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "singleSignOnServiceUrl": "http://127.0.0.1:8093/realms/ordivant-qa-saml/protocol/saml",
+        "idpEntityId": "http://127.0.0.1:8093/realms/ordivant-qa-saml",
+        "entityId": "ordivant-saml-qa",
+        "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+        "principalType": "SUBJECT",
+        "signatureAlgorithm": "RSA_SHA256",
+        "wantAuthnRequestsSigned": "false",
+        "useMetadataDescriptorUrl": "true",
+        "metadataDescriptorUrl": "http://identity-broker:8080/realms/ordivant-qa-saml/protocol/saml/descriptor",
+        "validateSignature": "true",
+        "wantAssertionsSigned": "true",
+        "postBindingResponse": "true",
+        "syncMode": "FORCE"
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": "b072d0aa-2987-545d-8742-9af7af8e250f",
+      "username": "qa-browser@example.com",
+      "email": "qa-browser@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "QA Local Administrator",
+      "lastName": "Fixture",
+      "groups": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Ordivant-QA-Fixture-2026!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "aaf8e620-e59d-5443-ad46-9a19c0e57e59",
+      "username": "qa-sso-jit@example.com",
+      "email": "qa-sso-jit@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "QA SSO JIT",
+      "lastName": "Fixture",
+      "groups": [
+        "/qa-work",
+        "/qa-knowledge",
+        "/qa-code"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Ordivant-QA-Fixture-2026!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "48eeafb2-4ea1-5cdd-83b9-37e93e88c7e3",
+      "username": "qa-sso-invited@example.com",
+      "email": "qa-sso-invited@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "QA SSO Invited",
+      "lastName": "Fixture",
+      "groups": [
+        "/qa-knowledge"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Ordivant-QA-Fixture-2026!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "3bbdf17a-584d-5081-83cc-5d7d1e842e3c",
+      "username": "qa-sso-group@example.com",
+      "email": "qa-sso-group@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "QA SSO Group Sync",
+      "lastName": "Fixture",
+      "groups": [
+        "/qa-work",
+        "/qa-knowledge",
+        "/qa-code"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Ordivant-QA-Fixture-2026!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "057c6438-1f82-5f82-8dd2-fed33b129198",
+      "username": "qa-sso-disabled@example.com",
+      "email": "qa-sso-disabled@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "QA SSO Disabled",
+      "lastName": "Fixture",
+      "groups": [
+        "/qa-work"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Ordivant-QA-Fixture-2026!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "0d795207-35a4-5df4-aba2-73d58053b36f",
+      "username": "qa-sso-uninvited@example.com",
+      "email": "qa-sso-uninvited@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "QA SSO Uninvited",
+      "lastName": "Fixture",
+      "groups": [
+        "/qa-work"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Ordivant-QA-Fixture-2026!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "ed375116-e062-5c1a-b5a9-56ac68494c5b",
+      "username": "service-account-ordivant-sso-fixture-admin",
+      "enabled": true,
+      "serviceAccountClientId": "ordivant-sso-fixture-admin",
+      "clientRoles": {
+        "realm-management": [
+          "query-users",
+          "view-users",
+          "manage-users",
+          "view-realm",
+          "manage-realm",
+          "view-clients",
+          "query-clients",
+          "manage-clients",
+          "view-identity-providers"
+        ]
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "QA SAML import email",
+      "identityProviderAlias": "qa-saml",
+      "identityProviderMapper": "saml-user-attribute-idp-mapper",
+      "config": {
+        "attribute.name": "email",
+        "user.attribute": "email",
+        "syncMode": "FORCE"
+      }
+    },
+    {
+      "name": "QA SAML import firstName",
+      "identityProviderAlias": "qa-saml",
+      "identityProviderMapper": "saml-user-attribute-idp-mapper",
+      "config": {
+        "attribute.name": "firstName",
+        "user.attribute": "firstName",
+        "syncMode": "FORCE"
+      }
+    },
+    {
+      "name": "QA SAML import lastName",
+      "identityProviderAlias": "qa-saml",
+      "identityProviderMapper": "saml-user-attribute-idp-mapper",
+      "config": {
+        "attribute.name": "lastName",
+        "user.attribute": "lastName",
+        "syncMode": "FORCE"
+      }
+    }
+  ]
+}

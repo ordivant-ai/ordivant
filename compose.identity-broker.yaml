@@ -1,0 +1,59 @@
+# Optional enterprise identity broker. Existing OIDC providers do not require it.
+# The operator bootstraps the human admin interactively; no default admin password.
+services:
+  identity-broker-db:
+    image: postgres:17-alpine
+    profiles: [identity-broker]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ordivant
+      POSTGRES_DB: identity_broker
+      POSTGRES_PASSWORD_FILE: /run/secrets/identity_broker_db_password
+    secrets: [identity_broker_db_password]
+    volumes: [identity_broker_postgres:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U ordivant -d identity_broker]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 20
+  identity-broker:
+    image: quay.io/keycloak/keycloak:26.8.0
+    profiles: [identity-broker]
+    init: true
+    restart: unless-stopped
+    entrypoint: [/bin/bash, /opt/ordivant/broker-entrypoint.sh]
+    command: [start, --http-enabled=true]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: identity-broker-db
+      KC_DB_URL_DATABASE: identity_broker
+      KC_DB_USERNAME: ordivant
+      KC_HOSTNAME: ${ORDIVANT_BROKER_PUBLIC_URL:-http://127.0.0.1:8093}
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_MANAGEMENT_PORT: "9000"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ACCESS_LOG_ENABLED: "false"
+    secrets: [identity_broker_db_password]
+    ports: ["127.0.0.1:${ORDIVANT_BROKER_PORT:-8093}:8080"]
+    volumes:
+      - ./infra/identity-broker/broker-entrypoint.sh:/opt/ordivant/broker-entrypoint.sh:ro
+    depends_on:
+      identity-broker-db: {condition: service_healthy}
+    healthcheck:
+      test:
+        - CMD
+        - /bin/bash
+        - -ec
+        - 'exec 3<>/dev/tcp/127.0.0.1/9000; printf "GET /health/ready HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; IFS= read -r result <&3; [[ "$$result" == *" 200 "* ]]'
+      interval: 5s
+      timeout: 3s
+      start_period: 90s
+      retries: 30
+
+volumes:
+  identity_broker_postgres:
+
+secrets:
+  identity_broker_db_password:
+    file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/identity_broker_db_password"

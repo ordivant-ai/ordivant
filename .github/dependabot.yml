@@ -1,0 +1,74 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      time: "07:00"
+      timezone: Asia/Taipei
+    open-pull-requests-limit: 3
+    groups:
+      github-actions-patch-minor:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+      github-actions-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
+
+  - package-ecosystem: uv
+    directories:
+      - /backend
+      - /products/identity/backend
+      - /products/knowledge/backend
+      - /products/code/backend
+      - /sandbox
+    schedule:
+      interval: monthly
+      time: "07:00"
+      timezone: Asia/Taipei
+    open-pull-requests-limit: 5
+    groups:
+      python-patch-minor:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+        group-by: dependency-name
+      python-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
+        group-by: dependency-name
+
+  - package-ecosystem: npm
+    directories:
+      - /runtime
+      - /frontend
+      - /docs
+    schedule:
+      interval: monthly
+      time: "07:00"
+      timezone: Asia/Taipei
+    open-pull-requests-limit: 5
+    groups:
+      npm-patch-minor:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+        group-by: dependency-name
+      npm-major:
+        patterns:
+          - "*"
+        update-types:
+          - major
+        group-by: dependency-name

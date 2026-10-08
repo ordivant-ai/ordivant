@@ -1,0 +1,31 @@
+{
+  "name": "ordivant-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --configLoader runner",
+    "build": "npm run build:suite",
+    "build:suite": "tsc -b && vite build --configLoader runner --mode suite --outDir dist/suite",
+    "build:work": "tsc -b && vite build --configLoader runner --mode work --outDir dist/work",
+    "build:knowledge": "tsc -b && vite build --configLoader runner --mode knowledge --outDir dist/knowledge",
+    "build:code": "tsc -b && vite build --configLoader runner --mode code --outDir dist/code",
+    "typecheck": "tsc -b --pretty false",
+    "preview": "vite preview --configLoader runner --host 127.0.0.1 --outDir dist/suite"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.0.0",
+    "antd": "^5.26.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^9.1.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5"
+  }
+}

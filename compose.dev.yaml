@@ -1,0 +1,86 @@
+services:
+  identity-api:
+    build: {target: development}
+    restart: "no"
+    environment:
+      ORDIVANT_MODE: development
+      WATCHFILES_FORCE_POLLING: "true"
+    volumes:
+      - ./products/identity/backend/src:/app/src:ro
+      - ./products/identity/backend/tests:/app/tests:ro
+    ports: ["127.0.0.1:${ORDIVANT_IDENTITY_PORT:-8030}:8030"]
+  work-api:
+    build: {target: development}
+    restart: "no"
+    environment:
+      ORDIVANT_MODE: development
+      ORDIVANT_DEV_PROXY_TOKEN_FILE: /run/secrets/dev_proxy_token
+      WATCHFILES_FORCE_POLLING: "true"
+    secrets: [dev_proxy_token]
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/tests:/app/tests:ro
+    ports: ["127.0.0.1:${ORDIVANT_WORK_PORT:-8000}:8000"]
+  knowledge-api:
+    build: {target: development}
+    restart: "no"
+    environment:
+      ORDIVANT_MODE: development
+      ORDIVANT_DEV_PROXY_TOKEN_FILE: /run/secrets/dev_proxy_token
+      WATCHFILES_FORCE_POLLING: "true"
+    secrets: [dev_proxy_token]
+    volumes:
+      - ./products/knowledge/backend/src:/app/src:ro
+      - ./products/knowledge/backend/tests:/app/tests:ro
+    ports: ["127.0.0.1:${ORDIVANT_KNOWLEDGE_PORT:-8010}:8010"]
+  code-api:
+    build: {target: development}
+    restart: "no"
+    environment:
+      ORDIVANT_MODE: development
+      ORDIVANT_DEV_PROXY_TOKEN_FILE: /run/secrets/dev_proxy_token
+      WATCHFILES_FORCE_POLLING: "true"
+    secrets: [dev_proxy_token]
+    volumes:
+      - ./products/code/backend/src:/app/src:ro
+      - ./products/code/backend/tests:/app/tests:ro
+    ports: ["127.0.0.1:${ORDIVANT_CODE_PORT:-8020}:8020"]
+  web:
+    build: {target: development}
+    restart: "no"
+    environment:
+      VITE_API_TARGET: ${ORDIVANT_WEB_API_UPSTREAM:-http://work-api:8000}
+      VITE_KNOWLEDGE_API_TARGET: http://knowledge-api:8010
+      VITE_CODE_API_TARGET: http://code-api:8020
+      VITE_IDENTITY_API_TARGET: http://identity-api:8030
+      ORDIVANT_DEV_PROXY_TOKEN_FILE: /run/secrets/dev_proxy_token
+      PRODUCT_MODE: ${ORDIVANT_PRODUCT_MODE:-suite}
+      CHOKIDAR_USEPOLLING: "true"
+    secrets: [dev_proxy_token]
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
+    ports: !override
+      - 127.0.0.1:${ORDIVANT_DEV_WEB_PORT:-5173}:5173
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:5173').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      start_period: 15s
+      retries: 20
+  runtime:
+    build: {target: development}
+    restart: "no"
+    environment:
+      NODE_ENV: development
+      ORDIVANT_MODE: development
+      TSC_WATCHFILE: DynamicPriorityPolling
+      TSC_WATCHDIRECTORY: RecursiveDirectoryUsingDynamicPriorityPolling
+    volumes:
+      - ./runtime/src:/app/src:ro
+      - ./runtime/test:/app/test:ro
+    ports: ["127.0.0.1:${ORDIVANT_RUNTIME_PORT:-8090}:8090"]
+
+secrets:
+  dev_proxy_token: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/dev_proxy_token"}

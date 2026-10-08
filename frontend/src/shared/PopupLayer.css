@@ -1,0 +1,30 @@
+.ordivant-popup-host {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: visible !important;
+  z-index: 1300 !important;
+}
+
+.ordivant-popup-host > [class*='-popup'],
+.ordivant-popup-host > [class~='ant-select-dropdown'],
+.ordivant-popup-host > [class*='ant-select-dropdown-'],
+.ordivant-popup-host > [class~='ant-dropdown'],
+.ordivant-popup-host > [class*='ant-dropdown-'],
+.ordivant-popup-host > [class~='ant-cascader-dropdown'],
+.ordivant-popup-host > [class*='ant-cascader-dropdown-'],
+.ordivant-popup-host > [class~='ant-popover'],
+.ordivant-popup-host > [class*='ant-popover-'],
+.ordivant-popup-host > [class~='ant-picker-dropdown'],
+.ordivant-popup-host > [class*='ant-picker-dropdown-'],
+.ordivant-popup-host [data-ordivant-popup-root] {
+  position: absolute !important;
+  inset: 0 auto auto 0 !important;
+  transform: none !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}

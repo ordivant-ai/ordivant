@@ -1,0 +1,1 @@
+"""Independent Ordivant Knowledge service."""

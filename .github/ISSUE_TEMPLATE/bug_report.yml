@@ -1,0 +1,63 @@
+name: 錯誤回報
+description: 回報可重現的產品錯誤或回歸問題。
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        請先搜尋既有 Issue。若問題涉及安全漏洞、憑證或個人資料，請改用「安全漏洞（私下回報）」聯絡管道。
+  - type: dropdown
+    id: product
+    attributes:
+      label: 產品或區域
+      options:
+        - Suite / Work
+        - Identity
+        - Knowledge
+        - Code
+        - Runtime
+        - Sandbox
+        - 文件 / 安裝
+        - 不確定
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本或 commit
+      description: 例如 v0.1 或短 commit SHA。
+      placeholder: v0.1 / abc1234
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟
+      description: 提供最短且可重現的步驟；請先移除 token、API key、cookie 與個人資料。
+      placeholder: |
+        1. 開啟……
+        2. 選擇……
+        3. 看到……
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期結果
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 實際結果
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境與相關日誌
+      description: 作業系統、瀏覽器或執行模式。只貼已遮蔽敏感值的錯誤訊息。
+    validations:
+      required: false

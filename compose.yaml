@@ -1,0 +1,231 @@
+name: ordivant
+
+x-api: &api
+  init: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  environment: &api-env
+    ORDIVANT_MODE: production
+    ORDIVANT_IDENTITY_URL: http://identity-api:8030
+    ORDIVANT_IDENTITY_SERVICE_TOKEN_FILE: /run/secrets/identity_service_token
+    ORDIVANT_AUTH_COOKIE_NAME: ${ORDIVANT_AUTH_COOKIE_NAME:-ordivant_${COMPOSE_PROJECT_NAME}_session}
+    ORDIVANT_AUTH_ORIGINS: ${ORDIVANT_AUTH_ORIGINS:-http://127.0.0.1:8088,http://localhost:8088}
+    ORDIVANT_AUTH_COOKIE_SECURE: ${ORDIVANT_AUTH_COOKIE_SECURE:-false}
+  healthcheck: &api-health
+    interval: 5s
+    timeout: 3s
+    start_period: 15s
+    retries: 20
+
+x-database: &database
+  image: postgres:17-alpine
+  restart: unless-stopped
+  environment: &database-env
+    POSTGRES_USER: ordivant
+    POSTGRES_DB: ordivant
+  healthcheck:
+    test: [CMD-SHELL, pg_isready -U ordivant -d ordivant]
+    interval: 5s
+    timeout: 3s
+    start_period: 10s
+    retries: 20
+
+services:
+  identity-db:
+    <<: *database
+    environment:
+      <<: *database-env
+      POSTGRES_PASSWORD_FILE: /run/secrets/identity_db_password
+    secrets: [identity_db_password]
+    volumes: [identity_postgres:/var/lib/postgresql/data]
+  identity-api:
+    <<: *api
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/identity-api:${ORDIVANT_IMAGE_TAG:-local}
+    build: {context: ./products/identity/backend, target: production}
+    environment:
+      <<: *api-env
+      ORDIVANT_IDENTITY_DATA_DIR: /data
+      ORDIVANT_IDENTITY_DATABASE_URL_FILE: /run/secrets/identity_database_url
+      ORDIVANT_SSO_PUBLIC_ORIGIN: ${ORDIVANT_SSO_PUBLIC_ORIGIN:-}
+      ORDIVANT_SSO_HTTP_HOSTS: ${ORDIVANT_SSO_HTTP_HOSTS:-}
+      ORDIVANT_SSO_ALLOWED_ENDPOINT_HOSTS: ${ORDIVANT_SSO_ALLOWED_ENDPOINT_HOSTS:-}
+      ORDIVANT_SSO_BACKCHANNEL_OVERRIDES: ${ORDIVANT_SSO_BACKCHANNEL_OVERRIDES:-}
+      ORDIVANT_SSO_CA_BUNDLE: ${ORDIVANT_SSO_CA_BUNDLE:-}
+      ORDIVANT_AUTH_TRUSTED_PROXY_HOSTS: ${ORDIVANT_AUTH_TRUSTED_PROXY_HOSTS:-web}
+    secrets: [identity_database_url, identity_service_token]
+    volumes: [identity_data:/data]
+    depends_on:
+      identity-db: {condition: service_healthy}
+    healthcheck:
+      <<: *api-health
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8030/api/health', timeout=2)"]
+  work-db:
+    <<: *database
+    environment:
+      <<: *database-env
+      POSTGRES_PASSWORD_FILE: /run/secrets/work_db_password
+    secrets: [work_db_password]
+    volumes: [work_postgres:/var/lib/postgresql/data]
+  knowledge-db:
+    <<: *database
+    environment:
+      <<: *database-env
+      POSTGRES_PASSWORD_FILE: /run/secrets/knowledge_db_password
+    secrets: [knowledge_db_password]
+    volumes: [knowledge_postgres:/var/lib/postgresql/data]
+  code-db:
+    <<: *database
+    environment:
+      <<: *database-env
+      POSTGRES_PASSWORD_FILE: /run/secrets/code_db_password
+    secrets: [code_db_password]
+    volumes: [code_postgres:/var/lib/postgresql/data]
+
+  work-api:
+    <<: *api
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/work-api:${ORDIVANT_IMAGE_TAG:-local}
+    build: {context: ./backend, target: production}
+    environment:
+      <<: *api-env
+      ORDIVANT_DATA_DIR: /data
+      ORDIVANT_DATABASE_URL_FILE: /run/secrets/work_database_url
+      ORDIVANT_VCS_CONFIG: /data/vcs.json
+      ORDIVANT_VCS_HTTP_HOSTS: gitea
+      ORDIVANT_TOOL_ALLOWED_HOSTS: ${ORDIVANT_TOOL_ALLOWED_HOSTS:-}
+      ORDIVANT_TOOL_HTTP_HOSTS: ${ORDIVANT_TOOL_HTTP_HOSTS:-}
+      ORDIVANT_TOOL_PRIVATE_HOSTS: ${ORDIVANT_TOOL_PRIVATE_HOSTS:-}
+      ORDIVANT_IDENTITY_ORG_ID: ${ORDIVANT_WORK_IDENTITY_ORG_ID:-}
+    secrets: [work_database_url, identity_service_token]
+    volumes: [work_data:/data]
+    depends_on:
+      work-db: {condition: service_healthy}
+      identity-api: {condition: service_healthy}
+    healthcheck:
+      <<: *api-health
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+  knowledge-api:
+    <<: *api
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/knowledge-api:${ORDIVANT_IMAGE_TAG:-local}
+    build: {context: ./products/knowledge/backend, target: production}
+    environment:
+      <<: *api-env
+      ORDIVANT_KNOWLEDGE_DATA_DIR: /data
+      ORDIVANT_KNOWLEDGE_DATABASE_URL_FILE: /run/secrets/knowledge_database_url
+      ORDIVANT_IDENTITY_ORG_ID: ${ORDIVANT_KNOWLEDGE_IDENTITY_ORG_ID:-}
+    secrets: [knowledge_database_url, identity_service_token]
+    volumes: [knowledge_data:/data]
+    depends_on:
+      knowledge-db: {condition: service_healthy}
+      identity-api: {condition: service_healthy}
+    healthcheck:
+      <<: *api-health
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/api/health', timeout=2)"]
+  code-api:
+    <<: *api
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/code-api:${ORDIVANT_IMAGE_TAG:-local}
+    build: {context: ./products/code/backend, target: production}
+    environment:
+      <<: *api-env
+      ORDIVANT_CODE_DATA_DIR: /data
+      ORDIVANT_CODE_DATABASE_URL_FILE: /run/secrets/code_database_url
+      ORDIVANT_CODE_GITEA_CONFIG: /run/secrets/gitea_connection
+      ORDIVANT_IDENTITY_ORG_ID: ${ORDIVANT_CODE_IDENTITY_ORG_ID:-}
+    secrets: [code_database_url, gitea_connection, identity_service_token]
+    volumes: [code_data:/data]
+    depends_on:
+      code-db: {condition: service_healthy}
+      identity-api: {condition: service_healthy}
+    healthcheck:
+      <<: *api-health
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8020/api/health', timeout=2)"]
+
+  web:
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/web:${ORDIVANT_IMAGE_TAG:-local}
+    build:
+      context: ./frontend
+      target: production
+      args:
+        PRODUCT_MODE: ${ORDIVANT_PRODUCT_MODE:-suite}
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: ${ORDIVANT_WEB_API_UPSTREAM:-http://work-api:8000}
+      KNOWLEDGE_UPSTREAM: http://knowledge-api:8010
+      CODE_UPSTREAM: http://code-api:8020
+      IDENTITY_UPSTREAM: http://identity-api:8030
+    ports:
+      - 127.0.0.1:${ORDIVANT_WEB_PORT:-8088}:80
+
+  runtime:
+    profiles: [runtime]
+    image: ${ORDIVANT_IMAGE_PREFIX:-ordivant}/runtime:${ORDIVANT_IMAGE_TAG:-local}
+    build: {context: ./runtime, target: production}
+    init: true
+    restart: unless-stopped
+    environment:
+      ORDIVANT_MODE: production
+      ORDIVANT_DATA_DIR: /data
+      ORDIVANT_API_URL: http://work-api:8000
+      ORDIVANT_RUNTIME_HOST: 0.0.0.0
+      ORDIVANT_RUNTIME_MODE: ${ORDIVANT_RUNTIME_MODE:-demo}
+      ORDIVANT_TOOL_ALLOWED_HOSTS: ${ORDIVANT_TOOL_ALLOWED_HOSTS:-}
+      ORDIVANT_TOOL_HTTP_HOSTS: ${ORDIVANT_TOOL_HTTP_HOSTS:-}
+      ORDIVANT_TOOL_PRIVATE_HOSTS: ${ORDIVANT_TOOL_PRIVATE_HOSTS:-}
+    volumes: [work_data:/data]
+    depends_on:
+      work-api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8090/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      start_period: 20s
+      retries: 20
+
+  gitea:
+    profiles: [gitea]
+    image: docker.gitea.com/gitea:28.0.0
+    restart: unless-stopped
+    environment:
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__database__PATH: /data/gitea/gitea.db
+      GITEA__server__ROOT_URL: ${ORDIVANT_GITEA_PUBLIC_URL:-http://127.0.0.1:${ORDIVANT_GITEA_PORT:-3002}/}
+      GITEA__server__PUBLIC_URL_DETECTION: never
+      GITEA__server__HTTP_PORT: "3000"
+      GITEA__server__DISABLE_SSH: "true"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__service__REQUIRE_SIGNIN_VIEW: "true"
+      GITEA__mailer__ENABLED: "false"
+      GITEA__actions__ENABLED: "false"
+    ports:
+      - 127.0.0.1:${ORDIVANT_GITEA_PORT:-3002}:3000
+    volumes: [gitea_data:/data]
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:3000/api/healthz]
+      interval: 5s
+      timeout: 3s
+      start_period: 15s
+      retries: 20
+
+volumes:
+  identity_postgres:
+  identity_data:
+  work_postgres:
+  knowledge_postgres:
+  code_postgres:
+  work_data:
+  knowledge_data:
+  code_data:
+  gitea_data:
+
+secrets:
+  identity_db_password: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/identity_db_password"}
+  identity_database_url: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/identity_database_url"}
+  identity_service_token: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/identity_service_token"}
+  work_db_password: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/work_db_password"}
+  knowledge_db_password: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/knowledge_db_password"}
+  code_db_password: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/code_db_password"}
+  work_database_url: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/work_database_url"}
+  knowledge_database_url: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/knowledge_database_url"}
+  code_database_url: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/code_database_url"}
+  gitea_connection: {file: "${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}/gitea.json"}
