@@ -99,7 +99,8 @@ function describeError(payload: unknown, status: number, translate = t): { messa
   const detail = typeof payload === 'object' && payload !== null && 'detail' in payload ? (payload as { detail: unknown }).detail : null;
   if (Array.isArray(detail)) {
     const validation: Record<string,string> = { missing: '必填欄位未填寫', string_too_short: '輸入長度超出允許範圍', string_too_long: '輸入長度超出允許範圍', greater_than: '數值超出允許範圍', greater_than_equal: '數值超出允許範圍', less_than: '數值超出允許範圍', less_than_equal: '數值超出允許範圍', literal_error: '輸入值不是允許的選項', enum: '輸入值不是允許的選項' };
-    return { message: detail.map((item: { type?: string; loc?: unknown[] }) => {
+    return { message: detail.map((value: unknown) => {
+      const item = typeof value === 'object' && value !== null ? value as { type?: string; loc?: unknown[] } : {};
       const field = Array.isArray(item.loc) ? item.loc.filter(value => typeof value === 'string' && !['body','query','path'].includes(value)).join('.') : '';
       const text = translate(validation[item.type ?? ''] ?? '輸入資料不符合格式，請檢查表單。');
       return field ? `${field}: ${text}` : text;
@@ -119,5 +120,10 @@ function describeError(payload: unknown, status: number, translate = t): { messa
 export function describeApiError(payload: unknown, status: number): { message: string; code?: string; sourceMessage: string } {
   const result = describeError(payload, status);
   const source = describeError(payload, status, (text, values = {}) => { const source = typeof text === 'string' ? text : text.source; return source.replace(/\{\{(\w+)\}\}/g, (placeholder: string, key: string) => Object.hasOwn(values, key) ? String(values[key]) : placeholder); });
-  return { ...result, sourceMessage: source.message };
+  const detail = typeof payload === 'object' && payload !== null && 'detail' in payload ? payload.detail : null;
+  // Dynamic field paths and HTTP codes remain in Error.message/code for diagnostics;
+  // persistent UI alerts keep a stable key that can be translated after a locale change.
+  const sourceMessage = Array.isArray(detail) ? '輸入資料不符合格式，請檢查表單。'
+    : (status < 500 && ![401,403,404,422,429].includes(status) && !(result.code && messages[result.code])) ? '請求未完成。' : source.message;
+  return { ...result, sourceMessage };
 }

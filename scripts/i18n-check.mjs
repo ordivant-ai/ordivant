@@ -82,7 +82,7 @@ check('localized API errors retain codes and hide raw server text',()=>{
     const error=context.exports.describeApiError({detail:{code:'stale_version',message:'PRIVATE SERVER DETAIL'}},409);
     assert.equal(error.code,'stale_version');assert.ok(!error.message.includes('PRIVATE'));assert.ok(error.message.length>0);
     const validation=context.exports.describeApiError({detail:[{loc:['body','title'],type:'missing',input:'PRIVATE INPUT'}]},422);
-    assert.ok(validation.message.startsWith('title: '));assert.ok(!validation.message.includes('PRIVATE'));
+    assert.ok(validation.message.startsWith('title: '));assert.ok(!validation.message.includes('PRIVATE'));assert.equal(store.t(validation.sourceMessage),store.t('輸入資料不符合格式，請檢查表單。'));assert.ok(context.exports.describeApiError({detail:[null]},422).message.length>0);
     assert.ok(!context.exports.describeApiError({detail:'RAW ERROR'},500).message.includes('RAW'));
   }
 });
