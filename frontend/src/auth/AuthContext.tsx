@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { authApi, AuthApiError, setAuthCsrfToken } from './client';
 import type { IdentitySession, IdentityStatus } from './types';
 import { RecoveryCodesDialog } from './RecoveryCodesDialog';
+import { t, useI18n } from '../i18n';
 
 export type AuthPhase = 'checking' | 'setup' | 'login' | 'error' | 'authenticated';
 
@@ -28,10 +29,12 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function errorMessage(error: unknown) {
+  if (error instanceof Error && 'sourceMessage' in error) return String((error as Error & { sourceMessage: string }).sourceMessage);
   return error instanceof Error ? error.message : '發生未預期的帳號錯誤。';
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { locale } = useI18n();
   const [phase, setPhase] = useState<AuthPhase>('checking');
   const [session, setSession] = useState<IdentitySession | null>(null);
   const phaseRef = useRef<AuthPhase>('checking');
@@ -169,8 +172,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     setupRequired,
     sso,
-    error,
-    notice,
+    error: t(error),
+    notice: t(notice),
     pendingRecoveryCodes,
     refresh,
     refreshStatus,
@@ -182,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSession,
     updateSession,
     dismissRecoveryCodes: () => setPendingRecoveryCodes([]),
-  }), [phase, session, setupRequired, sso, error, notice, pendingRecoveryCodes, refresh, refreshStatus, runAuth, logout, clearSession, updateSession]);
+  }), [locale, phase, session, setupRequired, sso, error, notice, pendingRecoveryCodes, refresh, refreshStatus, runAuth, logout, clearSession, updateSession]);
 
   return (
     <AuthContext.Provider value={value}>

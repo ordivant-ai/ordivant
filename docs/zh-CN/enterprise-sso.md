@@ -1,0 +1,92 @@
+# 企业登录与身分管理
+
+Ordivant Work、Knowledge、Code 共用一个 Identity 服务。管理员可以接上企业既有的 OIDC 身分服务，并控制成员布建、产品／项目权限、登录政策及工作阶段。企业密码与 MFA 验证由身分服务处理，Ordivant 不接收企业密码。
+
+## 管理员设置
+
+1. 在要使用的环境创建自己的第一位管理员并登录。开发与正式环境的账号、SSO 设置及数据库各自独立。
+2. 打开「账号与安全性 → 企业 SSO」。选择身分服务模板，再填入组织专属 Issuer URL、Client ID、Client Secret。
+3. 在身分服务创建 confidential OIDC Web application，允许 Authorization Code 和 PKCE S256。把 Ordivant 显示的 Callback URL 完整注册为 Redirect URI；不要使用通配符。
+4. 设置允许的完整电子邮件网域、成员布建方式、预设权限及群组对应。先保存，再运行「测试连接」。这项测试检查 discovery/JWKS；真正登录仍需由身分服务授权。
+5. 先用一位企业成员完成登录、产品访问及注销验收，再切换「仅企业 SSO」。本机管理员帐密入口保留作为复原途径。
+
+Client Secret 留白会保留既有值；改变 Issuer 或 Client ID 必须明确填入新值。保存后界面清空 Secret，API 只回传是否已设置。公开设置网址以管理员设置的 canonical origin 为准；从 localhost／127.0.0.1 的其他别名开始登录时，界面先切到该网址。
+
+## 常见身分服务
+
+| 身分服务 | Issuer／应用设置 | 注意事项 |
+|---|---|---|
+| Microsoft Entra ID | `https://login.microsoftonline.com/TENANT_ID/v2.0`；Web 平台、组织专属 tenant | 使用明确租户；依实际 token claims 选 email 或 preferred_username。Entra 未提供 email_verified 时，仅在确认租户与网域政策后关闭此验证。群组 claims 必须由管理员配置；group overage 不会被当成群组授权。 |
+| Google Workspace | `https://accounts.google.com`；Web application OAuth client | 限制允许网域；IdP 的 hd 提示不取代后端网域检查。Google 不预设提供产品所需 groups，请使用明确预设权限或手动授权。 |
+| Okta | 组织自己的 OIDC authorization server issuer | 设置 groups claim 发到 ID token；名称须与权限对应完全一致。 |
+| Auth0 | `https://YOUR_TENANT.REGION.auth0.com/` 或设置的 custom domain | OIDC ID token 的标准 claims；需要群组时由 Action 加入自订 claim，并在 Ordivant 填入相同 claim 名称。 |
+| Keycloak | `https://IDP_HOST/realms/REALM` | confidential client、PKCE S256、将 groups mapper 加入 ID token；可代理 SAML 或 LDAP／AD。 |
+| 其他 OIDC | 服务公开的精确 issuer | 必须提供 discovery、JWKS、Authorization Code、signed ID token，以及可用的身分 claims。 |
+
+这些模板提供标准设置方式。实际企业 tenant 仍需使用该组织配置进行登录验收，不能以本机 Keycloak 验收推定所有 vendor tenant 均已通过。
+
+官方设置参考：[Entra OIDC](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc)、[Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect)、[Okta OIDC](https://developer.okta.com/docs/guides/implement-grant-type/authcode/main/)、[Auth0 Regular Web Apps](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow)、[Keycloak 管理指南](https://www.keycloak.org/docs/latest/server_admin/index.html)。
+
+## 成员与权限
+
+- **仅受邀成员**：先由管理员创建 member 邀请。企业身分的电子邮件通过验证并符合允许网域后，可以直接使用 SSO 接受邀请，沿用邀请中指定的产品与资源权限。企业登录不会自动创建管理员。
+- **JIT 自动布建**：首次登录创建一般成员，套用明确的预设与群组权限。没有设置权限的成员无法访问产品数据；同网域不代表全组织可见。
+- **群组同步**：JIT 管理的成员每次登录同步群组。移除群组会移除相应授权并撤销旧工作阶段；数据访问仍由各产品的 Python 服务检查。
+- **既有账号链接**：电子邮件相同不会自动合并账号。管理员必须明确指定现有用户与 IdP subject，并在登录时验证对应。解除链接会撤销企业登录工作阶段。
+- **手动权限**：管理员明确修改成员权限后改为手动管理，避免下一次登录悄悄覆盖设置。要恢复群组管理，透过身分链接重新指定管理方式。
+
+登录成功只创建平台工作阶段，不直接授予 agent 或版控服务的 credential。Agent REST／MCP 仍使用项目受限的独立身分。
+
+## SAML、LDAP 与 Active Directory
+
+Ordivant 采 OIDC 接入协定。SAML-only 或 LDAP／AD 企业系统可以使用可选 Keycloak 身分代理：在 Keycloak 创建 SAML Identity Provider 或 LDAP User Federation，将它对外提供的 OIDC realm 接到 Ordivant。Work／Knowledge／Code 不必各自保存 LDAP 密码或实作不同登录协定。
+
+SAML 串接时，在 Keycloak 添加 SAML Identity Provider，导入上游 metadata，向上游登记该 broker 显示的 Entity ID 与 ACS／Redirect URI。保持 assertion 签章验证，配置电子邮件与姓名 mapper，再依企业的电子邮件验证政策决定是否激活 Trust Email。群组需要另外配置 broker mapper，让最终 OIDC ID token 的 groups claim 包含 Ordivant 对应的完整群组名称；SAML 的群组不会自动变成平台权限。
+
+LDAP／AD 串接时，在 Keycloak 的 User Federation 添加 LDAP provider，填入企业提供的目录地址、Users DN、搜索条件与 username／email attribute，配置群组 mapper，并使用 LDAPS 或 StartTLS 与可信 CA。目录 Bind Credential 与人员密码由企业管理员直接在身分服务输入。先验证目录连接与单一成员同步，再创建 OIDC client 接到 Ordivant；平台端仍套用允许网域、受邀／JIT 与明确资源授权。
+
+提供固定版本 Keycloak 26.8.0 与独立 PostgreSQL 的容器设置：
+
+```powershell
+.\scripts\containers.ps1 -Action up -WithIdentityBroker
+```
+
+broker 预设只绑定 `127.0.0.1:8093`。可由调用端指定 `ORDIVANT_BROKER_PORT` 及 `ORDIVANT_BROKER_PUBLIC_URL`；跨电脑的企业部署使用固定 HTTPS 网址与可信反向代理。其他 OIDC 身分服务可直接设置，不需要激活 broker 容器。
+
+broker 不安装预设人员管理员。初始化时让用户在 WSL tmux 的交互提示输入密码：
+
+```powershell
+wsl -- tmux new-session -A -s ordivant-idp-admin
+```
+
+在该终端机内，以实际 Compose project 名称运行（以下是本机正式模式）：
+
+```bash
+cd '/path/to/ordivant'  # Windows WSL 可使用 /mnt/c/path/to/ordivant
+export ORDIVANT_SECRETS_DIR="$PWD/.data/container-secrets/ordivant-local"
+docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
+docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
+docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
+```
+
+密码只在提示中输入，不放进聊天、指令、环境变量或文件。以暂时管理员登录 broker 后创建正式管理员，再移除暂时管理员。WSL 需激活 Docker Desktop integration。[Keycloak 官方初始化说明](https://www.keycloak.org/server/bootstrap-admin-recovery)
+
+## 工作阶段、安全与审核
+
+平台保留 HttpOnly、SameSite 与 Origin／CSRF 保护。OIDC 使用单次 state、browser binding、nonce、PKCE S256 与签章／issuer／audience 验证。Client Secret 加密存放；authorization code、ID token、access token 不进入业务数据库、API 回应或登录日志。
+
+禁用账号、变更权限、解除企业身分或禁用／更换身分服务会撤销相关工作阶段。激活 SSO-only 时撤销一般成员的密码工作阶段。若 IdP 支持 OIDC Back-Channel Logout，可将 URL 设为 `https://APP_HOST/auth-api/oidc/backchannel-logout`；只有通过签章与重放检查的注销通知才能撤销对应企业登录。
+
+Ordivant 注销会撤销三个模块共用的工作阶段；企业其他应用的工作阶段由 IdP 管理。企业 MFA、Conditional Access、密码规则与人员离职流程需在 IdP 设置；若 IdP 不发送 backchannel logout，管理员应在平台同步禁用成员，而不能把 IdP 禁用误认为现有平台 session 立即失效。
+
+「身分审核」记录登录、布建、设置与权限变更、链接／解除链接及注销事件。只有管理员可以查看，不含密码、cookie、client secret 或 provider token。
+
+## 运维与备份
+
+保留 Identity PostgreSQL、`identity_data`（包含 `sso.key`）、Compose service secrets。使用 broker 时还要保留 `identity_broker_postgres`。数据库与加密密钥须一起备份；只有数据库无法还原已加密的 client secret。
+
+正式 HTTPS 环境设置 `ORDIVANT_AUTH_COOKIE_SECURE=true`、明确 `ORDIVANT_AUTH_ORIGINS` 和 `ORDIVANT_SSO_PUBLIC_ORIGIN`。若 provider discovery 的 token/JWKS endpoint 使用不同 host，使用 `ORDIVANT_SSO_ALLOWED_ENDPOINT_HOSTS` 指定额外可信 host。Google 的精确 HTTPS token/JWKS hosts 已受支持。私有 HTTP broker 需明确 `ORDIVANT_SSO_HTTP_HOSTS`；`-WithIdentityBroker` 会处理该 Compose network 的 backchannel 路由，外部 provider 不需此例外。
+
+私有企业 CA 可将 PEM trust bundle 挂载到 Identity 容器，再设置 `ORDIVANT_SSO_CA_BUNDLE` 为该文件路径；TLS 凭证验证持续激活。Compose 信任指定的 `web` proxy，由 Nginx 覆写 `X-Real-IP`，依实际来源进行登录限流。自订反向代理需在 `ORDIVANT_AUTH_TRUSTED_PROXY_HOSTS` 列出精确 proxy host／IP，并由它覆写此 header；直接连到 Identity API 的伪造 header 不会被采用。
+
+原生 SAML 协定端点、SCIM 2.0 自动离职同步及特定企业 tenant 的集成验收是独立后续工作；SAML 身分代理与 OIDC 主流程的实际验收结果见 `sso-validation.md`。

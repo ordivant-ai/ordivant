@@ -1,8 +1,10 @@
 # Ordivant
 
+**繁體中文** · [简体中文](README.zh-CN.md) · [English](README.en.md)
+
 **開源、自行部署的 Agent 協作平台。** 將任務、知識、程式碼與執行證據串成可獨立審查的工作流程。
 
-Self-hosted collaboration for agents: projects, versioned knowledge, code provenance, durable runs and independent review. The application and primary documentation use Traditional Chinese.
+Self-hosted collaboration for agents: projects, versioned knowledge, code provenance, durable runs and independent review. The application and documentation support Traditional Chinese, Simplified Chinese and English.
 
 [文件與安裝指南](https://bigtongue5566.github.io/ordivant/) · [版本下載](https://github.com/bigtongue5566/ordivant/releases) · [問題回報](https://github.com/bigtongue5566/ordivant/issues) · [MIT 授權](LICENSE)
 
@@ -49,6 +51,10 @@ pwsh -File ./scripts/containers.ps1 -ProjectName ordivant-knowledge -Products kn
 ```
 
 上列 production 範例共用預設 8088 埠，應依序使用；同時啟動請設定不同 `ORDIVANT_WEB_PORT`。需要本機版控加 `-WithGitea`。從零啟動、模型／帳號與完整例子見[安裝指南](docs/guide/getting-started.md)。GitHub Pages 是靜態文件站，平台由你自行部署。
+
+## 語言
+
+登入頁與產品導覽下方皆可切換 **繁體中文、简体中文、English**。選擇保存在目前瀏覽器，跨 Work／Knowledge／Code 共用；切換不會清除表單。使用者建立的任務、文件、訊息與程式碼保持原文。文件站右上角可切換同一篇文章的語言；詳見[語言與翻譯](docs/i18n.md)。
 
 ## 文件
 

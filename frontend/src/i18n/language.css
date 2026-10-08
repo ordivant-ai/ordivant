@@ -1,0 +1,5 @@
+.language-control { display:flex; align-items:center; gap:8px; margin:8px 0 16px; color:inherit; }
+.language-control .ant-select { width:140px; }
+.side-rail .language-control { padding:0 9px; color:#c9c5d2; }
+.auth-page .language-control { margin-bottom:18px; }
+html[lang="en"] .rail-nav .nav-item { line-height:1.4; }

@@ -1,9 +1,11 @@
+import { t } from '../../i18n';
+import { describeApiError } from '../../i18n/errors';
 import type { ProductHealth, ProductPrincipal } from './types';
 import { announceAuthExpired, authRequestOptions } from '../../auth/client';
 
 export class ProductApiError extends Error {
-  constructor(public status: number, message: string, public code?: string) {
-    super(message);
+  constructor(public status: number, message: string, public code?: string, public sourceMessage = message) {
+    super(t(message));
     this.name = 'ProductApiError';
   }
 }
@@ -34,23 +36,13 @@ export function createProductApi(prefix: string) {
     const contentType = response.headers.get('content-type') ?? '';
     const payload = contentType.includes('application/json') ? await response.json() : await response.text();
     if (!response.ok) {
-      const detail = typeof payload === 'object' && payload !== null ? payload.detail : undefined;
-      const message = Array.isArray(detail)
-        ? detail.map((entry) => typeof entry === 'object' && entry !== null && 'msg' in entry ? String((entry as { msg: unknown }).msg) : '輸入資料不符合格式').join('；')
-        : typeof detail === 'object' && detail !== null
-          ? String(detail.message ?? '請求未完成。')
-          : typeof detail === 'string'
-            ? detail
-            : `請求失敗（HTTP ${response.status}）。`;
-      const code = typeof detail === 'object' && detail !== null && 'code' in detail
-        ? String((detail as { code: unknown }).code)
-        : undefined;
+      const { message, code, sourceMessage } = describeApiError(payload, response.status);
       if (response.status === 401) {
         const usedBearerToken = Boolean(token);
         token = null;
         if (!usedBearerToken) announceAuthExpired();
       }
-      throw new ProductApiError(response.status, message, code);
+      throw new ProductApiError(response.status, message, code, sourceMessage);
     }
     return payload as T;
   }

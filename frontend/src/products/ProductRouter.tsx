@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { lazy, Suspense } from 'react';
 import { Spin } from 'antd';
 import type { ProductKey } from './shared/ProductSwitcher';
@@ -30,8 +31,9 @@ function routeProduct(): ProductKey {
 }
 
 export default function ProductRouter() {
+  const { t } = useI18n();
   const product = routeProduct();
   const Application = standaloneApp ?? suiteApps?.[product];
-  if (!Application) return <div className="app-loading">找不到產品工作區</div>;
+  if (!Application) return <div className="app-loading">{t('找不到產品工作區')}</div>;
   return <Suspense fallback={<div className="app-loading"><Spin /></div>}><Application /></Suspense>;
 }

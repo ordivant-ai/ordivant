@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Form, Input, Spin, Typography } from 'antd';
 import { LockOutlined, LoginOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import { ProductSwitcher, type ProductKey as SwitcherProductKey } from '../products/shared/ProductSwitcher';
+import { useI18n, useLocalizedForm } from '../i18n';
 import { authApi } from './client';
 import { useAuth } from './AuthContext';
 import './auth.css';
@@ -22,8 +23,10 @@ const callbackMessages: Record<string, string> = {
 };
 
 export function AuthScreen({ product, productName }: { product: AuthProduct; productName: string }) {
+  const { t } = useI18n();
   const auth = useAuth();
   const [form] = Form.useForm();
+  useLocalizedForm(form);
   const [mode, setMode] = useState<AuthMode>(auth.phase === 'setup' ? 'setup' : 'login');
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
@@ -78,7 +81,7 @@ export function AuthScreen({ product, productName }: { product: AuthProduct; pro
       const result = await authApi.oidcStart({ return_to: `/${product}` });
       window.location.assign(result.authorization_url);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : '無法開始企業登入，請稍後重試。');
+      setFormError(error instanceof Error && 'sourceMessage' in error ? String((error as Error & { sourceMessage: string }).sourceMessage) : error instanceof Error ? error.message : '無法開始企業登入，請稍後重試。');
       ssoStartInProgress.current = false;
       setBusy(false);
     }
@@ -103,7 +106,7 @@ export function AuthScreen({ product, productName }: { product: AuthProduct; pro
   }, [auth.phase, auth.sso, enterpriseLoginFromUrl, product]);
 
   if (auth.phase === 'checking') {
-    return <div className="auth-loading"><Spin size="large" /><Text>正在檢查帳號服務</Text></div>;
+    return <div className="auth-loading"><Spin size="large" /><Text>{t('正在檢查帳號服務')}</Text></div>;
   }
 
   async function submit(values: Record<string, string>) {
@@ -133,7 +136,7 @@ export function AuthScreen({ product, productName }: { product: AuthProduct; pro
       }
       form.resetFields();
     } catch (error) {
-      const text = error instanceof Error ? error.message : '帳號請求失敗，請稍後重試。';
+      const text = error instanceof Error && 'sourceMessage' in error ? String((error as Error & { sourceMessage: string }).sourceMessage) : error instanceof Error ? error.message : '帳號請求失敗，請稍後重試。';
       setFormError(text);
       if (mode === 'setup' && 'status' in (error as object) && (error as { status?: number }).status === 409) {
         setTimeout(() => { void auth.refresh(); setMode('login'); }, 0);
@@ -163,37 +166,37 @@ export function AuthScreen({ product, productName }: { product: AuthProduct; pro
         <ProductSwitcher active={product} compact />
         <div className="auth-heading">
           <Text className="eyebrow">{productName.toUpperCase()}</Text>
-          <Title level={2}>{setupMode ? '建立管理員帳號' : recoverMode ? '使用復原碼重設密碼' : inviteMode ? '接受帳號邀請' : ssoOnlyDefaultMode ? '企業帳號登入' : adminRecoveryMode ? '管理員密碼登入' : '登入 Ordivant'}</Title>
-          <Paragraph>{setupMode ? '首次設定只會建立一位管理員，請使用你自己的密碼。' : recoverMode ? '輸入電子郵件與一組尚未使用的復原碼。' : inviteMode ? '設定密碼後即可使用邀請所授予的產品權限。' : ssoOnlyDefaultMode ? `使用 ${auth.sso?.display_name || '企業帳號'} 登入。` : adminRecoveryMode ? '此入口僅供 Ordivant 管理員在企業登入故障時使用。' : '使用你的 Ordivant 帳號繼續。'}</Paragraph>
+          <Title level={2}>{t(setupMode ? '建立管理員帳號' : recoverMode ? '使用復原碼重設密碼' : inviteMode ? '接受帳號邀請' : ssoOnlyDefaultMode ? '企業帳號登入' : adminRecoveryMode ? '管理員密碼登入' : '登入 Ordivant')}</Title>
+          <Paragraph>{t(setupMode ? '首次設定只會建立一位管理員，請使用你自己的密碼。' : recoverMode ? '輸入電子郵件與一組尚未使用的復原碼。' : inviteMode ? '設定密碼後即可使用邀請所授予的產品權限。' : ssoOnlyDefaultMode ? '使用 {{name}} 登入。' : adminRecoveryMode ? '此入口僅供 Ordivant 管理員在企業登入故障時使用。' : '使用你的 Ordivant 帳號繼續。', { name: auth.sso?.display_name || t('企業帳號') })}</Paragraph>
         </div>
-        {auth.notice && <Alert className="auth-alert" type="warning" showIcon message={auth.notice} />}
-        {auth.phase === 'error' && <Alert className="auth-alert" type="error" showIcon message="帳號服務目前無法連線" description={auth.error} action={<Button size="small" onClick={() => void auth.refresh()}>重試</Button>} />}
-        {showError && auth.phase !== 'error' && <Alert className="auth-alert" type="error" showIcon message={showError} />}
-        <div className="auth-service-state"><span className={`health-dot ${auth.phase === 'error' ? 'health-bad' : 'health-good'}`} />{auth.phase === 'error' ? '帳號服務暫時無法連線' : setupMode ? '首次設定' : '帳號服務'}</div>
+        {auth.notice && <Alert className="auth-alert" type="warning" showIcon message={t(auth.notice)} />}
+        {auth.phase === 'error' && <Alert className="auth-alert" type="error" showIcon message={t('帳號服務目前無法連線')} description={t(auth.error)} action={<Button size="small" onClick={() => void auth.refresh()}>{t('重試')}</Button>} />}
+        {showError && auth.phase !== 'error' && <Alert className="auth-alert" type="error" showIcon message={t(showError)} />}
+        <div className="auth-service-state"><span className={`health-dot ${auth.phase === 'error' ? 'health-bad' : 'health-good'}`} />{t(auth.phase === 'error' ? '帳號服務暫時無法連線' : setupMode ? '首次設定' : '帳號服務')}</div>
         <Form form={form} layout="vertical" onFinish={(values) => void submit(values as Record<string, string>)} requiredMark={false}>
-          {setupMode && <Form.Item name="name" label="姓名" rules={[{ required: true, whitespace: true, message: '請輸入姓名' }]}><Input prefix={<UserOutlined />} autoComplete="name" maxLength={120} /></Form.Item>}
-          {(loginMode && !ssoOnlyDefaultMode || setupMode || recoverMode) && <Form.Item name="email" label="電子郵件" rules={[{ required: true, type: 'email', message: '請輸入有效的電子郵件' }]}><Input prefix={<MailOutlined />} autoComplete="email" inputMode="email" /></Form.Item>}
-          {inviteMode && <Form.Item name="invitation_code" label="邀請碼" initialValue={invitationFromUrl} rules={[{ required: true, min: 32, message: '請輸入完整邀請碼' }]}><Input.Password prefix={<LockOutlined />} autoComplete="off" /></Form.Item>}
-          {recoverMode && <Form.Item name="recovery_code" label="一次性復原碼" rules={[{ required: true, min: 12, message: '請輸入完整復原碼' }]}><Input.Password prefix={<LockOutlined />} autoComplete="off" /></Form.Item>}
-          {loginMode && !ssoOnlyDefaultMode && <Form.Item name="password" label={adminRecoveryMode ? '管理員密碼' : '密碼'} rules={[{ required: true, message: '請輸入密碼' }]}><Input.Password prefix={<LockOutlined />} autoComplete="current-password" /></Form.Item>}
-          {setupMode && <Form.Item name="password" label="設定密碼" rules={[{ required: true, min: 12, message: '密碼至少 12 個字元' }]}><Input.Password prefix={<LockOutlined />} autoComplete="new-password" /></Form.Item>}
-          {recoverMode && <Form.Item name="new_password" label="新密碼" rules={[{ required: true, min: 12, message: '密碼至少 12 個字元' }]}><Input.Password prefix={<LockOutlined />} autoComplete="new-password" /></Form.Item>}
-          {inviteMode && <Form.Item name="password" label="設定密碼" rules={[{ required: true, min: 12, message: '密碼至少 12 個字元' }]}><Input.Password prefix={<LockOutlined />} autoComplete="new-password" /></Form.Item>}
-          {(setupMode || recoverMode || inviteMode) && <Form.Item name="confirm_password" label="再次輸入密碼" rules={[{ required: true, message: '請再次輸入密碼' }]}><Input.Password prefix={<LockOutlined />} autoComplete="new-password" /></Form.Item>}
+          {setupMode && <Form.Item name="name" label={t('姓名')} rules={[{ required: true, whitespace: true, message: t('請輸入姓名') }]}><Input prefix={<UserOutlined />} autoComplete="name" maxLength={120} /></Form.Item>}
+          {(loginMode && !ssoOnlyDefaultMode || setupMode || recoverMode) && <Form.Item name="email" label={t('電子郵件')} rules={[{ required: true, type: 'email', message: t('請輸入有效的電子郵件') }]}><Input prefix={<MailOutlined />} autoComplete="email" inputMode="email" /></Form.Item>}
+          {inviteMode && <Form.Item name="invitation_code" label={t('邀請碼')} initialValue={invitationFromUrl} rules={[{ required: true, min: 32, message: t('請輸入完整邀請碼') }]}><Input.Password prefix={<LockOutlined />} autoComplete="off" /></Form.Item>}
+          {recoverMode && <Form.Item name="recovery_code" label={t('一次性復原碼')} rules={[{ required: true, min: 12, message: t('請輸入完整復原碼') }]}><Input.Password prefix={<LockOutlined />} autoComplete="off" /></Form.Item>}
+          {loginMode && !ssoOnlyDefaultMode && <Form.Item name="password" label={t(adminRecoveryMode ? '管理員密碼' : '密碼')} rules={[{ required: true, message: t('請輸入密碼') }]}><Input.Password prefix={<LockOutlined />} autoComplete="current-password" /></Form.Item>}
+          {setupMode && <Form.Item name="password" label={t('設定密碼')} rules={[{ required: true, min: 12, message: t('密碼至少 12 個字元') }]}><Input.Password prefix={<LockOutlined />} autoComplete="new-password" /></Form.Item>}
+          {recoverMode && <Form.Item name="new_password" label={t('新密碼')} rules={[{ required: true, min: 12, message: t('密碼至少 12 個字元') }]}><Input.Password prefix={<LockOutlined />} autoComplete="new-password" /></Form.Item>}
+          {inviteMode && <Form.Item name="password" label={t('設定密碼')} rules={[{ required: true, min: 12, message: t('密碼至少 12 個字元') }]}><Input.Password prefix={<LockOutlined />} autoComplete="new-password" /></Form.Item>}
+          {(setupMode || recoverMode || inviteMode) && <Form.Item name="confirm_password" label={t('再次輸入密碼')} rules={[{ required: true, message: t('請再次輸入密碼') }]}><Input.Password prefix={<LockOutlined />} autoComplete="new-password" /></Form.Item>}
           {!ssoOnlyDefaultMode && <Button htmlType="submit" type="primary" size="large" block loading={busy} disabled={auth.phase === 'error'}>
-            {setupMode ? '建立管理員' : recoverMode ? '重設密碼並登入' : inviteMode ? '接受邀請並登入' : adminRecoveryMode ? '管理員登入' : '登入'}
+            {t(setupMode ? '建立管理員' : recoverMode ? '重設密碼並登入' : inviteMode ? '接受邀請並登入' : adminRecoveryMode ? '管理員登入' : '登入')}
           </Button>}
         </Form>
-        {auth.sso?.enabled && auth.sso.configured && <div className="auth-enterprise-login"><Button type={ssoOnlyDefaultMode ? 'primary' : 'default'} size="large" block icon={<LoginOutlined />} loading={busy} onClick={() => void beginSsoLogin()}>使用 {auth.sso.display_name || '企業帳號'} 登入</Button>{ssoOnly && adminRecoveryMode && <Text className="auth-admin-recovery-note">此密碼入口僅供本機 Ordivant 管理員復原使用。</Text>}</div>}
+        {auth.sso?.enabled && auth.sso.configured && <div className="auth-enterprise-login"><Button type={ssoOnlyDefaultMode ? 'primary' : 'default'} size="large" block icon={<LoginOutlined />} loading={busy} onClick={() => void beginSsoLogin()}>{t('使用 {{name}} 登入', { name: auth.sso.display_name || t('企業帳號') })}</Button>{ssoOnly && adminRecoveryMode && <Text className="auth-admin-recovery-note">{t('此密碼入口僅供本機 Ordivant 管理員復原使用。')}</Text>}</div>}
         <div className="auth-mode-links">
-          {auth.phase === 'setup' && mode !== 'setup' && <Button type="link" onClick={() => changeMode('setup')}>首次管理員設定</Button>}
-          {mode !== 'login' && auth.phase !== 'setup' && <Button type="link" onClick={() => changeMode('login')}>返回登入</Button>}
-          {ssoOnly && !adminRecoveryMode && loginMode && <Button type="link" onClick={() => changeMode('admin-login')}>管理員密碼登入</Button>}
-          {(!ssoOnly || adminRecoveryMode) && auth.phase !== 'setup' && !recoverMode && <Button type="link" onClick={() => changeMode('recover')}>使用復原碼</Button>}
-          {(!ssoOnly || adminRecoveryMode) && !inviteMode && <Button type="link" onClick={() => changeMode('invite')}>接受邀請</Button>}
-          {adminRecoveryMode && <Button type="link" onClick={() => changeMode('login')}>返回企業登入</Button>}
+          {auth.phase === 'setup' && mode !== 'setup' && <Button type="link" onClick={() => changeMode('setup')}>{t('首次管理員設定')}</Button>}
+          {mode !== 'login' && auth.phase !== 'setup' && <Button type="link" onClick={() => changeMode('login')}>{t('返回登入')}</Button>}
+          {ssoOnly && !adminRecoveryMode && loginMode && <Button type="link" onClick={() => changeMode('admin-login')}>{t('管理員密碼登入')}</Button>}
+          {(!ssoOnly || adminRecoveryMode) && auth.phase !== 'setup' && !recoverMode && <Button type="link" onClick={() => changeMode('recover')}>{t('使用復原碼')}</Button>}
+          {(!ssoOnly || adminRecoveryMode) && !inviteMode && <Button type="link" onClick={() => changeMode('invite')}>{t('接受邀請')}</Button>}
+          {adminRecoveryMode && <Button type="link" onClick={() => changeMode('login')}>{t('返回企業登入')}</Button>}
         </div>
-        <Text className="auth-footnote">登入狀態由伺服器管理，登出後工作階段立即失效。</Text>
+        <Text className="auth-footnote">{t('登入狀態由伺服器管理，登出後工作階段立即失效。')}</Text>
       </main>
     </div>
   );

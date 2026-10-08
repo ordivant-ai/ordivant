@@ -1,3 +1,5 @@
+import { t } from './i18n';
+import { describeApiError } from './i18n/errors';
 import type {
   Agent,
   AgentTemplate,
@@ -40,8 +42,8 @@ export class ApiError extends Error {
   status: number;
   code?: string;
 
-  constructor(status: number, message: string, code?: string) {
-    super(message);
+  constructor(status: number, message: string, code?: string, public sourceMessage = message) {
+    super(t(message));
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
@@ -87,26 +89,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     payload = null;
   }
   if (!response.ok) {
-    const payloadRecord = typeof payload === 'object' && payload !== null ? payload as Record<string, unknown> : undefined;
-    const detail = payloadRecord?.detail;
-    const message = Array.isArray(detail)
-      ? detail.map((entry) => typeof entry === 'object' && entry !== null && 'msg' in entry ? String((entry as { msg: unknown }).msg) : '輸入資料不符合格式').join('；')
-      : typeof detail === 'object' && detail !== null
-      ? String((detail as Record<string, unknown>).message ?? '請求未完成。')
-      : typeof detail === 'string'
-        ? detail
-        : payloadRecord && 'detail' in payloadRecord
-          ? String(payloadRecord.detail)
-          : `請求失敗（HTTP ${response.status}）。`;
-    const code = typeof detail === 'object' && detail !== null && 'code' in detail
-      ? String((detail as { code: unknown }).code)
-      : undefined;
+    const { message, code, sourceMessage } = describeApiError(payload, response.status);
     if (response.status === 401) {
       const usedBearerToken = Boolean(accessToken);
       accessToken = null;
       if (!usedBearerToken) announceAuthExpired();
     }
-    throw new ApiError(response.status, message, code);
+    throw new ApiError(response.status, message, code, sourceMessage);
   }
   return payload as T;
 }

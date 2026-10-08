@@ -15,10 +15,13 @@ class Page(HTMLParser):
         super().__init__()
         self.links: list[str] = []
         self.ids: set[str] = set()
+        self.lang = ''
         self.feed(text)
 
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
+        if tag == 'html':
+            self.lang = values.get('lang', '')
         if values.get('id'):
             self.ids.add(values['id'])
         for attr in ('href', 'src'):
@@ -34,6 +37,22 @@ def main() -> int:
         return 1
     errors = set()
     checked = 0
+    docs = ROOT.parent.parent
+    sources = {p.relative_to(docs).as_posix() for p in docs.rglob('*.md')
+               if not any(part in {'node_modules', '.vitepress', 'en', 'zh-CN'} for part in p.relative_to(docs).parts)}
+    for locale in ('en', 'zh-CN'):
+        translations = {p.relative_to(docs / locale).as_posix() for p in (docs / locale).rglob('*.md')}
+        for missing in sources - translations:
+            errors.add((locale, missing, 'missing translated source'))
+        for extra in translations - sources:
+            errors.add((locale, extra, 'translated page has no source counterpart'))
+    for source in sources:
+        for prefix, lang in (('', 'zh-Hant'), ('en/', 'en'), ('zh-CN/', 'zh-Hans')):
+            target = prefix + source.removesuffix('.md') + '.html'
+            if target not in pages:
+                errors.add((target, source, 'translated HTML missing'))
+            elif pages[target].lang != lang:
+                errors.add((target, pages[target].lang, 'incorrect document language'))
     for name, page in pages.items():
         for href in page.links:
             parsed = urlsplit(urljoin('https://docs.invalid' + BASE + name, href))

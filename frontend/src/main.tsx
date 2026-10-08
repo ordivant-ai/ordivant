@@ -2,6 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ConfigProvider, Spin } from 'antd';
 import zhTW from 'antd/locale/zh_TW';
+import zhCN from 'antd/locale/zh_CN';
+import enUS from 'antd/locale/en_US';
+import { useI18n } from './i18n';
 import { Suspense, lazy } from 'react';
 import './styles.css';
 import './products/products.css';
@@ -9,10 +12,11 @@ import { getPopupContainer, PopupLayer } from './shared/PopupLayer';
 
 const ProductRouter = lazy(() => import('./products/ProductRouter'));
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+function LocalizedApplication() {
+  const { locale } = useI18n();
+  return (
     <ConfigProvider
-      locale={zhTW}
+      locale={{ 'zh-TW': zhTW, 'zh-CN': zhCN, en: enUS }[locale]}
       getPopupContainer={getPopupContainer}
       theme={{
         token: {
@@ -34,5 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ProductRouter />
       </Suspense>
     </ConfigProvider>
-  </React.StrictMode>,
-);
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><LocalizedApplication /></React.StrictMode>);

@@ -32,6 +32,7 @@ import { AuthProvider, useAuth } from '../../auth/AuthContext';
 import { AuthAccessDenied } from '../../auth/AuthAccessDenied';
 import { ReferenceFields, ReferenceList } from '../shared/References';
 import type { Decision, DocumentContext, DocumentHit, DocumentVersion, ProductHealth, ProductPrincipal, Space as KnowledgeSpace } from '../shared/types';
+import { formatDate, formatNumber, useI18n, useLocalizedForm } from '../../i18n';
 
 const { Paragraph, Text, Title } = Typography;
 const { TextArea } = Input;
@@ -40,12 +41,11 @@ const knowledgeApi = createProductApi(productApiPrefix('knowledge'));
 type KnowledgeSection = 'documents' | 'decisions';
 
 function dateText(value?: string | null): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? '—' : new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+  return formatDate(value);
 }
 
 function errorMessage(error: unknown): string {
+  if (error instanceof Error && 'sourceMessage' in error) return String((error as Error & { sourceMessage: string }).sourceMessage);
   return error instanceof Error ? error.message : '發生未預期的錯誤。';
 }
 
@@ -54,6 +54,7 @@ export default function KnowledgeApp() {
 }
 
 function KnowledgeWorkspace() {
+  const { t } = useI18n();
   const auth = useAuth();
   const [messageApi, messageContext] = message.useMessage();
   const [health, setHealth] = useState<ProductHealth | null>(null);
@@ -91,12 +92,16 @@ function KnowledgeWorkspace() {
   const [documentSaving, setDocumentSaving] = useState(false);
   const [publishSaving, setPublishSaving] = useState(false);
   const [decisionSaving, setDecisionSaving] = useState(false);
-  const [publishError, setPublishError] = useState('');
+  const [publishError, setPublishError] = useState<{ message: string } | null>(null);
   const [formError, setFormError] = useState('');
   const [spaceForm] = Form.useForm();
+  useLocalizedForm(spaceForm);
   const [documentForm] = Form.useForm();
+  useLocalizedForm(documentForm);
   const [publishForm] = Form.useForm();
+  useLocalizedForm(publishForm);
   const [decisionForm] = Form.useForm();
+  useLocalizedForm(decisionForm);
   const listRequestId = useRef(0);
   const healthRequestId = useRef(0);
   const currentSpace = spaces.find((item) => item.id === spaceId) ?? null;
@@ -255,7 +260,7 @@ function KnowledgeWorkspace() {
   async function createSpace(values: Record<string, unknown>) {
     if (auth.session?.user.role !== 'admin') {
       setSpaceModalOpen(false);
-      messageApi.error('只有管理員可以建立 Knowledge space。');
+      messageApi.error(t('只有管理員可以建立 Knowledge space。'));
       return;
     }
     setSpaceSaving(true);
@@ -267,7 +272,7 @@ function KnowledgeWorkspace() {
       setSpaceId(created.id);
       setSpaceModalOpen(false);
       spaceForm.resetFields();
-      messageApi.success('Knowledge space 已建立。');
+      messageApi.success(t('Knowledge space 已建立。'));
     } catch (error) {
       setFormError(errorMessage(error));
     } finally {
@@ -293,7 +298,7 @@ function KnowledgeWorkspace() {
         summary: values.summary ?? '',
         body: values.body,
         tags: values.tags ?? [],
-        change_summary: values.change_summary ?? '初版建立',
+        change_summary: values.change_summary ?? t('初版建立'),
         source_refs: values.source_refs ?? [],
       });
       setCreateDocumentOpen(false);
@@ -301,7 +306,7 @@ function KnowledgeWorkspace() {
       setSection('documents');
       await loadDocuments();
       setDocumentId(created.document.id);
-      messageApi.success('文件與 v1 已建立。');
+      messageApi.success(t('文件與 v1 已建立。'));
     } catch (error) {
       setFormError(errorMessage(error));
     } finally {
@@ -324,7 +329,7 @@ function KnowledgeWorkspace() {
 
   function openPublish() {
     if (!documentContext) return;
-    setPublishError('');
+    setPublishError(null);
     publishForm.resetFields();
     publishForm.setFieldsValue({
       expected_version: documentContext.document.current_version,
@@ -339,7 +344,7 @@ function KnowledgeWorkspace() {
   async function publishVersion(values: Record<string, unknown>) {
     if (!documentId) return;
     setPublishSaving(true);
-    setPublishError('');
+    setPublishError(null);
     try {
       await knowledgeApi.post<DocumentVersion>(`/documents/${encodeURIComponent(documentId)}/versions`, {
         expected_version: values.expected_version,
@@ -352,14 +357,14 @@ function KnowledgeWorkspace() {
       publishForm.resetFields();
       await loadDocuments();
       await loadDocumentContext(documentId);
-      messageApi.success('新版本已發佈；舊版本保持不變。');
+      messageApi.success(t('新版本已發佈；舊版本保持不變。'));
     } catch (error) {
       if (error instanceof ProductApiError && error.status === 409) {
-        setPublishError(`版本衝突：${error.message} 目前草稿仍保留，請確認最新版本後再決定如何發佈。`);
+        setPublishError({ message: errorMessage(error) });
         void loadDocuments();
         void loadDocumentContext(documentId).catch(() => undefined);
       } else {
-        setPublishError(errorMessage(error));
+        setPublishError({ message: errorMessage(error) });
       }
     } finally {
       setPublishSaving(false);
@@ -382,7 +387,7 @@ function KnowledgeWorkspace() {
       decisionForm.resetFields();
       await loadDecisions();
       if (documentId) await loadDocumentContext(documentId).catch(() => undefined);
-      messageApi.success('決策紀錄已建立。');
+      messageApi.success(t('決策紀錄已建立。'));
     } catch (error) {
       setFormError(errorMessage(error));
     } finally {
@@ -391,8 +396,8 @@ function KnowledgeWorkspace() {
   }
 
   const sectionItems = useMemo(() => [
-    { key: 'documents', label: '文件庫', icon: <FileTextOutlined /> },
-    { key: 'decisions', label: '決策紀錄', icon: <SafetyCertificateOutlined /> },
+    { key: 'documents', label: t('文件庫'), icon: <FileTextOutlined /> },
+    { key: 'decisions', label: t('決策紀錄'), icon: <SafetyCertificateOutlined /> },
   ], []);
 
   if (!auth.session) {
@@ -418,85 +423,85 @@ function KnowledgeWorkspace() {
         onSectionChange={(key) => setSection(key as KnowledgeSection)}
         mode={health?.mode ?? 'unavailable'}
         serviceStatus={healthStatus}
-        headerExtra={<Space size={7}><Select aria-label="選擇 Knowledge space" className="product-scope-select" placeholder="選擇 Space" value={spaceId || undefined} loading={spaceBusy} onChange={(value) => { setSpaceId(value); setDocumentId(''); }} options={spaces.map((space) => ({ value: space.id, label: `${space.key} · ${space.name}` }))} notFoundContent="沒有可存取的 Space" />{canCreateSpace && <Button aria-label="建立 Space" icon={<PlusOutlined />} onClick={() => { spaceForm.resetFields(); setFormError(''); setSpaceModalOpen(true); }}>新增 Space</Button>}</Space>}
-        title={section === 'documents' ? '文件庫' : '決策紀錄'}
+        headerExtra={<Space size={7}><Select aria-label={t('選擇 Knowledge space')} className="product-scope-select" placeholder={t('選擇 Space')} value={spaceId || undefined} loading={spaceBusy} onChange={(value) => { setSpaceId(value); setDocumentId(''); }} options={spaces.map((space) => ({ value: space.id, label: `${space.key} · ${space.name}` }))} notFoundContent={t('沒有可存取的 Space')} />{canCreateSpace && <Button aria-label={t('建立 Space')} icon={<PlusOutlined />} onClick={() => { spaceForm.resetFields(); setFormError(''); setSpaceModalOpen(true); }}>{t('新增 Space')}</Button>}</Space>}
+        title={t(section === 'documents' ? '文件庫' : '決策紀錄')}
         eyebrow={currentSpace ? `${currentSpace.key} · ${currentSpace.name}` : 'KNOWLEDGE'}
         actions={canWrite && section === 'documents'
-          ? <Button type="primary" icon={<FileAddOutlined />} disabled={!spaceId} onClick={openCreateDocument}>新增文件</Button>
+          ? <Button type="primary" icon={<FileAddOutlined />} disabled={!spaceId} onClick={openCreateDocument}>{t('新增文件')}</Button>
           : canWrite && section === 'decisions'
-            ? <Button type="primary" icon={<PlusOutlined />} disabled={!spaceId} onClick={() => { decisionForm.resetFields(); decisionForm.setFieldsValue({ document_id: documentId || undefined, source_refs: [] }); setFormError(''); setDecisionOpen(true); }}>新增決策</Button>
+            ? <Button type="primary" icon={<PlusOutlined />} disabled={!spaceId} onClick={() => { decisionForm.resetFields(); decisionForm.setFieldsValue({ document_id: documentId || undefined, source_refs: [] }); setFormError(''); setDecisionOpen(true); }}>{t('新增決策')}</Button>
             : undefined}
       >
-        {healthStatus === 'error' && <Alert className="product-page-alert" type="warning" showIcon message="Knowledge API 健康檢查失敗" description={healthError} action={<Button size="small" onClick={() => void checkHealth()}>重試</Button>} />}
-        {spacesError && <Alert className="product-page-alert" type="error" showIcon message="Space 清單載入失敗" description={spacesError} action={<Button size="small" onClick={() => setSpacesReload((value) => value + 1)}>重試</Button>} />}
+        {healthStatus === 'error' && <Alert className="product-page-alert" type="warning" showIcon message={t('Knowledge API 健康檢查失敗')} description={t(healthError)} action={<Button size="small" onClick={() => void checkHealth()}>{t('重試')}</Button>} />}
+        {spacesError && <Alert className="product-page-alert" type="error" showIcon message={t('Space 清單載入失敗')} description={t(spacesError)} action={<Button size="small" onClick={() => setSpacesReload((value) => value + 1)}>{t('重試')}</Button>} />}
         {!spaceId ? (
-          <div className="product-empty-state"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={spaceBusy ? '正在載入 Space' : canCreateSpace ? '目前沒有可存取的 Knowledge space' : '目前沒有可存取的 Knowledge space，請聯絡管理員授予 Space 存取權或建立新 Space。'} />{canCreateSpace && <Button type="primary" icon={<PlusOutlined />} onClick={() => { spaceForm.resetFields(); setSpaceModalOpen(true); }}>建立 Space</Button>}</div>
+          <div className="product-empty-state"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(spaceBusy ? '正在載入 Space' : canCreateSpace ? '目前沒有可存取的 Knowledge space' : '目前沒有可存取的 Knowledge space，請聯絡管理員授予 Space 存取權或建立新 Space。')} />{canCreateSpace && <Button type="primary" icon={<PlusOutlined />} onClick={() => { spaceForm.resetFields(); setSpaceModalOpen(true); }}>{t('建立 Space')}</Button>}</div>
         ) : section === 'documents' ? (
           <>
-            {documentsError && <Alert className="product-page-alert" type="error" showIcon message="文件搜尋失敗" description={documentsError} action={<Button size="small" onClick={() => void loadDocuments()}>重試</Button>} />}
-            <div className="knowledge-tools"><Input allowClear prefix={<SearchOutlined />} aria-label="搜尋文件文字" placeholder="搜尋標題或正文" value={query} onChange={(event) => setQuery(event.target.value)} /><Input allowClear aria-label="依標籤篩選" placeholder="標籤篩選" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} /><span>文字搜尋 · {documentsBusy ? '搜尋中' : `${documents.length} 份文件`}</span></div>
+            {documentsError && <Alert className="product-page-alert" type="error" showIcon message={t('文件搜尋失敗')} description={t(documentsError)} action={<Button size="small" onClick={() => void loadDocuments()}>{t('重試')}</Button>} />}
+            <div className="knowledge-tools"><Input allowClear prefix={<SearchOutlined />} aria-label={t('搜尋文件文字')} placeholder={t('搜尋標題或正文')} value={query} onChange={(event) => setQuery(event.target.value)} /><Input allowClear aria-label={t('依標籤篩選')} placeholder={t('標籤篩選')} value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} /><span>{t('文字搜尋')} · {documentsBusy ? t('搜尋中') : t('{{count}} 份文件', { count: formatNumber(documents.length) })}</span></div>
             <div className="knowledge-workspace">
-              <aside className="knowledge-document-list" aria-label="文件搜尋結果">
-                <div className="knowledge-list-heading"><span>搜尋結果</span><span>{documents.length}</span></div>
+              <aside className="knowledge-document-list" aria-label={t('文件搜尋結果')}>
+                <div className="knowledge-list-heading"><span>{t('搜尋結果')}</span><span>{formatNumber(documents.length)}</span></div>
                 {documentsBusy && !documents.length && <div className="product-inline-loading"><Spin size="small" /></div>}
-                {!documentsBusy && documents.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={query || tagFilter ? '沒有符合條件的文件' : '此 Space 尚無文件'}>{canWrite && !query && !tagFilter && <Button size="small" type="primary" onClick={openCreateDocument}>建立文件</Button>}</Empty>}
-                {documents.map((document) => <button type="button" key={document.id} className={`knowledge-document-item${document.id === documentId ? ' knowledge-document-active' : ''}`} onClick={() => setDocumentId(document.id)}><span className="document-item-top"><strong>{document.title}</strong><Tag>v{document.version ?? document.current_version}</Tag></span><span className="document-item-summary">{document.snippet || document.summary || '尚無摘要'}</span><span className="document-item-bottom"><span>{document.tags?.slice(0, 3).map((tag) => `#${tag}`).join(' ') || '無標籤'}</span><time>{dateText(document.updated_at)}</time></span></button>)}
+                {!documentsBusy && documents.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(query || tagFilter ? '沒有符合條件的文件' : '此 Space 尚無文件')}>{canWrite && !query && !tagFilter && <Button size="small" type="primary" onClick={openCreateDocument}>{t('建立文件')}</Button>}</Empty>}
+                {documents.map((document) => <button type="button" key={document.id} className={`knowledge-document-item${document.id === documentId ? ' knowledge-document-active' : ''}`} onClick={() => setDocumentId(document.id)}><span className="document-item-top"><strong>{document.title}</strong><Tag>v{document.version ?? document.current_version}</Tag></span><span className="document-item-summary">{document.snippet || document.summary || t('尚無摘要')}</span><span className="document-item-bottom"><span>{document.tags?.slice(0, 3).map((tag) => `#${tag}`).join(' ') || t('無標籤')}</span><time>{dateText(document.updated_at)}</time></span></button>)}
               </aside>
               <main className="knowledge-reader">
                 {documentBusy && !documentContext && <div className="product-inline-loading"><Spin /></div>}
-                {!documentId && !documentsBusy && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="選取一份文件以檢視版本與來源" />}
-                {documentId && !documentContext && !documentBusy && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="文件脈絡無法載入" />}
+                {!documentId && !documentsBusy && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('選取一份文件以檢視版本與來源')} />}
+                {documentId && !documentContext && !documentBusy && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('文件脈絡無法載入')} />}
                 {documentContext && selectedVersion && <DocumentReader context={documentContext} selectedVersion={selectedVersion} history={history} busy={documentBusy} canWrite={canWrite} onVersion={selectExactVersion} onPublish={openPublish} onCreateDecision={() => { decisionForm.resetFields(); decisionForm.setFieldsValue({ document_id: documentContext.document.id, source_refs: [] }); setFormError(''); setDecisionOpen(true); }} />}
               </main>
             </div>
           </>
         ) : (
           <section className="knowledge-decisions">
-            {decisionsError && <Alert className="product-page-alert" type="error" showIcon message="決策紀錄載入失敗" description={decisionsError} action={<Button size="small" onClick={() => void loadDecisions()}>重試</Button>} />}
-            <div className="knowledge-decisions-heading"><div><Text type="secondary">依 Space 範圍載入；每筆決策保留來源引用與建立者。</Text></div><span>{decisionsBusy ? '載入中' : `${decisions.length} 筆決策`}</span></div>
+            {decisionsError && <Alert className="product-page-alert" type="error" showIcon message={t('決策紀錄載入失敗')} description={t(decisionsError)} action={<Button size="small" onClick={() => void loadDecisions()}>{t('重試')}</Button>} />}
+            <div className="knowledge-decisions-heading"><div><Text type="secondary">{t('依 Space 範圍載入；每筆決策保留來源引用與建立者。')}</Text></div><span>{decisionsBusy ? t('載入中') : t('{{count}} 筆決策', { count: formatNumber(decisions.length) })}</span></div>
             {decisionsBusy && !decisions.length && <div className="product-inline-loading"><Spin /></div>}
-            {!decisionsBusy && decisions.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="此 Space 尚無決策紀錄" />}
+            {!decisionsBusy && decisions.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('此 Space 尚無決策紀錄')} />}
             {decisions.map((decision) => <DecisionRow key={decision.id} decision={decision} documentTitle={documents.find((item) => item.id === decision.document_id)?.title} />)}
           </section>
         )}
       </ProductShell>
 
-      {canCreateSpace && <Modal title="建立 Knowledge space" open={spaceModalOpen} onCancel={() => setSpaceModalOpen(false)} onOk={() => spaceForm.submit()} confirmLoading={spaceSaving} okText="建立 Space" cancelText="取消" destroyOnClose>
-        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
-        <Form form={spaceForm} layout="vertical" onFinish={(values) => void createSpace(values)}><Form.Item name="key" label="Space 代碼" rules={[{ required: true, message: '請輸入代碼' }]}><Input maxLength={20} /></Form.Item><Form.Item name="name" label="名稱" rules={[{ required: true, message: '請輸入名稱' }]}><Input maxLength={120} /></Form.Item><Form.Item name="description" label="描述"><TextArea rows={3} /></Form.Item></Form>
+      {canCreateSpace && <Modal title={t('建立 Knowledge space')} open={spaceModalOpen} onCancel={() => setSpaceModalOpen(false)} onOk={() => spaceForm.submit()} confirmLoading={spaceSaving} okText={t('建立 Space')} cancelText={t('取消')} destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={t(formError)} />}
+        <Form form={spaceForm} layout="vertical" onFinish={(values) => void createSpace(values)}><Form.Item name="key" label={t('Space 代碼')} rules={[{ required: true, message: t('請輸入代碼') }]}><Input maxLength={20} /></Form.Item><Form.Item name="name" label={t('名稱')} rules={[{ required: true, message: t('請輸入名稱') }]}><Input maxLength={120} /></Form.Item><Form.Item name="description" label={t('描述')}><TextArea rows={3} /></Form.Item></Form>
       </Modal>}
 
-      <Modal title="建立文件 v1" open={createDocumentOpen} onCancel={() => setCreateDocumentOpen(false)} onOk={() => documentForm.submit()} confirmLoading={documentSaving} okText="建立文件" cancelText="取消" width={760} destroyOnClose>
-        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
+      <Modal title={t('建立文件 v1')} open={createDocumentOpen} onCancel={() => setCreateDocumentOpen(false)} onOk={() => documentForm.submit()} confirmLoading={documentSaving} okText={t('建立文件')} cancelText={t('取消')} width={760} destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={t(formError)} />}
         <Form form={documentForm} layout="vertical" onFinish={(values) => void createDocument(values)}>
-          <Form.Item name="title" label="文件標題" rules={[{ required: true, whitespace: true }]}><Input maxLength={200} /></Form.Item>
-          <Form.Item name="summary" label="摘要"><TextArea rows={2} /></Form.Item>
-          <Form.Item name="body" label="正文（Markdown）" rules={[{ required: true, whitespace: true, message: '正文不得空白' }]}><TextArea rows={12} spellCheck /></Form.Item>
-          <Form.Item name="tags" label="標籤"><Select mode="tags" tokenSeparators={[',']} placeholder="輸入標籤後按 Enter" /></Form.Item>
-          <Form.Item name="change_summary" label="版本說明"><Input placeholder="初版建立" /></Form.Item>
-          <Divider orientation="left" plain>來源與 provenance</Divider><ReferenceFields />
+          <Form.Item name="title" label={t('文件標題')} rules={[{ required: true, whitespace: true }]}><Input maxLength={200} /></Form.Item>
+          <Form.Item name="summary" label={t('摘要')}><TextArea rows={2} /></Form.Item>
+          <Form.Item name="body" label={t('正文（Markdown）')} rules={[{ required: true, whitespace: true, message: t('正文不得空白') }]}><TextArea rows={12} spellCheck /></Form.Item>
+          <Form.Item name="tags" label={t('標籤')}><Select mode="tags" tokenSeparators={[',']} placeholder={t('輸入標籤後按 Enter')} /></Form.Item>
+          <Form.Item name="change_summary" label={t('版本說明')}><Input placeholder={t('初版建立')} /></Form.Item>
+          <Divider orientation="left" plain>{t('來源與 provenance')}</Divider><ReferenceFields />
         </Form>
       </Modal>
 
-      <Modal title={`發佈文件新版本${documentContext ? ` · ${documentContext.document.title}` : ''}`} open={publishOpen} onCancel={() => { setPublishOpen(false); setPublishError(''); }} onOk={() => publishForm.submit()} confirmLoading={publishSaving} okText="發佈新版本" cancelText="取消" width={780} destroyOnClose>
-        {publishError && <Alert className="product-form-alert" type="error" showIcon message="未發佈新版本" description={publishError} />}
-        {documentContext && <Alert className="product-form-alert" type="info" showIcon message={`目前最新版 v${documentContext.document.current_version}`} description="expected_version 採 compare-and-swap；舊版本不可變更。若遇版本衝突，先確認最新內容及來源再調整草稿。" />}
+      <Modal title={t('發佈文件新版本') + (documentContext ? ` · ${documentContext.document.title}` : '')} open={publishOpen} onCancel={() => { setPublishOpen(false); setPublishError(null); }} onOk={() => publishForm.submit()} confirmLoading={publishSaving} okText={t('發佈新版本')} cancelText={t('取消')} width={780} destroyOnClose>
+        {publishError && <Alert className="product-form-alert" type="error" showIcon message={t('未發佈新版本')} description={t('版本衝突：{{message}} 目前草稿仍保留，請確認最新版本後再決定如何發佈。', { message: publishError.message })} />}
+        {documentContext && <Alert className="product-form-alert" type="info" showIcon message={t('目前最新版 v{{version}}', { version: formatNumber(documentContext.document.current_version) })} description={t('expected_version 採 compare-and-swap；舊版本不可變更。若遇版本衝突，先確認最新內容及來源再調整草稿。')} />}
         <Form form={publishForm} layout="vertical" onFinish={(values) => void publishVersion(values)}>
-          <Form.Item name="expected_version" label="預期目前版本" rules={[{ required: true }]}><InputNumber min={1} className="full-width" /></Form.Item>
-          <Form.Item name="title" label="版本標題" rules={[{ required: true, whitespace: true }]}><Input maxLength={200} /></Form.Item>
-          <Form.Item name="body" label="正文（Markdown）" rules={[{ required: true, whitespace: true, message: '正文不得空白' }]}><TextArea rows={12} spellCheck /></Form.Item>
-          <Form.Item name="change_summary" label="變更摘要" rules={[{ required: true, whitespace: true }]}><Input maxLength={300} /></Form.Item>
-          <Divider orientation="left" plain>來源與 provenance</Divider><ReferenceFields />
+          <Form.Item name="expected_version" label={t('預期目前版本')} rules={[{ required: true }]}><InputNumber min={1} className="full-width" /></Form.Item>
+          <Form.Item name="title" label={t('版本標題')} rules={[{ required: true, whitespace: true }]}><Input maxLength={200} /></Form.Item>
+          <Form.Item name="body" label={t('正文（Markdown）')} rules={[{ required: true, whitespace: true, message: t('正文不得空白') }]}><TextArea rows={12} spellCheck /></Form.Item>
+          <Form.Item name="change_summary" label={t('變更摘要')} rules={[{ required: true, whitespace: true }]}><Input maxLength={300} /></Form.Item>
+          <Divider orientation="left" plain>{t('來源與 provenance')}</Divider><ReferenceFields />
         </Form>
       </Modal>
 
-      <Modal title="記錄決策" open={decisionOpen} onCancel={() => setDecisionOpen(false)} onOk={() => decisionForm.submit()} confirmLoading={decisionSaving} okText="建立決策" cancelText="取消" width={720} destroyOnClose>
-        {formError && <Alert className="product-form-alert" type="error" showIcon message={formError} />}
+      <Modal title={t('記錄決策')} open={decisionOpen} onCancel={() => setDecisionOpen(false)} onOk={() => decisionForm.submit()} confirmLoading={decisionSaving} okText={t('建立決策')} cancelText={t('取消')} width={720} destroyOnClose>
+        {formError && <Alert className="product-form-alert" type="error" showIcon message={t(formError)} />}
         <Form form={decisionForm} layout="vertical" onFinish={(values) => void createDecision(values)}>
-          <Form.Item name="title" label="決策標題" rules={[{ required: true, whitespace: true }]}><Input maxLength={200} /></Form.Item>
-          <Form.Item name="document_id" label="關聯文件"><Select allowClear placeholder="不關聯特定文件" options={documents.map((document) => ({ value: document.id, label: document.title }))} /></Form.Item>
-          <Form.Item name="body" label="決策內容" rules={[{ required: true, whitespace: true }]}><TextArea rows={5} /></Form.Item>
-          <Divider orientation="left" plain>決策來源</Divider><ReferenceFields />
+          <Form.Item name="title" label={t('決策標題')} rules={[{ required: true, whitespace: true }]}><Input maxLength={200} /></Form.Item>
+          <Form.Item name="document_id" label={t('關聯文件')}><Select allowClear placeholder={t('不關聯特定文件')} options={documents.map((document) => ({ value: document.id, label: document.title }))} /></Form.Item>
+          <Form.Item name="body" label={t('決策內容')} rules={[{ required: true, whitespace: true }]}><TextArea rows={5} /></Form.Item>
+          <Divider orientation="left" plain>{t('決策來源')}</Divider><ReferenceFields />
         </Form>
       </Modal>
     </>
@@ -522,25 +527,27 @@ function DocumentReader({
   onPublish: () => void;
   onCreateDecision: () => void;
 }) {
+  const { t } = useI18n();
   const isLatest = selectedVersion.version === context.document.current_version;
   return (
     <div className="document-reader-content">
-      <div className="reader-toolbar"><div className="citation-uri">{selectedVersion.uri}</div><Space><Select aria-label="選擇文件版本" value={selectedVersion.version} loading={busy} onChange={(version) => onVersion(version)} options={history.slice().sort((a, b) => b.version - a.version).map((version) => ({ value: version.version, label: `v${version.version}${version.version === context.document.current_version ? ' · 最新' : ''}` }))} />{canWrite && isLatest && <Button type="primary" onClick={onPublish}>發佈新版本</Button>}</Space></div>
-      {!isLatest && <Alert className="historical-version-alert" type="warning" showIcon icon={<HistoryOutlined />} message={`正在檢視不可變更的歷史版本 v${selectedVersion.version}`} />}
-      <div className="reader-document-head"><div><div className="document-version-kicker">{context.document.space_id.slice(0, 8)} · VERSION {selectedVersion.version}</div><Title level={3}>{selectedVersion.title}</Title><Paragraph>{context.document.summary}</Paragraph></div><div className="reader-head-actions">{canWrite && <Button icon={<SafetyCertificateOutlined />} onClick={onCreateDecision}>記錄決策</Button>}</div></div>
+      <div className="reader-toolbar"><div className="citation-uri">{selectedVersion.uri}</div><Space><Select aria-label={t('選擇文件版本')} value={selectedVersion.version} loading={busy} onChange={(version) => onVersion(version)} options={history.slice().sort((a, b) => b.version - a.version).map((version) => ({ value: version.version, label: `v${formatNumber(version.version)}${version.version === context.document.current_version ? ` · ${t('最新')}` : ''}` }))} />{canWrite && isLatest && <Button type="primary" onClick={onPublish}>{t('發佈新版本')}</Button>}</Space></div>
+      {!isLatest && <Alert className="historical-version-alert" type="warning" showIcon icon={<HistoryOutlined />} message={t('正在檢視不可變更的歷史版本 v{{version}}', { version: formatNumber(selectedVersion.version) })} />}
+      <div className="reader-document-head"><div><div className="document-version-kicker">{context.document.space_id.slice(0, 8)} · {t('版本')} {formatNumber(selectedVersion.version)}</div><Title level={3}>{selectedVersion.title}</Title><Paragraph>{context.document.summary}</Paragraph></div><div className="reader-head-actions">{canWrite && <Button icon={<SafetyCertificateOutlined />} onClick={onCreateDecision}>{t('記錄決策')}</Button>}</div></div>
       <Space wrap className="document-tags">{context.document.tags?.map((tag) => <Tag key={tag}>{tag}</Tag>)}</Space>
-      {busy && <div className="reader-loading"><Spin size="small" /> 載入版本</div>}
+      {busy && <div className="reader-loading"><Spin size="small" /> {t('載入版本')}</div>}
       <article className="markdown-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedVersion.body}</ReactMarkdown></article>
-      <section className="version-metadata"><div><span>版本建立</span><strong>{dateText(selectedVersion.created_at)}</strong></div><div><span>編輯者</span><strong>{selectedVersion.author_id}</strong></div><div><span>內容 SHA-256</span><code>{selectedVersion.content_sha256}</code></div><div><span>變更摘要</span><strong>{selectedVersion.change_summary || '—'}</strong></div></section>
-      <section className="provenance-section"><div className="knowledge-subhead"><h3>來源引用</h3><span>{selectedVersion.source_refs.length}</span></div><ReferenceList references={selectedVersion.source_refs} /></section>
-      <section className="version-history-section"><div className="knowledge-subhead"><h3>不可變版本歷程</h3><span>{history.length}</span></div>{history.slice().sort((a, b) => b.version - a.version).map((version) => <button type="button" key={version.id} className={`version-history-row${version.version === selectedVersion.version ? ' version-history-current' : ''}`} onClick={() => onVersion(version.version)}><span className="version-history-number">v{version.version}</span><span className="version-history-summary">{version.change_summary || '沒有變更摘要'}<small>{dateText(version.created_at)} · SHA-256 {version.content_sha256.slice(0, 12)}…</small></span>{version.version === context.document.current_version && <Tag color="green">最新</Tag>}</button>)}</section>
-      {context.decisions.length > 0 && <section className="version-history-section"><div className="knowledge-subhead"><h3>相關決策</h3><span>{context.decisions.length}</span></div>{context.decisions.map((decision) => <div className="inline-decision" key={decision.id}><strong>{decision.title}</strong><span>{decision.body}</span><ReferenceList references={decision.source_refs} /></div>)}</section>}
+      <section className="version-metadata"><div><span>{t('版本建立')}</span><strong>{dateText(selectedVersion.created_at)}</strong></div><div><span>{t('編輯者')}</span><strong>{selectedVersion.author_id}</strong></div><div><span>{t('內容 SHA-256')}</span><code>{selectedVersion.content_sha256}</code></div><div><span>{t('變更摘要')}</span><strong>{selectedVersion.change_summary || '—'}</strong></div></section>
+      <section className="provenance-section"><div className="knowledge-subhead"><h3>{t('來源引用')}</h3><span>{formatNumber(selectedVersion.source_refs.length)}</span></div><ReferenceList references={selectedVersion.source_refs} /></section>
+      <section className="version-history-section"><div className="knowledge-subhead"><h3>{t('不可變版本歷程')}</h3><span>{formatNumber(history.length)}</span></div>{history.slice().sort((a, b) => b.version - a.version).map((version) => <button type="button" key={version.id} className={`version-history-row${version.version === selectedVersion.version ? ' version-history-current' : ''}`} onClick={() => onVersion(version.version)}><span className="version-history-number">v{formatNumber(version.version)}</span><span className="version-history-summary">{version.change_summary || t('沒有變更摘要')}<small>{dateText(version.created_at)} · SHA-256 {version.content_sha256.slice(0, 12)}…</small></span>{version.version === context.document.current_version && <Tag color="green">{t('最新')}</Tag>}</button>)}</section>
+      {context.decisions.length > 0 && <section className="version-history-section"><div className="knowledge-subhead"><h3>{t('相關決策')}</h3><span>{formatNumber(context.decisions.length)}</span></div>{context.decisions.map((decision) => <div className="inline-decision" key={decision.id}><strong>{decision.title}</strong><span>{decision.body}</span><ReferenceList references={decision.source_refs} /></div>)}</section>}
     </div>
   );
 }
 
 function DecisionRow({ decision, documentTitle }: { decision: Decision; documentTitle?: string }) {
+  const { t } = useI18n();
   return (
-    <article className="decision-row"><div className="decision-row-icon"><SafetyCertificateOutlined /></div><div className="decision-row-body"><div className="decision-row-header"><strong>{decision.title}</strong><time>{dateText(decision.created_at)}</time></div>{documentTitle && <span className="decision-document-link"><FileTextOutlined /> {documentTitle}</span>}<Paragraph>{decision.body}</Paragraph><div className="decision-provenance"><Text className="eyebrow">PROVENANCE</Text><ReferenceList references={decision.source_refs} /></div><span className="decision-actor">建立者 {decision.actor_id}</span></div></article>
+    <article className="decision-row"><div className="decision-row-icon"><SafetyCertificateOutlined /></div><div className="decision-row-body"><div className="decision-row-header"><strong>{decision.title}</strong><time>{dateText(decision.created_at)}</time></div>{documentTitle && <span className="decision-document-link"><FileTextOutlined /> {documentTitle}</span>}<Paragraph>{decision.body}</Paragraph><div className="decision-provenance"><Text className="eyebrow">{t('來源追溯')}</Text><ReferenceList references={decision.source_refs} /></div><span className="decision-actor">{t('建立者')} {decision.actor_id}</span></div></article>
   );
 }

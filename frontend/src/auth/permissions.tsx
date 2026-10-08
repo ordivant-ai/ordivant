@@ -4,6 +4,7 @@ import { api } from '../api';
 import { createProductApi, productApiPrefix } from '../products/shared/productApi';
 import type { Space as KnowledgeSpace } from '../products/shared/types';
 import type { AuthPermissions, ProductKey, ProductScope } from './types';
+import { formatNumber, useI18n } from '../i18n';
 
 export type PermissionCatalog = { status: 'idle' | 'loading' | 'ready' | 'error'; scopes: ProductScope[]; error: string };
 export type PermissionCatalogs = Record<ProductKey, PermissionCatalog>;
@@ -15,9 +16,9 @@ export const emptyPermissionCatalogs: PermissionCatalogs = {
 };
 
 const productCopy: Record<ProductKey, { label: string; roles: Array<{ value: string; label: string }>; scopeLabel: string }> = {
-  work: { label: 'Work', roles: [{ value: 'manager', label: 'Manager' }, { value: 'worker', label: 'Worker' }, { value: 'reviewer', label: 'Reviewer' }], scopeLabel: 'Projects' },
-  knowledge: { label: 'Knowledge', roles: [{ value: 'manager', label: 'Manager' }, { value: 'writer', label: 'Writer' }, { value: 'reader', label: 'Reader' }], scopeLabel: 'Spaces' },
-  code: { label: 'Code', roles: [{ value: 'manager', label: 'Manager' }, { value: 'writer', label: 'Writer' }, { value: 'reader', label: 'Reader' }], scopeLabel: 'Projects' },
+  work: { label: 'Work', roles: [{ value: 'manager', label: '管理者' }, { value: 'worker', label: '工作者' }, { value: 'reviewer', label: '審核者' }], scopeLabel: '專案' },
+  knowledge: { label: 'Knowledge', roles: [{ value: 'manager', label: '管理者' }, { value: 'writer', label: '編輯者' }, { value: 'reader', label: '讀者' }], scopeLabel: '空間' },
+  code: { label: 'Code', roles: [{ value: 'manager', label: '管理者' }, { value: 'writer', label: '編輯者' }, { value: 'reader', label: '讀者' }], scopeLabel: '專案' },
 };
 
 const knowledgeApi = createProductApi(productApiPrefix('knowledge'));
@@ -37,6 +38,7 @@ async function fetchScopes(product: ProductKey): Promise<ProductScope[]> {
 }
 
 function errorText(error: unknown) {
+  if (error instanceof Error && 'sourceMessage' in error) return String(error.sourceMessage);
   return error instanceof Error ? error.message : '請求失敗，請稍後重試。';
 }
 
@@ -64,6 +66,7 @@ export function usePermissionCatalogs() {
 }
 
 export function PermissionEditor({ value, catalogs, onChange }: { value: AuthPermissions; catalogs: PermissionCatalogs; onChange: (next: AuthPermissions) => void }) {
+  const { t } = useI18n();
   const products = Object.keys(productCopy) as ProductKey[];
   function update(product: ProductKey, field: 'role' | 'scope_ids', fieldValue: string | string[] | undefined) {
     const current = value[product];
@@ -85,14 +88,15 @@ export function PermissionEditor({ value, catalogs, onChange }: { value: AuthPer
     <div className="auth-permission-editor">
       {products.map((product) => {
         const copy = productCopy[product];
+        const roles = copy.roles.map((role) => ({ ...role, label: t(role.label) }));
         const catalog = catalogs[product];
         const permission = value[product];
         return (
           <section className="auth-permission-row" key={product}>
-            <div className="auth-permission-title"><strong>{copy.label}</strong><span>{catalog.status === 'ready' ? `${catalog.scopes.length} ${copy.scopeLabel}` : catalog.status === 'loading' ? '載入資源中' : catalog.status === 'error' ? catalog.error : '資源尚未載入'}</span></div>
+            <div className="auth-permission-title"><strong>{copy.label}</strong><span>{catalog.status === 'ready' ? t('{{count}} {{scope}}', { count: formatNumber(catalog.scopes.length), scope: t(copy.scopeLabel) }) : catalog.status === 'loading' ? t('載入資源中') : catalog.status === 'error' ? t(catalog.error) : t('資源尚未載入')}</span></div>
             <div className="auth-permission-fields">
-              <Select allowClear placeholder="不授予此產品" value={permission?.role} options={copy.roles} disabled={catalog.status !== 'ready'} onChange={(role) => update(product, 'role', role)} />
-              <Select mode="multiple" allowClear placeholder={`選擇 ${copy.scopeLabel}`} value={permission?.scope_ids ?? []} options={catalog.scopes.map((scope) => ({ value: scope.id, label: `${scope.key ? `${scope.key} · ` : ''}${scope.name}` }))} disabled={catalog.status !== 'ready' || !permission?.role} onChange={(ids) => update(product, 'scope_ids', ids)} maxTagCount="responsive" />
+              <Select allowClear placeholder={t('不授予此產品')} value={permission?.role} options={roles} disabled={catalog.status !== 'ready'} onChange={(role) => update(product, 'role', role)} />
+              <Select mode="multiple" allowClear placeholder={t('選擇 {{scope}}', { scope: t(copy.scopeLabel) })} value={permission?.scope_ids ?? []} options={catalog.scopes.map((scope) => ({ value: scope.id, label: `${scope.key ? `${scope.key} · ` : ''}${scope.name}` }))} disabled={catalog.status !== 'ready' || !permission?.role} onChange={(ids) => update(product, 'scope_ids', ids)} maxTagCount="responsive" />
             </div>
           </section>
         );

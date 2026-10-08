@@ -100,3 +100,9 @@ Feature candidates, current implementation boundaries and proposed priorities ar
 - Scaled dispatch ownership/partitioning, load tests and operational monitoring.
 
 Do not mark these gates complete merely because an interface or placeholder exists.
+
+## Internationalization delivery (2026-10-08)
+
+The application and public documentation now support Traditional Chinese (`zh-TW`), Simplified Chinese (`zh-CN`) and English (`en`). Shared navigation persists the browser preference across products and tabs. Application copy, Ant Design widgets, dates, numbers and API error projections follow the selected language; user-authored content and API identifiers are preserved. Open forms retain drafts, and existing validation errors are revalidated when the locale changes.
+
+Acceptance: 1,247 catalog messages with parity/interpolation/source-copy checks and seven locale behavior checks; all four frontend build targets; 121 isolated browser checks across Identity, Work, Knowledge, Code and mobile layouts; 46 documentation browser checks; 109 generated HTML pages (36 articles per language plus 404), 5,030 checked local references, zero link errors. Browser reports remain in ignored `.data/validation/`. No paid model calls are needed for these interface checks. See [language and translation](i18n.md) for maintenance and repeatable commands.

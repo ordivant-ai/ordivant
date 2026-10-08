@@ -1,11 +1,13 @@
 import type { IdentityAuditEvent, IdentityInvitation, IdentitySession, IdentitySessionRecord, IdentitySsoLink, IdentitySsoSettings, IdentitySsoSettingsWrite, IdentitySsoTestResult, IdentityStatus, IdentityUser } from './types';
+import { t } from '../i18n';
+import { describeApiError } from '../i18n/errors';
 
 const authApiPrefix = import.meta.env.VITE_AUTH_API_PREFIX || '/auth-api';
 const publicAuthPaths = new Set(['/status', '/me', '/setup', '/login', '/accept-invitation', '/recover']);
 let csrfToken: string | null = null;
 
 export class AuthApiError extends Error {
-  constructor(public status: number, message: string, public code?: string) {
+  constructor(public status: number, message: string, public code?: string, public sourceMessage = message) {
     super(message);
     this.name = 'AuthApiError';
   }
@@ -31,7 +33,8 @@ function describeError(payload: unknown, status: number): { message: string; cod
     ? (payload as { detail: unknown }).detail
     : undefined;
   if (Array.isArray(detail)) {
-    return { message: detail.map((item) => typeof item === 'object' && item !== null && 'msg' in item ? String((item as { msg: unknown }).msg) : '輸入資料不符合格式').join('；') };
+    const validation = describeApiError(payload, status);
+    return { message: validation.sourceMessage };
   }
   if (status >= 500) return { message: '帳號服務暫時無法連線，請稍後重試。' };
   if (status === 429) return { message: '嘗試次數過多，請稍後再試。' };
@@ -77,7 +80,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
     response = await fetch(`${authApiPrefix}${path}`, authRequestOptions({ ...init, headers, cache: 'no-store' }));
   } catch {
-    throw new AuthApiError(0, '無法連線至帳號服務，請確認服務已啟動後重試。');
+    const sourceMessage = '無法連線至帳號服務，請確認服務已啟動後重試。';
+    throw new AuthApiError(0, t(sourceMessage), undefined, sourceMessage);
   }
   if (response.status === 204) return undefined as T;
   const contentType = response.headers.get('content-type') ?? '';
@@ -86,7 +90,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (response.status === 401 && !publicAuthPaths.has(path)) announceAuthExpired();
     const error = describeError(payload, response.status);
     if (!error.code && response.status === 403) error.message = '此操作需要額外權限。';
-    throw new AuthApiError(response.status, error.message, error.code);
+    throw new AuthApiError(response.status, t(error.message), error.code, error.message);
   }
   return payload as T;
 }

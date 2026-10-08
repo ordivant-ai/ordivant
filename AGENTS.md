@@ -21,6 +21,6 @@ Ordivant is an enterprise project management and collaboration platform for agen
 - Pi owns execution transcripts, not business task state. One process owns each Pi storage file.
 - Never present demo execution or self-reported cost as a verified paid model run.
 - No fabricated data fallback when an API request fails. Demo seed data must be clearly marked.
-- User-facing copy is Traditional Chinese with useful English identifiers retained.
+- User-facing copy supports Traditional Chinese (default), Simplified Chinese and English through frontend/src/i18n. Add every interface message to the English catalog and regenerate the Simplified Chinese catalog. Keep API identifiers and user-authored content unchanged.
 - Python commands use `uv`. Put uv/npm caches under `.cache/` when default caches are inaccessible.
 - Tests should cover risks: concurrent claims, expiry, cross-project access, dependency cycles, idempotency, review separation, restart recovery, and the collaboration round trip.

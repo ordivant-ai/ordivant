@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n';
 import type { ReactNode } from 'react';
 import { Avatar, Typography } from 'antd';
 import type { ProductPrincipal } from './types';
@@ -39,18 +40,20 @@ export function ProductShell({
   actions?: ReactNode;
   children: ReactNode;
 }) {
+  const { t } = useI18n();
+  const roles: Record<string,string> = { admin: '管理員', manager: '管理者', writer: '編輯者', reader: '讀者', member: '成員' };
   return (
     <div className={`app-shell product-shell product-${product}`}>
       <aside className="side-rail">
         <div className="side-brand"><span className="brand-mark">O</span><div><strong>Ordivant</strong><span>Agent operations</span></div></div>
         <ProductSwitcher active={product} />
         <div className="rail-label">{sectionLabel}</div>
-        <nav className="rail-nav" aria-label={`${productLabel} 導覽`}>
+        <nav className="rail-nav" aria-label={t('{{product}} 導覽', { product: productLabel })}>
           {navigation.map((item) => <button type="button" key={item.key} className={`nav-item${activeSection === item.key ? ' nav-item-active' : ''}`} onClick={() => onSectionChange(item.key)}><span className="nav-item-icon">{item.icon}</span><span>{item.label}</span>{item.count ? <span className="nav-count">{item.count}</span> : null}</button>)}
         </nav>
         <div className="rail-bottom">
-          <div className="workspace-identity"><Avatar size={28}>{principal.name.slice(0, 1).toUpperCase()}</Avatar><div className="workspace-user"><strong>{principal.name}</strong><span>{principal.role}</span></div><AccountControl product={product} productLabel={productLabel} displayName={principal.name} businessRole={principal.role} /></div>
-          <div className="rail-service"><span className={`health-dot ${serviceStatus === 'ok' ? 'health-good' : serviceStatus === 'error' ? 'health-bad' : ''}`} />{serviceStatus === 'ok' ? `${productLabel} API 已連線` : serviceStatus === 'error' ? `${productLabel} API 無法連線` : '檢查服務中'}</div>
+          <div className="workspace-identity"><Avatar size={28}>{principal.name.slice(0, 1).toUpperCase()}</Avatar><div className="workspace-user"><strong>{principal.name}</strong><span>{t(roles[principal.role] ?? principal.role)}</span></div><AccountControl product={product} productLabel={productLabel} displayName={principal.name} businessRole={principal.role} /></div>
+          <div className="rail-service"><span className={`health-dot ${serviceStatus === 'ok' ? 'health-good' : serviceStatus === 'error' ? 'health-bad' : ''}`} />{serviceStatus === 'ok' ? t('{{product}} API 已連線', { product: productLabel }) : serviceStatus === 'error' ? t('{{product}} API 無法連線', { product: productLabel }) : t('檢查服務中')}</div>
         </div>
       </aside>
       <main className="main-pane">
