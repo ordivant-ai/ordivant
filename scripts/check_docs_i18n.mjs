@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { documentPaths } from './docs_pages.mjs';
+export { documentPaths } from './docs_pages.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const requireDocs = createRequire(path.join(repoRoot, 'docs/package.json'));
@@ -112,16 +114,6 @@ function runRegressionChecks() {
   const failures = cases.filter(([, passed]) => !passed);
   if (failures.length) throw new Error(`Body-language regression checks failed: ${failures.map(([name]) => name).join(', ')}`);
   return cases.length;
-}
-
-export function documentPaths() {
-  const docs = path.join(repoRoot, 'docs');
-  const walk = directory => fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
-    if (['node_modules', '.vitepress', 'en', 'zh-CN'].includes(entry.name)) return [];
-    const full = path.join(directory, entry.name);
-    return entry.isDirectory() ? walk(full) : entry.name.endsWith('.md') ? [path.relative(docs, full).split(path.sep).join('/')] : [];
-  });
-  return walk(docs).sort();
 }
 
 function main() {

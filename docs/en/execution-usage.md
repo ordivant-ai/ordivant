@@ -3,7 +3,7 @@
 
 # Runs, Templates, Workflows, and Tool Environments
 
-These features are part of **Work**. Knowledge and Code remain independently usable and do not require a sandbox. See the [execution contracts](execution-contracts.md) for the API and authorization rules.
+Run execution, Agent templates, workflows, and tool connections are managed by **Work**. Knowledge and Code remain independently usable and do not require a sandbox. See the [architecture and API reference](reference.md#work-api) for API and authorization rules.
 
 To get started, sign in to Work. An administrator configures the API endpoint, key, and default model under **Model connections**. Then create any required tool connections or sandbox profiles and Agents, and manually dispatch a task or start a workflow. Existing organization model settings can be reused. Runs are explicitly marked DEMO when no valid model is configured.
 
@@ -12,7 +12,7 @@ To get started, sign in to Work. An administrator configures the API endpoint, k
 
 ## Start
 
-If the existing local environment already has a Work runtime bootstrap:
+Use the following Compose commands for development or a standard deployment:
 
 ```powershell
 # Development mode with hot reload and the isolated executor.
@@ -74,7 +74,7 @@ Enter an HTTPS MCP endpoint, a write-only bearer token, and the allowed tool nam
 
 Connection credentials are encrypted and never returned to the form; leaving the field blank preserves the existing key. Changing an authenticated endpoint requires entering a new key. An Agent receives only tools allowed for its execution project, with namespaced tool names. External operations are not replayed automatically; uncertain side effects are neither reported as success nor repeated automatically.
 
-Bearer authentication is supported. Vendor-specific interactive MCP OAuth, stdio launchers, and remote A2A are outside this release.
+Bearer authentication is supported. Vendor-specific interactive MCP OAuth, stdio launchers, and remote A2A are not supported yet.
 
 <span id="沙箱"></span>
 
@@ -82,7 +82,7 @@ Bearer authentication is supported. Vendor-specific interactive MCP OAuth, stdio
 
 An administrator creates a project sandbox profile with limits for command time, memory, CPU, process count, output bytes, and workspace size, then assigns it to an Agent. Dispatch stores an immutable profile snapshot. Runtime exposes sandbox tools to read and write files, list files, and execute argv commands.
 
-Each Run receives its own container and size-limited memory workspace. Jobs run as non-root with a read-only root filesystem, no network, no host directories, and no provider, tool, or platform credentials. The fixed image includes Python, Node.js, and Git for running programs and tests with the available dependencies. Because networking is disabled, operators must add required packages to the fixed job image in advance or write authorized files into the workspace. Arbitrary Git cloning and online package installation are not supported in this release.
+Each Run receives its own container and size-limited memory workspace. Jobs run as non-root with a read-only root filesystem, no network, no host directories, and no provider, tool, or platform credentials. The fixed image includes Python, Node.js, and Git for running programs and tests with the dependencies already in the image. Because networking is disabled, deployment operators must add required packages to the fixed job image in advance or write authorized files into the workspace. Arbitrary Git cloning and online package installation are not currently supported.
 
 Failed commands retain their non-zero exit code, and timeouts or truncated output are marked explicitly. File tools accept only relative workspace paths and reject traversal and symlink escapes. Submit result files and test output as evidence before the Run ends. The workspace is removed when a Run completes, stops, or reaches its global timeout; after restart the executor cleans up orphaned jobs it owns. A command timeout terminates that command's process group and returns an explicit result. The workspace is not persistent file storage.
 
@@ -92,43 +92,10 @@ Only the separately trusted `sandbox-api` service holds the Docker daemon socket
 
 <span id="隔離驗收"></span>
 
-## Isolated acceptance
+## Validate runs in your project {#isolated-acceptance}
 
-```powershell
-# Port 8092 is reserved for synthetic QA; do not start the original enterprise SSO fixture.
-$env:ORDIVANT_WEB_PORT = '8092'
-.\scripts\containers.ps1 -ProjectName ordivant-execution-qa -Seed -WithRuntime -WithSandbox -ExecutionQaFixture
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_acceptance.py --containers
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_cleanup_acceptance.py
-.\scripts\containers.ps1 -ProjectName ordivant-execution-qa -Action down -WithRuntime -WithSandbox -ExecutionQaFixture
-Remove-Item Env:ORDIVANT_WEB_PORT
-```
+Run a low-risk task in your project and confirm that its Run moves from queued to execution and submission. Have a different authorized member review the result independently. DEMO validates the product workflow but does not call a paid model. When using a configured model connection, first confirm the provider, model, and spending policy.
 
-The scripts accept only their own Compose project and `127.0.0.1:8092`, using the already authorized synthetic QA account. The MCP fixture is a local authenticated synthetic service. The Docker probe actually reads and writes files, runs successful and failing commands, and checks isolation and resource limits. Reports under `.data/validation/` contain no credentials. See [execution acceptance](execution-validation.md) for results and limitations.
+For a tool connection, use **Test connection** to confirm the allowed tool list, then dispatch a task that only reads data or creates test data that can be safely removed. Check the actual side effect in the upstream service. Stopping a Run does not undo an operation already completed by an external service, and uncertain operations are not replayed automatically.
 
-To reproduce the mouse-driven browser acceptance, run these commands after QA is running and API acceptance has created the required resources. Chrome must be installed. The browser uses an isolated headless session.
-
-```powershell
-npm install --prefix .cache/browser-qa --no-audit --no-fund --package-lock playwright
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_browser.py scripts/execution_ui.cjs
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_run_browser.py
-```
-
-Live acceptance makes real calls to the Provider you specify and is not part of regular CI or offline tests. Set the following environment variables explicitly. You choose the endpoint and model; the key is read only from the specified local file. The script does not automatically read or decrypt a saved connection from the main environment.
-
-```powershell
-# Set only non-secret connection details and the key-file path; never put the key value in a command.
-$env:ORDIVANT_TEST_PROVIDER_BASE = 'https://YOUR_PROVIDER_HOST/v1'
-$env:ORDIVANT_TEST_PROVIDER_MODEL = 'YOUR_MODEL_ID'
-$env:ORDIVANT_TEST_PROVIDER_PROJECT = 'ordivant-execution-qa'
-$env:ORDIVANT_TEST_PROVIDER_KEY_FILE = '/path/to/private/provider.key'
-# Optional: ORDIVANT_TEST_PROVIDER_ID; defaults to acceptance-provider.
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_live_acceptance.py
-# Replace the report path below with the successful report produced by the previous command.
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_record_checks.py .data/validation/execution-EXAMPLE/live-report.json
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_browser.py scripts/execution_live_ui.cjs --report .data/validation/execution-EXAMPLE/live-report.json
-```
-
-First start `ordivant-execution-qa` on port 8092 using the isolation steps above and complete regular acceptance; the Live script checks environment ownership. It configures only the QA Agent, leaving the organization default empty. Other QA work remains DEMO. Use a real model that supports Responses, tool calling, and reasoning, and allow for test usage.
-
-The record checker briefly stops its own QA Runtime, inspects the current MCP tool result read-only while no Pi writer is active, then restores the service. Its output contains only booleans and resource IDs. See [execution acceptance](execution-validation.md) for the historical summary; raw QA data and keys are not included in the public repository.
+If the Agent uses a sandbox, confirm that files and command results have been submitted as evidence before the Run ends, and that the workspace is cleaned up afterward. If the sandbox API cannot confirm deletion, the console reports unconfirmed cleanup; the deployment operator should inspect the executor they manage. Docker isolation shares the host kernel. Connect a VM or microVM executor when a VM boundary is required.

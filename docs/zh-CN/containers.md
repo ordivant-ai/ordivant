@@ -38,15 +38,15 @@
 
 选择完整套件时，会使用套件前端模式，并以 Work 作为 `/api` 上游。单独选择 Knowledge 或 Code 时，会建置该产品的独立前端。正式环境缺省网页连接端口为 `8088`。开发与正式环境的缺省 Compose 项目名称都包含保存库绝对路径的哈希，因此另一份 checkout 会取得独立的项目与秘密文件夹。可使用 `-ProjectName` 指定固定的运行个体名称。
 
-若要同时运行开发与正式环境，请使用不同的 Compose 项目名称及不冲突的主机连接端口。以下范例让开发环境 Gitea 使用 `3003`，正式环境 Gitea 使用缺省的 `3002`：
+若要同时运行开发与正式环境，请使用不同的 Compose 项目名称及不冲突的主机连接端口。以下命令仅为可调整的示例；请依部署名称、可用端口和是否需要选配服务进行调整：
 
 ```powershell
 $env:ORDIVANT_DEV_WEB_PORT = '5173'
 $env:ORDIVANT_WEB_PORT = '8088'
 $env:ORDIVANT_GITEA_PORT = '3003'
-.\scripts\containers.ps1 -Development -ProjectName ordivant-dev-local -Seed -WithGitea -WithRuntime
+.\scripts\containers.ps1 -Development -ProjectName ordivant-dev-example -Seed -WithGitea -WithRuntime
 Remove-Item Env:ORDIVANT_GITEA_PORT
-.\scripts\containers.ps1 -ProjectName ordivant-prod-local -WithGitea
+.\scripts\containers.ps1 -ProjectName ordivant-prod-example -WithGitea
 ```
 
 这两次运行会使用各 Compose 项目独立的数据卷，以及 `.data/container-secrets/<ProjectName>/` 文件夹。正式环境的命令不会创建示范数据。
@@ -65,15 +65,15 @@ Remove-Item Env:ORDIVANT_GITEA_PORT
 
 必须明确提供 `-Seed` 才会在各选定产品的 API 容器内运行数据初始化模块。初始化数据及产生的 Bearer token 都是本机示范数据，不会设置企业 SSO。若使用 `-WithRuntime` 却没有提供 `-Seed`，脚本会要求该 Compose 项目的永久数据卷中已存在 Work `/data/bootstrap.json`；文件不存在时会失败，不会自行创建。
 
-使用 `-WithRuntime` 时，`-Products` 必须包含 `work`。`-WithGitea` 会启动 `gitea` profile，缺省将 Gitea 公开于回送连接端口 `3002`。自动产生的 `ordivant-local` 服务帐号使用随机密码，该密码不会被保存或输出；具有限定权限的服务 token 与 webhook 秘密会保存在本机供 Code 使用。重复运行时，脚本会验证并保留既有凭证。若无法验证已保存的凭证，脚本会停止，不会悄悄更换凭证。
+使用 `-WithRuntime` 时，`-Products` 必须包含 `work`。`-WithGitea` 会启动 `gitea` profile，缺省将 Gitea 公开于回送连接端口 `3002`。辅助脚本会初始化本机 Gitea 服务身分，并将必要的服务凭证保存在该 Compose 项目的本机机密文件夹。重复运行时会验证并保留既有凭证；若无法验证，脚本会停止，不会悄悄替换凭证。
 
-`-WithSandbox` 另外要求 Work 与 `-WithRuntime`。它会加入 `compose.sandbox.yaml`、建置固定的沙箱工作映像，并在 runtime 之前启动内部受信任的运行器。只有 `sandbox-api` 持有 Docker daemon socket；工作容器、runtime 与网页都不持有。沙箱工作以非 root 身分运行，采唯读、禁止网络及资源限制设置，每次运行使用独立且容量受限的 tmpfs 工作空间。产生的 `sandbox_service_token` 保存在项目秘密文件夹。运行控制、范本、工作流程调度、端点主机政策，以及选配的 8092 专属 `-ExecutionQaFixture`，请参阅[运行功能操作指南](execution-usage.md)。沙箱工作空间内容是暂存数据，不包含在数据卷备份中。
+`-WithSandbox` 另外要求 Work 与 `-WithRuntime`。它会加入 `compose.sandbox.yaml`、建置固定的沙箱工作映像，并在 runtime 之前启动内部受信任的运行器。只有 `sandbox-api` 持有 Docker daemon socket；工作容器、runtime 与网页都不持有。沙箱工作以非 root 身分运行，采唯读、禁止网络及资源限制设置，每次运行使用独立且容量受限的 tmpfs 工作空间。产生的服务凭证保存在项目机密文件夹。运行控制、范本、工作流程调度与端点主机政策，请参阅[运行功能操作指南](execution-usage.md)。沙箱工作空间内容是暂存数据，不包含在数据卷备份中。
 
-每个 Compose 项目会将产生的服务凭证保存在 `.data/container-secrets/<ProjectName>/`。文件夹包含 64 位十六进位数据库密码、PostgreSQL URL 文件、内部 Identity 服务 token、开发代理 token，以及 `gitea.json`（初始内容为 `{}`）。包含 Identity 在内的数据库数据卷也依 Compose 项目区分。这些文件已被 Git 忽略；请保留于本机，不要输出或发布。若要持续使用对应数据库数据卷，请安全地备份这些文件。脚本不会产生人类用户的密码。
+每个 Compose 项目都有独立的数据卷与本机机密文件夹。机密文件已被 Git 忽略；请勿提交或公开。若要保留并还原对应数据库，请将该项目的数据卷、机密文件夹及 Identity 加密密钥一起安全备份。停止容器不会删除这些数据。
 
 正式环境建置使用 `ORDIVANT_MODE=production`，不提供本机工作阶段验证。明确使用 `-Seed` 仍会写入示范身分与本机 Bearer 凭证，因此只有需要示范数据时才应使用。
 
-Docker Compose 操作失败时，脚本会附上最后 15 行输出，并屏蔽已知项目秘密、长十六进位凭证、含密码的行及 URL 中的用户信息。它不会输出完整 Docker 命令或秘密文件内容。
+分享 Docker Compose 错误输出前，请先确认内容未包含机密、个人资料或内部网址。
 
 ## Gitea 网址 {#gitea-urls}
 
@@ -92,30 +92,15 @@ Work 使用各项目自己的 `/data/vcs.json` 访问既有 VCS。其 Compose �
 .\scripts\containers.ps1 -Development -Action status -WithIdentityBroker
 ```
 
-代理绑定回送连接端口 `8093`；需要调整时，请在启动前覆写 `ORDIVANT_BROKER_PORT` 与 `ORDIVANT_BROKER_PUBLIC_URL`。代理没有缺省的人类管理员。请依[企业 SSO](enterprise-sso.md)的交互式 WSL tmux 步骤初始化管理员。`-WithIdentityBroker` 会设置明确的内部反向信道路由；外部 IdP 使用经验证的 HTTPS。企业私人 CA 凭证组合可挂载至容器，并通过 `ORDIVANT_SSO_CA_BUNDLE` 指定。
-
-隔离的协定测试环境须明确启动，且不会在主要环境中初始化人类帐号：
-
-```powershell
-.\scripts\sso-containers.ps1 -Action up
-uv --cache-dir .cache/uv run --project products/identity/backend --no-sync python scripts/sso_acceptance.py
-uv --cache-dir .cache/uv run --project products/identity/backend --no-sync python scripts/sso_storage_acceptance.py
-.\scripts\sso-containers.ps1 -Action down
-```
-
-此环境使用项目 `ordivant-sso-qa`、应用连接端口 `8092`、代理连接端口 `8093`、独立数据卷与秘密，以及两个合成 realm。产生测试数据时需要主机安装 `uv`。若这些连接端口已有服务，必须先通过该服务所属的项目辅助脚本停止。`-Action reimport` 只会在代理停止时替换产生的 QA realm，不用于实际组织身分。报告只包含检查结果与资源识别字，不包含凭证。详见 [SSO 验收](sso-validation.md)。
+代理绑定回送连接端口 `8093`；需要调整时，请在启动前覆写 `ORDIVANT_BROKER_PORT` 与 `ORDIVANT_BROKER_PUBLIC_URL`。代理没有缺省的人类管理员。请依[企业 SSO](enterprise-sso.md)中的交互提示初始化 broker 管理员，并在创建正式管理员后移除临时账号。请勿将密码写入命令、环境变量或文件。`-WithIdentityBroker` 会设置明确的内部反向信道路由；外部 IdP 使用经验证的 HTTPS。企业私人 CA 凭证组合可挂载至容器，并通过 `ORDIVANT_SSO_CA_BUNDLE` 指定。
 
 ## 无需主机 Python 的 MCP {#mcp-without-host-python}
 
 每个 API 映像都包含自己的 stdio MCP 服务器。设置 MCP 用户端时，使用对应项目的 Compose 文件与限定权限的 token 环境变量来运行 `docker`。主机不需要 Python 环境或 Pi runtime。例如，以下命令会转送已在用户端进程环境中设置的 token，其值不会出现在命令参数中：
 
 ```powershell
-$env:ORDIVANT_SECRETS_DIR = Join-Path (Get-Location) '.data/container-secrets/ordivant-dev'
-docker compose -p ordivant-dev -f compose.yaml -f compose.dev.yaml exec -T -e ORDIVANT_KNOWLEDGE_API_TOKEN knowledge-api python -m ordivant_knowledge.mcp_server
+$env:ORDIVANT_SECRETS_DIR = Join-Path (Get-Location) '.data/container-secrets/ordivant-example'
+docker compose -p ordivant-example -f compose.yaml -f compose.dev.yaml exec -T -e ORDIVANT_KNOWLEDGE_API_TOKEN knowledge-api python -m ordivant_knowledge.mcp_server
 ```
 
-外部 MCP 用户端的设置需使用实际项目名称与 Compose 文件绝对路径。Work 使用 `ORDIVANT_API_TOKEN` 与 `python -m ordivant.mcp_server`；Code 使用 `ORDIVANT_CODE_API_TOKEN` 与 `python -m ordivant_code.mcp_server`。每个 Agent 应取得其产品限定权限的凭证；不要将 Gitea 服务 token 当成 Ordivant Bearer token。Knowledge 独立容器验收会完全在自己的 API 容器中使用官方 MCP SDK 与服务器。
-
-可重现的容器检查方式，请参阅[套件容器验收](container-validation.md)、[Knowledge 独立容器验收](standalone-container-validation.md)、[Code 独立容器验收](code-standalone-validation.md)与[热重载验收](hot-reload-validation.md)。已完成的本机结果记录于[验收纪录](validation.md)。
-
-交付时，本机开发套件使用 `5173`，其 Gitea 使用 `3002`；正式环境映像的 QA 套件使用 `8088`，其 Gitea 使用 `3003`。暂时启动的 Knowledge／Code 独立 QA 容器已在验收后停止，数据卷、秘密与报告仍予保留。这两套环境都没有部署至远程。
+外部 MCP 用户端的设置需使用该部署的 Compose 项目名称与 Compose 文件路径。Work 使用 `ORDIVANT_API_TOKEN` 与 `python -m ordivant.mcp_server`；Knowledge 使用 `ORDIVANT_KNOWLEDGE_API_TOKEN` 与 `python -m ordivant_knowledge.mcp_server`；Code 使用 `ORDIVANT_CODE_API_TOKEN` 与 `python -m ordivant_code.mcp_server`。每个 Agent 应取得其产品限定权限的凭证；不要将 Gitea 服务 token 当成 Ordivant Bearer token。

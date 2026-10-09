@@ -31,13 +31,13 @@ Work、Knowledge、Code 共用这一套环境的账号。首次启动时打开�
 
 ## 环境与部署 {#environments-and-deployment}
 
-开发入口 `http://127.0.0.1:5173/work`，本地正式模式入口 `http://127.0.0.1:8088/work`。两套环境各自保存账号及业务数据，需要各自创建管理员。`-Seed` 只加入明确标示的业务示范数据，不会创建人的密码账号。
+使用管理员提供的部署网址打开 Ordivant。每个独立部署各自保存账号与业务数据；若使用多个部署，需在每个环境分别创建初始管理员。`-Seed` 只加入明确标示的业务示范数据，不会创建人的密码账号。
 
 Docker helper 自动创建 Identity API、独立 PostgreSQL 与内部服务凭证。产品只透过内部验证服务查找登录状态，不读 Identity 数据库。浏览器工作阶段使用 HttpOnly／SameSite cookie，写入操作检查 Origin 与 CSRF；agent REST／MCP 使用原有受限 bearer token。
 
 对外部署需要 HTTPS、`ORDIVANT_AUTH_COOKIE_SECURE=true` 和明确的 `ORDIVANT_AUTH_ORIGINS`。只有 literal localhost／127.0.0.1／::1 的 HTTP Origin 可使用本地例外；设置不完整或服务脱机时拒绝登录与人员业务授权。若产品数据库有多个组织，Compose／launcher 分别设置 `ORDIVANT_WORK_IDENTITY_ORG_ID`、`ORDIVANT_KNOWLEDGE_IDENTITY_ORG_ID`、`ORDIVANT_CODE_IDENTITY_ORG_ID`，它们传入各产品自己的 `ORDIVANT_IDENTITY_ORG_ID`；不得把不同组织的项目混在同一个登录范围。
 
-Identity volumes、业务 volumes 与 `.data/container-secrets/<ProjectName>/` 必须一起保留及备份。停止容器不会删除数据；企业设置还需要 Identity data volume 中的 `sso.key` 才能解密还原。
+Identity volumes、业务 volumes 与部署所配置的服务机密储存位置必须一起保留及备份。停止容器不会删除数据；企业设置还需要 Identity data volume 中的 `sso.key` 才能解密还原。
 
 <span id="企業-sso"></span>
 <span id="企业-sso"></span>

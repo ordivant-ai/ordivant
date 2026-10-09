@@ -3,7 +3,7 @@
 
 # 运行、模板、自动流程与工具环境 {#runs-templates-workflows-and-tool-environments}
 
-本轮功能位于 **Work**。Knowledge／Code 仍可独立使用，不需要启动沙箱。完整 API 与权限在 [运行契约](execution-contracts.md)。
+Run 执行、Agent 模板、工作流程与工具连接由 **Work** 管理；Knowledge／Code 仍可独立使用，不需要启动沙箱。API 与权限规则见[架构与 API 索引](reference.md#work-api)。
 
 第一次使用时，先登录 Work，由管理员在「模型连接」设置 API endpoint、密钥与预设模型；再创建需要的工具连接／沙箱与 Agent，最后手动派工或启动工作流程。已存在的组织模型设置可直接沿用。没有设置有效模型时，运行明确标示为 DEMO。
 
@@ -12,7 +12,7 @@
 
 ## 启动 {#start}
 
-既有本机环境已经有 Work runtime bootstrap 时：
+开发环境与一般部署环境可使用以下 Compose 指令：
 
 ```powershell
 # 開發模式：熱重載，啟動隔離執行器。
@@ -74,7 +74,7 @@ $env:ORDIVANT_TOOL_ALLOWED_HOSTS = 'mcp.company.example'
 
 连接密钥加密保存，不回填到表单；留白保留原密钥。变更有认证的 endpoint 时需明确重新输入密钥。Agent 绑定后只会取得该运行项目允许的工具，工具名称会加入命名空间。外部操作预设不自动重播；不确定的副作用不会被当成成功或自动重做。
 
-目前提供 bearer 认证；各厂商的交互式 MCP OAuth、stdio launcher 和远程 A2A 不包含在本轮。
+目前提供 bearer 认证；尚未支持各厂商的交互式 MCP OAuth、stdio launcher 和远程 A2A。
 
 <span id="沙箱"></span>
 
@@ -82,7 +82,7 @@ $env:ORDIVANT_TOOL_ALLOWED_HOSTS = 'mcp.company.example'
 
 管理员添加项目沙箱设置，限制 command 时间、内存、CPU、process 数、输出 bytes 与 workspace 空间。将设置套用至 Agent。派工时固定设置快照，runtime 会提供读写文件、列出文件、运行 argv command 的沙箱工具。
 
-每个 Run 使用独立容器与有大小上限的内存 workspace；非 root、唯读系统文件、无网络、无主机目录、无 provider／工具／平台认证。内含 Python、Node.js 与 Git，可运行现有依赖的程序与测试。网络关闭，因此需要的套件应由操作者预先加入固定 job image，或由授权文件工具写入；本轮不提供任意 Git 网址 clone 或在线安装套件。
+每个 Run 使用独立容器与有大小上限的内存 workspace；程序以非 root 身份运行，系统文件唯读，且无网络、主机目录或 provider／工具／平台凭证。内含 Python、Node.js 与 Git，可运行映像中已有依赖的程序与测试。网络关闭，因此需要的套件应由部署者预先加入固定 job image，或由授权文件工具写入；目前不支援任意 Git 网址 clone 或在线安装套件。
 
 失败 command 会保留非零 exit code，超时及截断的输出会明确标记。文件只能使用相对 workspace 路径，拒绝 traversal 与 symlink escape。成果文件／测试输出需在 Run 结束前提交为证据；Run 结束、停止或整次运行超时会清理 workspace，运行器重启会清理自己拥有的孤儿工作。单一 command 超时会终止其 process group 并保留明确结果。这不是长期文件保存。
 
@@ -92,43 +92,10 @@ $env:ORDIVANT_TOOL_ALLOWED_HOSTS = 'mcp.company.example'
 
 <span id="隔離驗收"></span>
 
-## 隔离验收 {#isolated-acceptance}
+## 在项目中验证运行结果 {#isolated-acceptance}
 
-```powershell
-# 埠 8092 僅供合成 QA；不啟動原企業 SSO fixture。
-$env:ORDIVANT_WEB_PORT = '8092'
-.\scripts\containers.ps1 -ProjectName ordivant-execution-qa -Seed -WithRuntime -WithSandbox -ExecutionQaFixture
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_acceptance.py --containers
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_cleanup_acceptance.py
-.\scripts\containers.ps1 -ProjectName ordivant-execution-qa -Action down -WithRuntime -WithSandbox -ExecutionQaFixture
-Remove-Item Env:ORDIVANT_WEB_PORT
-```
+可在自己的项目中执行低风险任务，确认 Run 从 queued 进入执行与提交状态，再由另一位具备权限的成员独立审核成果。DEMO 只验证产品流程，不代表已调用付费模型；使用已设置的模型连接时，请先确认供应商、模型与费用政策。
 
-脚本只允许自己的 Compose project 与 `127.0.0.1:8092`，使用既有授权的合成 QA 账号。MCP fixture 是带认证的本机合成服务；Docker probe 会真正读写文件、运行成功／失败 command、验证隔离及限制。报告位于 `.data/validation/`，不含凭证。验收结果与限制见 [运行功能验收](execution-validation.md)。
+使用工具连接时，先通过「测试连接」确认可以取得允许的工具列表，再派发只读取数据或创建可安全清理的测试数据的任务。到上游服务核对实际副作用；停止 Run 不会撤销外部服务已完成的操作，也不会自动重播结果不明的操作。
 
-需要重现鼠标验收时，在 QA 仍启动且 API 验收已产生资源后运行以下指令；需已安装 Chrome。浏览器使用独立的 headless 工作阶段。
-
-```powershell
-npm install --prefix .cache/browser-qa --no-audit --no-fund --package-lock playwright
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_browser.py scripts/execution_ui.cjs
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_run_browser.py
-```
-
-Live 验收会真的调用你指定的 Provider，不包含在一般 CI 或脱机测试。请明确设置以下环境变量；endpoint/model 由你选择，key 只从指定的本机文件读取，不会自动读取或解密主环境的已存连接。
-
-```powershell
-# 仅设置非机密的连接信息与文件路径；不要把 key 值放入命令。
-$env:ORDIVANT_TEST_PROVIDER_BASE = 'https://YOUR_PROVIDER_HOST/v1'
-$env:ORDIVANT_TEST_PROVIDER_MODEL = 'YOUR_MODEL_ID'
-$env:ORDIVANT_TEST_PROVIDER_PROJECT = 'ordivant-execution-qa'
-$env:ORDIVANT_TEST_PROVIDER_KEY_FILE = '/path/to/private/provider.key'
-# 可选：ORDIVANT_TEST_PROVIDER_ID，默认 acceptance-provider。
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_live_acceptance.py
-# 將下列路徑替換成上一個命令產生的成功報告。
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_record_checks.py .data/validation/execution-EXAMPLE/live-report.json
-uv --cache-dir .cache/uv run --project backend --no-sync python scripts/execution_browser.py scripts/execution_live_ui.cjs --report .data/validation/execution-EXAMPLE/live-report.json
-```
-
-请先依隔离验收步骤启动 8092 的 `ordivant-execution-qa` 并完成一般验收；Live 脚本会检查环境 ownership。脚本只设置 QA 的个别 Agent，组织 default 保持空值。其他 QA 工作仍是 DEMO。请使用支持 Responses/tool calling/reasoning 的实际模型并预留测试用量。
-
-纪录检查会短暂停止自己的 QA runtime，在没有 Pi writer 的状态下只读检查当次 MCP tool result，再恢复服务；输出只有布尔与资源 ID。历史验收摘要见[运行功能验收](execution-validation.md)，原始 QA 数据与密钥不随公开仓库提供。
+如果 Agent 使用沙箱，请确认文件与命令结果在 Run 结束前已提交为证据，且 Run 结束后工作区会清理。沙箱 API 无法确认删除时，控制台会标示清理未确认；部署者应检查自己管理的执行器。Docker 隔离共用主机 kernel；需要 VM 边界时，请连接 VM 或 microVM 执行器。

@@ -57,4 +57,4 @@ The `mode` in the service health check is the default behavior for unconfigured 
 
 When backing up model settings, preserve the Work database and `model-settings.key` from the Work data volume together. Restoring only the database without its encryption key cannot decrypt existing Provider keys.
 
-See the [model contracts](model-contracts.md) for API and Runtime boundaries. See the [validation records](validation.md) for acceptance report locations and the scope actually completed.
+For model connection and dispatch instructions, see the [Work guide](guide/work.md) and [execution and automation guide](execution-usage.md). See [Model API](reference.md#model-settings) for API and Runtime boundaries, and the [product roadmap](roadmap.md) for planned model features.

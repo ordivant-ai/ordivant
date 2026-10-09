@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { documentPaths } from './check_docs_i18n.mjs';
+import { publicDocumentPaths } from './docs_pages.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, '.cache/docs-project-redirects');
@@ -27,10 +27,13 @@ function redirectPage(locale, route, fallback = false) {
 `;
 }
 
+// The output is generated only within this repository's cache directory.
+if (path.dirname(output) !== path.join(root, '.cache')) throw new Error('Invalid redirect output directory');
+fs.rmSync(output, { recursive: true, force: true });
 fs.mkdirSync(output, { recursive: true });
 let pages = 0;
 for (const locale of locales) {
-  for (const document of documentPaths()) {
+  for (const document of publicDocumentPaths()) {
     const route = locale.prefix + document.replace(/\.md$/, '.html');
     const file = path.join(output, route);
     fs.mkdirSync(path.dirname(file), { recursive: true });

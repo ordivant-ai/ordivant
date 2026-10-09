@@ -36,4 +36,4 @@ Code 权限以 Code Project 为范围：**Manager** 创建及管理 Project，**
 
 「回报状态」可把指定 commit 的 pending、success、failure 或 error 回报到 Gitea。这类收据明确标记为 `agent_reported`，不代表实际 CI runner 运行过测试。有效的 Gitea webhook 收据会标记为 `gitea_webhook`。此套件目前不包含 CI runner；请在描述中说清楚状态来源与测试实际运行情况。
 
-PR 来源引用是 provenance，不会使 Code 用户自动取得 Work、Knowledge 或外部系统权限。Work 可独立连接既有 VCS 读取 PR 状态，不必先激活 Code；两者的边界见[产品契约](../suite-contracts.md)。
+PR 来源引用是 provenance，不会使 Code 用户自动取得 Work、Knowledge 或外部系统权限。Work 可独立连接既有 VCS 读取 PR 状态，不必先激活 Code；两者的边界见[架构与 API 索引](../reference.md)。

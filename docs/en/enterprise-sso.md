@@ -60,31 +60,30 @@ For SAML, add a SAML Identity Provider in Keycloak and import the upstream metad
 
 For LDAP/AD, add an LDAP provider under Keycloak User Federation. Enter the directory address, Users DN, search filters, and username/email attributes provided by the enterprise. Configure group mappers and use LDAPS or StartTLS with a trusted CA. Enterprise administrators enter directory bind credentials and member passwords directly in the identity service. Validate the directory connection and synchronization for one member before creating an OIDC client for Ordivant. Ordivant still applies allowed domains, invitation/JIT policy, and explicit resource grants.
 
-The container configuration provides pinned Keycloak 26.8.0 and a separate PostgreSQL database:
+To use SAML or LDAP/AD federation in the same deployment, the following example starts pinned Keycloak 26.8.0 and its separate PostgreSQL database. `ordivant-example` is an adjustable Compose project name:
 
 ```powershell
-.\scripts\containers.ps1 -Action up -WithIdentityBroker
+.\scripts\containers.ps1 -Action up -WithIdentityBroker -ProjectName ordivant-example
 ```
 
 By default, the broker binds only to `127.0.0.1:8093`. The caller can set `ORDIVANT_BROKER_PORT` and `ORDIVANT_BROKER_PUBLIC_URL`; deployments across machines should use a fixed HTTPS URL and a trusted reverse proxy. Other OIDC providers can be configured directly without enabling the broker container.
 
-The broker does not create a default human administrator. During initialization, enter the password at the interactive prompt in a WSL tmux session:
+The broker does not create a default human administrator. These commands use `ordivant-example`; use the same project name and secret directory as the broker deployment. The administrator enters the password directly at the interactive prompt in tmux. On Windows, open a WSL session first and ensure Docker Desktop has WSL integration enabled:
 
 ```powershell
 wsl -- tmux new-session -A -s ordivant-idp-admin
 ```
 
-In that terminal, use the actual Compose project name (the example below uses local production mode):
+On Linux, use `tmux new-session -A -s ordivant-idp-admin`. Change to the repository directory in the tmux terminal, then run the one-time bootstrap:
 
-```bash
-cd '/path/to/ordivant'  # In Windows WSL, use a path such as /mnt/c/path/to/ordivant.
-export ORDIVANT_SECRETS_DIR="$PWD/.data/container-secrets/ordivant-local"
-docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
-docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
-docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
+```sh
+export ORDIVANT_SECRETS_DIR="$PWD/.data/container-secrets/ordivant-example"
+docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
+docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
+docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
 ```
 
-Enter the password only at the prompt; do not put it in chat, commands, environment variables, or files. Sign in to the broker as the temporary administrator, create the permanent administrator, then remove the temporary account. Docker Desktop integration must be enabled for WSL. See [Keycloak's official bootstrap and recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery).
+Do not put the password in chat, commands, environment variables, or files. Sign in to the broker as the temporary administrator, create the permanent administrator, then remove the temporary account. See [Keycloak's official bootstrap and recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery).
 
 <span id="工作階段、安全與稽核"></span>
 <span id="工作阶段、安全与审核"></span>
@@ -110,4 +109,4 @@ For production HTTPS, set `ORDIVANT_AUTH_COOKIE_SECURE=true`, `ORDIVANT_AUTH_ORI
 
 For a private enterprise CA, mount its PEM trust bundle into the Identity container and set `ORDIVANT_SSO_CA_BUNDLE` to the file path; TLS certificate verification remains enabled. Compose trusts the designated `web` proxy, whose Nginx instance overwrites `X-Real-IP` so sign-in rate limits use the actual source. A custom reverse proxy must be listed by exact host/IP in `ORDIVANT_AUTH_TRUSTED_PROXY_HOSTS` and must overwrite this header; forged headers sent directly to the Identity API are ignored.
 
-Native SAML protocol endpoints, automatic SCIM 2.0 offboarding synchronization, and integration acceptance for specific enterprise tenants are separate future work. See `sso-validation.md` for actual acceptance of the SAML identity broker and main OIDC flow.
+Ordivant uses OIDC as its identity integration protocol; SAML and LDAP/AD are federated through the optional Keycloak broker. Native SAML protocol endpoints and automatic SCIM 2.0 offboarding synchronization are not implemented. Customer-specific IdP tenants and LDAP/AD directories have not been individually verified. Before production use, validate each organization's claims, MFA, domain restrictions, and resource authorization policies.

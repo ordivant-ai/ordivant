@@ -57,4 +57,4 @@ Pi 模型可以呼叫平台工具讀取任務與回報進度；成果提交後�
 
 備份模型設定時，需一起保存 Work 資料庫及 Work data volume 的 `model-settings.key`。只還原資料庫而遺失加密金鑰，無法解密原有 Provider key。
 
-詳細 API 與 runtime 邊界見 [模型契約](model-contracts.md)。驗收報告位置與實際完成範圍見 [驗收紀錄](validation.md)。
+設定模型連線與派發任務的操作方式見[執行指南](guide/work.md)及[執行與自動化指南](execution-usage.md)；API 與 runtime 邊界見[模型 API](reference.md#model-settings)。目前規劃中的模型功能見[產品路線圖](roadmap.md)。
