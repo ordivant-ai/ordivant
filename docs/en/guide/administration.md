@@ -51,6 +51,6 @@ Members use invitations or an explicitly configured JIT policy; matching an emai
 
 ## Agents and model connections
 
-Organization administrators configure model endpoints, model IDs, and provider keys, then select an organization default or Agent-specific settings. Runtime receives only the scoped configuration it needs for execution; human browsers do not receive Runtime or API secrets. Tool-connection tokens are write-only and encrypted at rest. See the [execution guide](../execution-usage.md).
+Organization administrators configure providers, API URLs, keys, and models, then choose an organization default. When creating or editing an Agent, inherit that default or select another configured model. Saved keys and tool access tokens are never refilled in plaintext; enter a new value to replace one. See [model settings](../model-usage.md) and the [Run and tools guide](../execution-usage.md).
 
 Before production use, review TLS, trusted origins, allowed membership provisioning policies, Project/Space scopes, and recovery-code storage. SSO does not replace server-side authorization in each product.

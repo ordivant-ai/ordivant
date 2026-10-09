@@ -125,6 +125,11 @@ export const api = {
   },
   taskContext: (id: string) => request<TaskContext>(`/api/tasks/${encodeURIComponent(id)}/context`, { method: 'GET' }),
   taskExecutions: (id: string) => request<import('./types').Execution[]>(`/api/tasks/${encodeURIComponent(id)}/executions`, { method: 'GET' }),
+  dispatchTask: (id: string, body: { agent_id: string }, idempotencyKey?: string) => request<Record<string, unknown>>(`/api/tasks/${encodeURIComponent(id)}/dispatch`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}),
+  }),
   agents: () => request<Agent[]>('/api/agents', { method: 'GET' }),
   agentTemplates: () => request<AgentTemplate[]>('/api/agent-templates', { method: 'GET' }),
   createAgentTemplate: (body: AgentTemplateCreateInput) => request<AgentTemplate>('/api/agent-templates', { method: 'POST', body: JSON.stringify(body) }),

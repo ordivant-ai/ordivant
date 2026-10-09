@@ -3,32 +3,32 @@
 
 # 專案介紹 {#project-overview}
 
-Ordivant 是開源、可自行部署的 Agent 專案協作平台，介面以繁體中文呈現。設計重點是團隊權限、可追溯規格、Agent 協作、真實執行證據及獨立審查。
+Ordivant 是開源、可自行部署的團隊協作平台，適合需要讓人員與 Agent 一起推進專案的團隊。你可以管理工作、共享專案知識，並在需要時加入程式碼協作；管理者可設定帳號、登入方式及團隊權限。
 
 <span id="四個服務邊界"></span>
 <span id="四个服务边界"></span>
 
-## 四個服務邊界 {#four-service-boundaries}
+## 產品如何配合 {#four-service-boundaries}
 
-| 服務 | 責任 | 可選的執行依賴 |
+| 產品 | 你可以用它做什麼 | 常見情境 |
 | --- | --- | --- |
-| Work | 專案、任務、Agent、執行與工作流程 | Pi Durable 執行環境、Docker 沙箱 |
-| Knowledge | 文件版本、決策、搜尋與引用 | 不需要 Work runtime |
-| Code | 版控中繼資料、Gitea 寫入與 webhook | Gitea；未設定時明確拒絕 Git 寫入 |
-| Identity | 人員帳號、session、SSO、權限 | Keycloak broker 用於 SAML／LDAP／AD |
+| Work | 建立專案與任務、指派 Agent、安排工作流程、查看執行結果 | 團隊共同追蹤工作進度，並讓 Agent 協助完成任務 |
+| Knowledge | 維護文件版本、決策與可追溯引用，並搜尋內容 | 團隊共享規格、決策與專案背景 |
+| Code（選用） | 配合已設定的 Gitea 管理程式碼協作 | 在專案工作中追蹤程式碼變更與審查 |
+| 共用登入與權限 | 管理人員帳號、登入方式及可存取的專案 | 使用同一組帳號管理平台存取權限 |
 
-各產品都有自己的 Python API、資料庫與 MCP 入口。React 介面可建置為 Suite 或單一產品；各產品透過 API 連結，不會直接查詢彼此的業務資料庫。
+產品可以分開部署。Work 與 Knowledge 不需要 Code 才能使用；Code 是選用功能。企業可設定 OIDC 單一登入；需要 SAML 或 LDAP／Active Directory 時，可透過選用的 Keycloak 整合。登入後能看見哪些專案與功能，仍由管理者設定的權限決定。
 
 <span id="完成與證據"></span>
 <span id="完成与证据"></span>
 
-## 完成與證據 {#completion-and-evidence}
+## 任務如何完成 {#completion-and-evidence}
 
-任務、Execution 與 Run 是不同紀錄。Run 完成表示執行與提交完成；任務需由獲授權的獨立審查者接受成果後才算完成。模型自我回報的成本、合成 DEMO 與實際 Provider 回傳的用量會明確區分；未知費用仍標示為未知。
+Agent 執行結束不代表任務已完成。執行者需提交成果與相關證據，再由另一位獲授權的審查者檢查並接受；執行者不能自行審查自己的成果。DEMO 模式用於示範，不會呼叫付費模型，因此不能當成真實模型結果或實際費用。實際費用若無法確認，平台會標示為未知。
 
 <span id="適用與限制"></span>
 <span id="适用与限制"></span>
 
-## 適用與限制 {#intended-use-and-limits}
+## 適合哪些團隊與目前限制 {#intended-use-and-limits}
 
-適合需要自行管理資料及服務的小型團隊、Agent 協作實驗與企業試點。v0.1 由單一 runtime 擁有 Pi 儲存；多節點執行、高負載，以及各企業自己的 IdP／Git／模型供應商都應另行驗證。完整限制見[路線圖](./roadmap.md)，公開狀態見[版本說明](./release.md)。
+Ordivant 適合希望自行管理服務與資料、並逐步導入 Agent 協作的團隊。v0.1 目前由單一執行服務處理工作，尚未提供多台服務共同分散執行；高負載能力及各組織的登入、程式碼平台與模型設定，都需依實際環境確認。更多目前功能與限制見[路線圖](./roadmap.md)，版本與升級資訊見[版本說明](./release.md)。

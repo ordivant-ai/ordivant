@@ -2,6 +2,8 @@
 
 Work 用來整理專案、任務、Agent 執行、訊息、成果證據與獨立審核。Task 是業務工作；Run/Execution 是一次實際執行。執行完成不會自動把 Task 標成完成，必須由有權限且非提交者的審核者接受成果。
 
+![Work 任務清單：以任務狀態追蹤示範專案](/screenshots/work-zh-TW.png)
+
 <span id="建立專案與任務"></span>
 <span id="创建项目与任务"></span>
 
@@ -17,7 +19,7 @@ Work 用來整理專案、任務、Agent 執行、訊息、成果證據與獨立
 
 ## 執行並提交證據 {#execute-and-submit-evidence}
 
-Agent 認領 Task 時會建立一筆 Execution，並取得有期限的租約。透過已設定的 Runtime 派發時，業務 outbox 會把工作交給 Work Runtime；沒有 Runtime 時仍可使用產品的人工工作流程，但不能期待 Pi Agent 自動執行。
+Agent 領取任務後，每次執行都會留下獨立紀錄。自動執行需要管理員先啟用 Agent 執行服務；尚未啟用時，仍可手動安排任務、提交成果與進行審核。派發操作詳見[Run 與自動化](../execution-usage.md)。
 
 執行者完成工作後，提交摘要及一項或多項成果，例如文字、Artifact URI 或檔案／測試結果引用。提交會把 Task 移入待審核，並保留本次 Run 的事件與收據。請在成果中說明如何對照驗收條件；「Run done」只代表執行已提交，不等於 Task 已被接受。
 
@@ -38,7 +40,7 @@ Work 也能讀取已設定的既有 GitHub、GitLab 或 Gitea PR/check 狀態。
 
 ## Run 控制 {#run-controls}
 
-「Run 執行」檢視每次執行的狀態、事件與安全收據。管理員或 Project manager 可要求 pause、resume、stop 和 retry。Pause 在下一個工具邊界生效，等待期間 Runtime 仍維持租約；Stop 會立即撤銷該執行的寫入資格。Retry 建立新的 Run，不重用舊 Execution。
+在「Run 執行」查看每次執行的狀態、事件與用量。管理員或專案管理者可暫停、繼續、停止或重試。暫停會在下一個工具操作前生效，並保留任務；停止後，本次執行不能再更新任務。重試會建立新的 Run。已完成的外部操作不會因停止而撤銷，重試前請先核對結果。
 
 控制台的 Run 狀態、等待與停止語意、沙箱和工具設定詳見[執行使用指南](../execution-usage.md)。工具外部副作用不會因重試而自動重播；不確定的操作結果應先到上游服務核對。
 

@@ -1,89 +1,75 @@
 <span id="開始使用-ordivant"></span>
 <span id="开始使用-ordivant"></span>
 
-# Getting started with Ordivant
+# Getting started with Ordivant {#getting-started-with-ordivant}
 
-This guide uses Docker Compose to create a local development environment. Work, Knowledge, Code, and Identity share one browser entry point; each product's data remains in its own database and volume.
+Follow a product launch checklist example from signing in and creating a task through reviewing the result. Use your team's Ordivant URL. If you are self-hosting, finish installation first and open your platform address.
 
 <span id="準備環境"></span>
 <span id="准备环境"></span>
+<span id="prepare-the-environment"></span>
 
-## Prepare the environment
+## Sign in and choose a language {#sign-in-and-language}
 
-- Git.
-- Docker Desktop (Windows/macOS with Linux containers) or Docker Engine on Linux.
-- Docker Compose v2 plugin, with the `docker compose` command.
-- PowerShell 7 (`pwsh`). `scripts/containers.ps1` uses the same parameters on Windows and Linux.
+For a new installation, create the initial administrator on the first screen and save the recovery codes, then use your account to sign in. To join an existing team, select **Accept invitation** on the sign-in page, enter your invitation code, and set your password. If your organization uses single sign-on, choose the identity provider shown on the sign-in page. Ordivant has no default human account or password. If you do not have an invitation or cannot sign in, contact your administrator. See [Accounts and sign-in](../human-login.md) for other sign-in options.
 
-You do not need to install Python, Node.js, or `uv` on the host. The first startup builds application images and downloads required container images; the time required depends on network and host performance.
+After signing in, use **Interface language** to choose **Traditional Chinese** (`繁體中文`), **Simplified Chinese** (`简体中文`), or **English**. This changes the platform interface; it does not automatically translate tasks, documents, or messages written by members.
+
+![Sign in or accept an invitation on the login page](/screenshots/login-en.png)
+
+## Choose a workspace and project {#choose-workspace-and-project}
+
+Choose **Work** in the product navigation, then open a project you are authorized to access from **Choose project**. We will use a product launch checklist as the example task. As the initial administrator, choose **Create project** and enter a key and name, for example LAUNCH and Product launch preparation. Other members with an empty project list should ask their administrator for access. Signing in does not grant access to every project.
 
 <span id="複製並啟動"></span>
 <span id="拷贝并启动"></span>
+<span id="clone-and-start"></span>
+<span id="create-task-and-review"></span>
 
-## Clone and start
+## Create your first task {#create-first-task}
 
-Run this in Windows PowerShell 7:
+On the task page, choose **Add task** and enter **Prepare product launch checklist** as the task name. Set the goal to preparing the items that must be completed before launch, then add inputs, scope, and constraints as needed.
 
-```powershell
-git clone https://github.com/ordivant-ai/ordivant.git
-Set-Location ordivant
-pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Seed
-```
-
-On Linux, use the same helper with a Unix-style path:
-
-```bash
-git clone https://github.com/ordivant-ai/ordivant.git
-cd ordivant
-pwsh -NoProfile -File ./scripts/containers.ps1 -Development -ProjectName ordivant-dev -Seed
-```
-
-The default selects all three products. Open `http://127.0.0.1:5173` and create your own administrator on the first-run setup page. There is no built-in human account or default password. The first administrator receives one-time recovery codes; store them securely. Do not paste passwords or recovery codes into chat, command lines, or logs. See [Accounts and sign-in](../human-login.md) for more about sign-in and invitations.
-
-`-Seed` is an explicit demo-data initialization option. It creates business examples marked DEMO in selected products and creates local bootstrap credentials required by product APIs and Agents. It does not create an Identity human account, configure enterprise SSO, or connect a paid model. Do not add `.data` or container secrets to Git.
-
-This minimal startup lets you explore all three products and the basic Work task flow, but it does not start the Pi Runtime, Gitea, or sandbox. To start the Agent Runtime, Code writes, and Docker sandbox in a new environment, use the full command:
-
-```powershell
-pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Seed -WithGitea -WithRuntime -WithSandbox
-```
-
-On Linux, use the path `./scripts/containers.ps1`. If the minimal environment is already running, rerun the helper with the same `-Development` and `-ProjectName` values plus `-WithGitea -WithRuntime -WithSandbox`; do not add `-Seed` again. To add only Runtime to a new environment without Code writes or a sandbox, use `-WithRuntime`. `-WithSandbox` requires Work and Runtime to be enabled as well.
+Under **Acceptance criteria**, list checkable results, such as covering all pre-launch items, naming an owner and current status for each item, and linking to supporting sources or evidence. Choose **Create task** to save it. You can leave the task unassigned until you select an Agent in the next step. See the [Work task and review guide](work.md) for field details.
 
 <span id="seed-與-runtime"></span>
 <span id="seed-与-runtime"></span>
+<span id="seed-and-runtime"></span>
+<span id="create-project-and-agent"></span>
 
-## Seed and Runtime
+![Task details with goal, acceptance criteria, and Pi Agent dispatch](/screenshots/task-en.png)
 
-Seed and Runtime are separate steps. Seed creates `bootstrap.json` in Work's persistent data directory; Runtime uses it on startup to obtain initial connection data for the service. If you add `-WithRuntime` in a new environment before Work has a bootstrap file, the helper stops and asks you to use `-Seed`. It will not silently create demo data in the background. You can add Runtime to initialized data later under the same Compose project.
+## Select an Agent and start a Run {#select-agent-and-run}
 
-If Runtime has no usable model connection, execution uses an explicitly labeled DEMO fallback; this is not a paid-model run. An administrator configures model connections in Work and selects settings for each Agent. See the [execution and automation guide](../execution-usage.md).
+For automatic execution, an administrator or project manager selects an available Agent under **Select a Pi runtime agent** in the task details, then chooses **Dispatch to agent**. This creates a Run: open **Run execution** in the sidebar to follow progress, events, and results. For manual work, use **Select an execution agent** and **Claim task**; claiming does not start automatic execution. If no Agent is suitable, an administrator or a member with Agent management permission can choose **Add agent** on the Agent page, set its **Worker** role and capabilities, select **Pi Durable** under **Runtime** for automatic execution, and grant it access to the current project. If you do not have that permission, ask your administrator or project manager.
+
+Automatic execution depends on the administrator’s configuration. To run work automatically, the administrator must enable the Agent execution service and configure a valid model connection. Until then, work can still be assigned, completed, and submitted for review manually. A Run marked **DEMO** is not a paid model call. Administrators can see the [execution and automation guide](../execution-usage.md) for details.
 
 <span id="檢查與停止"></span>
 <span id="检查与停止"></span>
+<span id="check-and-stop"></span>
 
-## Check and stop
+![Run console with DEMO execution events and submitted results](/screenshots/run-en.png)
 
-Use the same project name to check service status, read logs, or stop containers:
+## Submit the result for review {#submit-and-review}
 
-```powershell
-pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Action status
-pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Action logs -WithRuntime -WithGitea -WithSandbox
-pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Action down
-```
+For the launch checklist, the executor submits a summary and evidence such as the checklist and source links. The task enters review. A different Reviewer checks the evidence against the acceptance criteria and accepts the result or returns it for changes. The executor cannot accept their own submission. A completed Run does not mean the task is complete; the task is marked complete only after an independent review accepts it. See the [Work task and review guide](work.md) for details.
 
-On Linux, change the script path to `./scripts/containers.ps1`. `down` stops only that Compose project and preserves named volumes; it does not erase data. To start again, use the same project name and feature options as before.
+<span id="self-host"></span>
 
-For PowerShell 7 on Linux, see the [container guide](../containers.md). For production, omit `-Development`; the default Web port is `8088`. Before exposing the service, configure a trusted HTTPS origin, secure cookies, the Identity service, and data backups. Do not treat local development settings as a production deployment.
+## Product overview {#product-overview}
+
+- **Work** manages projects and tasks, assigns work to Agents, and tracks completion through evidence and independent review.
+- **Knowledge** organizes versioned documents, decisions, and source citations for members to find and reference in their work.
+- **Code** provides access to code repositories, commits, pull requests, and check status.
 
 <span id="接下來"></span>
 <span id="接下来"></span>
 
-## Next steps
+## Next steps {#next-steps}
 
 - [Work: tasks and review](work.md)
 - [Knowledge: documents, versions, and citations](knowledge.md)
 - [Code: repositories and pull requests](code.md)
 - [Administrators, roles, and SSO](administration.md)
-- [Operations and backups](operations.md)
-- [Troubleshooting](troubleshooting.md)
+- [Accounts and sign-in](../human-login.md)

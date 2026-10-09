@@ -67,6 +67,20 @@ async function main() {
       check(`${locale.key}: homepage document language`, await page.locator('html').getAttribute('lang') === locale.htmlLang);
       check(`${locale.key}: homepage brand`, (await page.getByRole('heading', { level: 1 }).first().innerText()).includes('Ordivant'));
       check(`${locale.key}: homepage GitHub source`, await page.locator('a[href="https://github.com/ordivant-ai/ordivant"]').count() > 0);
+      const screenshotLocale = locale.key === 'root' ? 'zh-TW' : locale.key;
+      const heroImage = page.locator('.VPHero img[src*="/screenshots/"]');
+      check(`${locale.key}: homepage shows a real localized product screenshot`,
+        await heroImage.count() === 1 && await heroImage.evaluate((img, suffix) => img.complete && img.naturalWidth >= 1200 && img.src.endsWith(`/work-${suffix}.png`), screenshotLocale));
+      check(`${locale.key}: homepage explains features and first-use steps`, await page.locator('#use-cases, #product-tour, #start-your-first-project, #find-your-guide').count() === 4);
+      const homeDesktopWidth = await page.evaluate(() => ({ inner: window.innerWidth, document: document.documentElement.scrollWidth }));
+      check(`${locale.key}: desktop homepage has no horizontal overflow`, homeDesktopWidth.document <= homeDesktopWidth.inner, homeDesktopWidth);
+      await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${locale.key}-home-desktop.png`), fullPage: false });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.reload({ waitUntil: 'networkidle' });
+      const homeMobileWidth = await page.evaluate(() => ({ inner: window.innerWidth, document: document.documentElement.scrollWidth }));
+      check(`${locale.key}: 390px homepage has no horizontal overflow`, homeMobileWidth.document <= homeMobileWidth.inner, homeMobileWidth);
+      await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${locale.key}-home-mobile.png`), fullPage: false });
+      await page.setViewportSize({ width: 1440, height: 1000 });
 
       const articleUrl = new URL(`${locale.prefix}guide/getting-started.html`, base).href;
       const articleResponse = await page.goto(articleUrl, { waitUntil: 'networkidle' });
@@ -76,18 +90,18 @@ async function main() {
       const normalizedH1 = h1.replace(/\u200b/g, '').trim();
       check(`${locale.key}: quickstart heading`, normalizedH1 === locale.title, normalizedH1);
 
-      const copyLabel = { root: '複製程式碼', en: 'Copy code', 'zh-CN': '复制代码' }[locale.key];
-      const copyButton = page.locator('.vp-doc button.copy').first();
-      check(`${locale.key}: localized copy button`, await copyButton.getAttribute('title') === copyLabel && await copyButton.getAttribute('aria-label') === copyLabel);
       const sectionLabel = { root: '連至章節', en: 'Link to section', 'zh-CN': '链接到章节' }[locale.key];
       check(`${locale.key}: localized section link`, (await page.locator('.vp-doc .header-anchor').first().getAttribute('aria-label')).startsWith(sectionLabel));
-
-      const editLinks = page.locator('a[href*="/edit/main/docs/"]');
-      const editHref = await editLinks.first().getAttribute('href');
-      const editSuffix = locale.key === 'root'
-        ? '/docs/guide/getting-started.md'
-        : `/docs/${locale.key}/guide/getting-started.md`;
-      check(`${locale.key}: GitHub edit link has one locale prefix`, Boolean(editHref && editHref.endsWith(editSuffix) && !editHref.includes(`/docs/${locale.key}/${locale.key}/`)), editHref);
+      check(`${locale.key}: quickstart uses the application without shell commands`, await page.locator('.vp-doc pre').count() === 0);
+      const sidebarText = await page.locator('.VPSidebar').innerText();
+      const sidebarGroups = {
+        root: ['開始使用', '日常操作', '管理與部署'],
+        en: ['Get started', 'Daily work', 'Administration and deployment'],
+        'zh-CN': ['开始使用', '日常操作', '管理与部署'],
+      }[locale.key];
+      check(`${locale.key}: sidebar guides users and administrators`, sidebarGroups.every(label => sidebarText.includes(label)));
+      const navigationHrefs = await page.locator('.VPSidebar a, .VPNavBar a').evaluateAll(links => links.map(link => link.getAttribute('href') || ''));
+      check(`${locale.key}: navigation omits developer documentation`, navigationHrefs.every(href => !/(?:reference|i18n|validation)\.html|\/(?:CONTRIBUTING|SECURITY)\.md/.test(href)));
 
       await page.locator('#local-search button').click();
       const searchInput = page.locator('#localsearch-input');
@@ -138,11 +152,22 @@ async function main() {
         check(`${locale.key}: ${document} HTTP`, response && response.ok(), String(response && response.status()));
         check(`${locale.key}: ${document} declared language`, await page.locator('html').getAttribute('lang') === locale.htmlLang);
         check(`${locale.key}: ${document} translated body`, blocks.length > 0 && issues.length === 0, issues.length ? issues.slice(0, 4) : { blocks: blocks.length });
+        const screenshotResults = await page.locator('.vp-doc img[src*="/screenshots/"]').evaluateAll(async (images, suffix) => Promise.all(images.map(img => new Promise(resolve => {
+          const result = () => resolve(img.naturalWidth >= 1200 && img.src.endsWith(`-${suffix}.png`) && Boolean(img.alt.trim()));
+          if (img.complete) result();
+          else { img.addEventListener('load', result, { once: true }); img.addEventListener('error', () => resolve(false), { once: true }); }
+        }))), screenshotLocale);
+        if (screenshotResults.length) check(`${locale.key}: ${document} localized screenshots load`, screenshotResults.every(Boolean), { screenshots: screenshotResults.length });
       }
 
       const containerUrl = new URL(`${locale.prefix}containers.html#development`, base).href;
       await page.goto(containerUrl, { waitUntil: 'domcontentloaded' });
-      check(`${locale.key}: container development bookmark preserved`, await page.locator('#development').count() === 1);
+      const copyLabel = { root: '複製程式碼', en: 'Copy code', 'zh-CN': '复制代码' }[locale.key];
+      const copyButton = page.locator('.vp-doc button.copy').first();
+      check(`${locale.key}: localized deployment copy button`, await copyButton.getAttribute('title') === copyLabel && await copyButton.getAttribute('aria-label') === copyLabel);
+      check(`${locale.key}: legacy container bookmark preserved`, await page.locator('#development').count() === 1);
+      const deploymentCommands = (await page.locator('.vp-doc pre').allInnerTexts()).join('\n');
+      check(`${locale.key}: installation uses native Docker Compose`, deploymentCommands.includes('docker compose -f compose.init.yaml run --rm init') && !/pwsh|containers\.ps1/i.test(deploymentCommands));
       await page.locator('.VPNavBarTranslations button').click();
       const sectionSwitch = page.locator(`.VPNavBarTranslations a[href="${new URL(`${languagePrefix(locale.next)}containers.html#development`, base).pathname}#development"]`);
       check(`${locale.key}: language switch preserves section`, await sectionSwitch.count() === 1);

@@ -2,6 +2,8 @@
 
 Knowledge 用来保存可追溯的规格、决策和背景数据。每个 Space 都有独立成员范围；文档内容采不可变版本，搜索依目前实际保存的标题和正文做文字比对。
 
+![Knowledge 文档：查看正文、已发布版本与引用](/screenshots/knowledge-zh-CN.png)
+
 <span id="建立文件與版本"></span>
 <span id="创建文档与版本"></span>
 

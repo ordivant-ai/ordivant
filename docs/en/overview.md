@@ -1,34 +1,34 @@
 <span id="專案介紹"></span>
 <span id="项目介绍"></span>
 
-# Project overview
+# Project overview {#project-overview}
 
-Ordivant is an open-source, self-hosted collaboration platform for agent projects. Its interface is available in Traditional Chinese, Simplified Chinese, and English. The platform focuses on team permissions, traceable specifications, agent collaboration, execution evidence, and independent review.
+Ordivant is an open-source, self-hosted collaboration platform for teams that want people and agents to work on projects together. Teams can manage work, share project knowledge, and add code collaboration when needed. Administrators manage accounts, sign-in options, and team permissions.
 
 <span id="四個服務邊界"></span>
 <span id="四个服务边界"></span>
 
-## Four service boundaries
+## How the products work together {#four-service-boundaries}
 
-| Service | Responsibility | Optional execution dependency |
+| Product | What you can do | Typical use |
 | --- | --- | --- |
-| Work | Projects, tasks, agents, runs, and workflows | Pi Durable runtime, Docker sandbox |
-| Knowledge | Document versions, decisions, search, and citations | Does not require the Work runtime |
-| Code | Version-control metadata, Gitea writes, and webhooks | Gitea; Git writes are explicitly rejected when it is not configured |
-| Identity | Human accounts, sessions, SSO, and permissions | Keycloak broker for SAML / LDAP / AD |
+| Work | Create projects and tasks, assign agents, schedule workflows, and review run results | Track team work and let agents help complete tasks |
+| Knowledge | Maintain document versions, decisions, and traceable citations; search content | Share specifications, decisions, and project context |
+| Code (optional) | Collaborate on code with a configured Gitea service | Track code changes and reviews alongside project work |
+| Shared sign-in and permissions | Manage people, sign-in options, and access to projects | Control platform access with the same account |
 
-Each product has its own Python API, database, and MCP entry point. The React interface can be built as a Suite or as a single product. Products connect through APIs and do not query one another's business databases directly.
+Products can be deployed separately. Work and Knowledge do not require Code; Code is optional. Organizations can configure OIDC single sign-on. SAML or LDAP / Active Directory can be connected through the optional Keycloak integration. Administrators still decide which projects and features each person can access.
 
 <span id="完成與證據"></span>
 <span id="完成与证据"></span>
 
-## Completion and evidence
+## How tasks are completed {#completion-and-evidence}
 
-Tasks, Executions, and Runs are separate records. A completed Run means execution and submission have finished; a Task is completed only after an authorized independent reviewer accepts its result. Model-reported numbers, synthetic DEMO activity, and usage returned by an actual provider are clearly distinguished. Unknown costs remain unknown.
+An agent finishing a run does not complete a task. The person responsible for the work submits its result and supporting evidence, then a different authorized reviewer checks and accepts it. The person who performed the work cannot review their own result. DEMO mode is for demonstration and does not call a paid model, so it is not a real model result or actual usage charge. If an actual cost cannot be confirmed, the platform reports it as unknown.
 
 <span id="適用與限制"></span>
 <span id="适用与限制"></span>
 
-## Intended use and limits
+## Who it is for and current limits {#intended-use-and-limits}
 
-Ordivant is suited to small teams that need to manage their own data and services, agent-collaboration experiments, and enterprise pilots. v0.1 uses a single runtime process to own Pi storage. Multi-node execution, high-load operation, and each organization's own IdP, Git, and model providers require separate validation. See the [roadmap](./roadmap.md) for limits and the [release notes](./release.md) for public release status.
+Ordivant is suited to teams that want to manage their own services and data while introducing agent collaboration step by step. In v0.1, one execution service handles work; multiple services cannot distribute execution yet. High-load operation and each organization's sign-in, code-hosting, and model settings must be checked in its own environment. See the [roadmap](./roadmap.md) for current capabilities and limits, and the [release notes](./release.md) for version and upgrade information.

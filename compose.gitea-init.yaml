@@ -1,0 +1,17 @@
+services:
+  gitea:
+    profiles: [gitea, gitea-init]
+
+  gitea-init:
+    profiles: [gitea-init]
+    build:
+      context: ./infra/gitea-init
+    image: ordivant/gitea-init:local
+    depends_on:
+      gitea:
+        condition: service_healthy
+    volumes:
+      - gitea_data:/data
+      - type: bind
+        source: ${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}
+        target: /secrets

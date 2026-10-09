@@ -52,7 +52,7 @@ import {
   UserAddOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { api } from './api';
+import { api, createIdempotencyKey, isDefinitiveClientError } from './api';
 import { RunConsole } from './RunConsole';
 import { Automation } from './Automation';
 import { ToolSettings } from './ToolSettings';
@@ -260,6 +260,8 @@ function WorkWorkspace() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [leases, setLeases] = useState<Record<string, Lease>>({});
   const [claimAgentId, setClaimAgentId] = useState<string>();
+  const [dispatchAgentId, setDispatchAgentId] = useState<string>();
+  const [dispatchBusy, setDispatchBusy] = useState(false);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskSaving, setTaskSaving] = useState(false);
@@ -309,6 +311,7 @@ function WorkWorkspace() {
   const agentModelMode = Form.useWatch('modelMode', agentForm) as 'inherit' | 'override' | undefined;
   const taskRequestSequence = useRef(0);
   const agentExecutionOptionsSequence = useRef(0);
+  const pendingDispatchKey = useRef<{ taskId: string; agentId: string; key: string } | null>(null);
 
   useEffect(() => {
     agentExecutionOptionsSequence.current += 1;
@@ -328,6 +331,7 @@ function WorkWorkspace() {
   const selectedTask = taskContext?.task ?? tasks.find((task) => task.id === selectedTaskId) ?? null;
   const lease = selectedTaskId ? leases[selectedTaskId] : undefined;
   const canManageAgents = Boolean(principal && ['admin', 'manager'].includes(principal.role));
+  const dispatchAgents = people.filter((agent) => agent.status === 'available' && agent.role === 'worker' && agent.runtime === 'pi');
   const activeReviewer = taskContext?.executions.find((execution) => execution.status === 'submitted') ?? null;
   const submittedByCurrentAgent = Boolean(activeReviewer && people.some((agent) => agent.id === activeReviewer.agent_id && agent.principal_id === principal?.id));
   const designatedReviewerPrincipal = selectedTask?.reviewer_id
@@ -646,6 +650,35 @@ function WorkWorkspace() {
       messageApi.success(t('已開始執行 {{key}}。', { key: selectedTask.key }));
     } catch (error) {
       messageApi.error(t(errorText(error)));
+    }
+  }
+
+  async function dispatchSelectedTask() {
+    if (!selectedTask || !principal || dispatchBusy) return;
+    if (principal.kind !== 'human' || !canManageAgents || selectedTask.status !== 'ready') return;
+    const agent = dispatchAgents.find((candidate) => candidate.id === dispatchAgentId);
+    if (!agent) return;
+
+    setDispatchBusy(true);
+    const pending = pendingDispatchKey.current;
+    const idempotencyKey = pending?.taskId === selectedTask.id && pending.agentId === agent.id
+      ? pending.key
+      : createIdempotencyKey();
+    pendingDispatchKey.current = { taskId: selectedTask.id, agentId: agent.id, key: idempotencyKey };
+    try {
+      await api.dispatchTask(selectedTask.id, { agent_id: agent.id }, idempotencyKey);
+      pendingDispatchKey.current = null;
+      try {
+        await reloadTaskContext(selectedTask.id);
+      } catch (error) {
+        setTaskContextError(errorText(error));
+      }
+      messageApi.success(t('已派發給 {{agent}}。請前往 Run 執行查看狀態。', { agent: agent.name }));
+    } catch (error) {
+      if (isDefinitiveClientError(error)) pendingDispatchKey.current = null;
+      messageApi.error(t(errorText(error)));
+    } finally {
+      setDispatchBusy(false);
     }
   }
 
@@ -1220,6 +1253,10 @@ function WorkWorkspace() {
             <div className="claim-bar">
               {principal.kind === 'human' && <Select aria-label={t('選擇代執行 Agent')} placeholder={t('選擇執行 Agent')} value={claimAgentId} onChange={setClaimAgentId} options={people.filter((agent) => agent.status === 'available' && agent.role === 'worker').map((agent) => ({ value: agent.id, label: agent.name }))} className="claim-agent-select" />}
               {principal.kind !== 'runtime' && !lease && selectedTask.status === 'ready' && <Button type="primary" icon={<CheckOutlined />} onClick={() => void claimTask()} disabled={principal.kind === 'human' && !claimAgentId}>{t('認領任務')}</Button>}
+              {principal.kind === 'human' && canManageAgents && selectedTask.status === 'ready' && <>
+                <Select aria-label={t('選擇 Pi 執行 Agent')} placeholder={t('選擇 Pi 執行 Agent')} value={dispatchAgentId} onChange={setDispatchAgentId} options={dispatchAgents.map((agent) => ({ value: agent.id, label: agent.name }))} className="claim-agent-select" disabled={dispatchBusy} />
+                <Button icon={<SendOutlined />} onClick={() => void dispatchSelectedTask()} disabled={dispatchBusy || !dispatchAgents.some((agent) => agent.id === dispatchAgentId)} loading={dispatchBusy}>{t('派發給 Agent')}</Button>
+              </>}
               {lease && <Tag color="green" icon={<CheckCircleOutlined />}>{t('目前工作階段持有執行租約')}</Tag>}
               {selectedTask.status === 'blocked' && ['admin', 'manager'].includes(principal.role) && <Button type="primary" onClick={() => void unblockTask()}>{t('解除阻塞')}</Button>}
             </div>

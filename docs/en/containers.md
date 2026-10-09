@@ -1,106 +1,125 @@
-# Container workflow
+# Self-host Ordivant {#container-workflow}
 
-`scripts/containers.ps1` builds and runs the selected products through Docker Compose. The host needs Docker Engine/Desktop with Docker Compose; it does not need `uv`, Python, Node.js, or npm.
+<span id="development"></span>
 
-## Development
+Install Ordivant on your own computer or server with Docker Compose. These commands work on Linux, macOS, and Windows with Docker Desktop. PowerShell 7, host Python, and host Node.js are not required. Members joining an existing team can go straight to [getting started](guide/getting-started.md).
 
-Start the full development suite, explicitly create local demo data, and enable the optional Gitea and Pi runtime services:
+## Before installation {#deployment-prerequisites}
 
-```powershell
-.\scripts\containers.ps1 -Development -Seed -WithGitea -WithRuntime
+Install Git, Docker Engine or Docker Desktop, and Docker Compose v2. Use Linux containers in Docker Desktop. Check that `docker compose version` works. The first build needs internet access to download images and dependencies.
+
+The default deployment name is `ordivant`, with a web address of `http://127.0.0.1:8088`. To use another name or port, create `.env` in the repository root; `.env.compose.example` is a template. Choose the deployment name and secrets directory before first installation, and keep using the same settings.
+
+## Install and start {#production-targets}
+
+Run these commands in order in your terminal:
+
+```sh
+git clone https://github.com/ordivant-ai/ordivant.git
+cd ordivant
+docker compose -f compose.init.yaml run --rm init
+docker compose up -d --build --wait
 ```
 
-The helper builds the selected development targets, waits for the APIs and web service, seeds only the selected APIs when `-Seed` is supplied, bootstraps the local Gitea service account when `-WithGitea` is supplied, and starts the runtime only after Work has a bootstrap file. Configured Work dispatches use their live model connection; unconfigured dispatches keep a visibly marked deterministic demo fallback. See [model settings](model-usage.md).
+The first Compose job prepares service settings without creating human accounts or sample tasks. The second command builds and starts Work, Knowledge, Code, and shared login. The first build takes some time; `--wait` waits for healthy services.
 
-Development mode mounts product source into the containers and provides the same complete account login as production. Identity API `8030` and its independent PostgreSQL are included for every selected product. Default host ports are Work API `8000`, Knowledge API `8010`, Code API `8020`, web `5173`, runtime `8090`, and Gitea `3002`. Override Compose port variables in the shell when a port is already in use.
+Open `http://127.0.0.1:8088/work`, create the initial administrator, and save the recovery codes. There is no default human password. The three products share login within this deployment, while their projects and permissions remain separate. Code repository operations also need the Gitea setup below.
 
-To run one product's standalone frontend and API without starting its peers:
+### Enable automatic Agent execution {#enable-agent-execution}
 
-```powershell
-.\scripts\containers.ps1 -Development -Products knowledge -Seed
-.\scripts\containers.ps1 -Development -Products code -Seed -WithGitea
+To let Pi agents execute tasks, also run:
+
+```sh
+docker compose exec work-api python -m ordivant.bootstrap_runtime
+docker compose --profile runtime up -d --build --wait runtime
 ```
 
-One selected product sets `ORDIVANT_PRODUCT_MODE` to that product and directs the web API upstream to its API container. Supported selections are one product, all three products, or a pair that includes Work. A Knowledge+Code-only pair is rejected because suite routing needs Work as the `/api` upstream. Supported multi-product selections use suite mode and route `/api` to `work-api`.
+Initialization creates only the execution service's machine identity: no DEMO project, Agent, or human account. Repeating it preserves valid configuration. It also works on an installation with existing work data. In Work, configure a provider and model under **Model connections**, then create a Pi worker in **Agent directory**. Select the Agent in a task's details and choose **Dispatch to agent**. See [model settings](model-usage.md) and [getting started](guide/getting-started.md).
 
-## Production Targets
+An unconfigured Run is labeled DEMO and does not call a paid model. Skip the execution service if you only need manual tracking, submissions, and review. Add `COMPOSE_PROFILES=runtime` to `.env` to include it on subsequent ordinary starts.
 
-On first startup the web page asks the user to create the initial administrator with their own password. There is no default human account; `-Seed` creates only business DEMO fixtures and agent credentials. Development and production have separate Identity volumes and project-specific cookie names. See [human login](human-login.md) for invitations, permissions, password recovery and session revocation. All configured products refuse the old local-session endpoint in both modes.
+## Install only the products you need {#individual-products}
 
-The helper derives exact `ORDIVANT_AUTH_ORIGINS` from the selected web host port unless explicitly supplied. For a remote HTTPS deployment, configure the public origin and `ORDIVANT_AUTH_COOKIE_SECURE=true`. Insecure cookies are accepted only with literal HTTP loopback origins. Identity service secrets and database connection files stay in each project's ignored secret directory.
+For a new deployment, select the product in `.env`, run initialization, and use the corresponding start command. Use a separate deployment name and secrets directory to keep it isolated from another installation. Concurrent installations also need different `ORDIVANT_WEB_PORT` values.
 
-Omit `-Development` to build and run the production Docker targets. Local-session authentication remains disabled:
+| Product | Product settings in `.env` | Start command |
+| --- | --- | --- |
+| Work | `ORDIVANT_PRODUCT_MODE=work`, `ORDIVANT_WEB_API_UPSTREAM=http://work-api:8000` | `docker compose up -d --build --wait work-api web` |
+| Knowledge | `ORDIVANT_PRODUCT_MODE=knowledge`, `ORDIVANT_WEB_API_UPSTREAM=http://knowledge-api:8010` | `docker compose up -d --build --wait knowledge-api web` |
+| Code | `ORDIVANT_PRODUCT_MODE=code`, `ORDIVANT_WEB_API_UPSTREAM=http://code-api:8020` | `docker compose up -d --build --wait code-api web` |
 
-```powershell
-.\scripts\containers.ps1 -Action up
-.\scripts\containers.ps1 -Action up -Products knowledge
+Required login and database services start alongside the selected product. Work and Knowledge do not need Code or Gitea. Code needs Gitea for repository changes.
+
+## Enable optional features {#optional-services}
+
+### Code and Gitea {#enable-gitea}
+
+Run in the same deployment:
+
+```sh
+docker compose --profile gitea up -d --wait gitea
+docker compose -f compose.yaml -f compose.gitea-init.yaml --profile gitea run --build --rm gitea-init
+docker compose up -d --no-deps --force-recreate --wait code-api
 ```
 
-The full selection uses suite frontend mode and Work as the `/api` upstream. A single selected Knowledge or Code product builds that product's standalone frontend. The default production web port is `8088`. Default development and production Compose project names both include a hash of the repository's absolute path, so another checkout gets a separate project and secret directory. Use `-ProjectName` to select a stable, explicitly named instance.
+The initialization job configures Code's service connection without creating a default human login password. Return to Code to create projects, repositories, and PRs. Gitea's default address is `http://127.0.0.1:3002`. Keep `gitea` in `.env`'s `COMPOSE_PROFILES`, for example `runtime,gitea`, to include it on subsequent starts.
 
-To keep development and production up at the same time, give them separate Compose project names and nonconflicting host ports. The commands below are adjustable examples; choose names, available ports, and optional services for your deployment:
+### Execution sandbox {#enable-sandbox}
 
-```powershell
-$env:ORDIVANT_DEV_WEB_PORT = '5173'
-$env:ORDIVANT_WEB_PORT = '8088'
-$env:ORDIVANT_GITEA_PORT = '3003'
-.\scripts\containers.ps1 -Development -ProjectName ordivant-dev-example -Seed -WithGitea -WithRuntime
-Remove-Item Env:ORDIVANT_GITEA_PORT
-.\scripts\containers.ps1 -ProjectName ordivant-prod-example -WithGitea
+Initialize the execution service first, then build the sandbox job image and start it:
+
+```sh
+docker compose -f compose.yaml -f compose.sandbox.yaml --profile sandbox build sandbox-job-image
+docker compose -f compose.yaml -f compose.sandbox.yaml --profile runtime --profile sandbox up -d --build --wait runtime
 ```
 
-The two invocations use separate project-scoped volumes and `.data/container-secrets/<ProjectName>/` directories. The production command does not seed demo data.
+If Gitea is enabled, add `--profile gitea` to the second command. Save the enabled configuration in `.env` so subsequent operations can use ordinary Compose commands:
 
-## Actions And Data
-
-`-Action` accepts `up` (default), `down`, `status`, and `logs`. Use the same `-Development` and `-ProjectName` values to address the same project. For example:
-
-```powershell
-.\scripts\containers.ps1 -Development -Action status
-.\scripts\containers.ps1 -Development -Action logs -WithGitea -WithRuntime
-.\scripts\containers.ps1 -Development -Action down
+```dotenv
+COMPOSE_PATH_SEPARATOR=,
+COMPOSE_FILE=compose.yaml,compose.sandbox.yaml
+COMPOSE_PROFILES=runtime,gitea,sandbox
 ```
 
-`down` stops only the selected Compose project and preserves its named database, product, runtime, and Gitea volumes. It never uses `down -v` and does not remove secrets or data.
+Remove `gitea` if it is not enabled. Sandboxes have no network access or host data mounts. Submit files you need to preserve before a Run ends. [Sandbox operations](execution-usage.md#sandboxes)
 
-`-Seed` is explicit and runs each selected product's seed module inside its API container. Seed data and generated bearer tokens are local DEMO data; they do not configure enterprise SSO. If `-WithRuntime` is used without `-Seed`, the helper requires an existing Work `/data/bootstrap.json` in that Compose project's persistent volume and fails without creating one.
+### Enterprise login and external tools {#enterprise-and-tools}
 
-`-WithRuntime` requires `work` in `-Products`. `-WithGitea` starts the `gitea` profile and publishes Gitea on loopback port `3002` by default. The helper initializes a local Gitea service identity and stores the required service credentials in that Compose project's local secret directory. Existing credentials are verified and retained on repeat runs. If they cannot be verified, the helper stops rather than silently replacing them.
+Connect your company's OIDC provider directly without an extra container. SAML and LDAP can use optional Keycloak; follow the [enterprise SSO guide](enterprise-sso.md#saml-ldap-and-active-directory). Add custom Compose files to the existing `COMPOSE_FILE` list without replacing an enabled sandbox configuration.
 
-`-WithSandbox` additionally requires Work and `-WithRuntime`. It adds `compose.sandbox.yaml`, builds the fixed sandbox job image, and starts an internal trusted executor before runtime. Only `sandbox-api` holds the Docker daemon socket; job/runtime/web do not. Jobs are non-root, read-only, networkless, resource-limited and use an isolated bounded tmpfs workspace per run. Generated service credentials stay in the project secret directory. See [execution usage](execution-usage.md) for controls, templates, workflow schedules, and endpoint host policies. Sandbox workspace contents are ephemeral and are not included in data volume backups.
+For external MCP tools, add exact hostnames to `.env`'s `ORDIVANT_TOOL_ALLOWED_HOSTS`, then restart Work and the execution service. Do not put model keys or human passwords in `.env`; enter model keys in the administration interface. [Tool connections](execution-usage.md#external-mcp-tools)
 
-Each Compose project has separate data volumes and a local secret directory. These secret files are ignored by Git; do not commit or publish them. To preserve and restore a project's databases, securely back up its volumes, secret directory, and Identity encryption key together. Stopping containers does not delete this data.
+## Status, stopping, and backups {#actions-and-data}
 
-Production builds use `ORDIVANT_MODE=production`; local-session authentication is unavailable. Explicit `-Seed` still writes demonstration principals and generated local bearer credentials, so use it only when demo data is intended.
+Use the same repository directory, `.env`, and Compose configuration as installation:
 
-Before sharing Docker Compose error output, check that it contains no secrets, personal data, or internal URLs.
-
-## Gitea URLs
-
-Code connects to `http://gitea:3000` inside the Compose network. Browser and clone URLs use Gitea's configured `ROOT_URL`; `PUBLIC_URL_DETECTION=never` keeps an internal API request from changing those links to `gitea:3000`. Set `ORDIVANT_GITEA_PUBLIC_URL` to the intended public Gitea URL for another host. The default remains the loopback URL at `ORDIVANT_GITEA_PORT`. See the [official Gitea server configuration](https://docs.gitea.com/administration/config-cheat-sheet/#server-server).
-
-Work uses its own project-scoped `/data/vcs.json` for existing VCS access. Its Compose configuration explicitly permits the private HTTP host `gitea`; other HTTP hosts require the operator's `ORDIVANT_VCS_HTTP_HOSTS` allowlist. Callers cannot supply a server URL through a task or tool request.
-
-## Enterprise Identity Broker
-
-The shared Identity service supports direct OIDC without an extra container. Configure the provider in Account & Security; each Compose project keeps its own encrypted settings and identity records. Keep `identity_data/sso.key` with the Identity database backup. The administrator chooses the canonical `ORDIVANT_SSO_PUBLIC_ORIGIN` from the exact trusted auth origins.
-
-For SAML or LDAP/AD federation, add the optional Keycloak 26.8.0 broker and its independent PostgreSQL:
-
-```powershell
-.\scripts\containers.ps1 -Development -WithIdentityBroker
-.\scripts\containers.ps1 -Development -Action status -WithIdentityBroker
+```sh
+docker compose ps
+docker compose logs --tail 100 work-api identity-api
+docker compose down
+docker compose up -d --wait
 ```
 
-The broker binds to loopback `8093`; override `ORDIVANT_BROKER_PORT` and `ORDIVANT_BROKER_PUBLIC_URL` before startup when needed. It has no default human administrator. Follow the interactive bootstrap steps in [enterprise SSO](enterprise-sso.md), then remove the temporary account after creating a permanent administrator. Do not put the password in commands, environment variables, or files. `-WithIdentityBroker` configures explicit internal backchannel routing; external IdPs use verified HTTPS. Private enterprise CA bundles can be mounted and selected with `ORDIVANT_SSO_CA_BUNDLE`.
+`down` preserves volumes. Do not add `-v`, which deletes data. Back up product databases, data volumes, and `.data/container-secrets/` or your configured secrets directory together with model and SSO encryption keys. [Backup and restore](guide/operations.md)
 
-## MCP Without Host Python
+Only in a fresh trial installation with no real accounts or business data, you may add DEMO examples before initializing execution or signing in for the first time:
 
-Each API image includes its own stdio MCP server. Configure the MCP client to execute `docker` with the matching project's Compose file and scoped token environment variable. No host Python environment or Pi runtime is required. For example, the following command forwards a token already configured in the client process environment; its value does not appear in command arguments:
-
-```powershell
-$env:ORDIVANT_SECRETS_DIR = Join-Path (Get-Location) '.data/container-secrets/ordivant-example'
-docker compose -p ordivant-example -f compose.yaml -f compose.dev.yaml exec -T -e ORDIVANT_KNOWLEDGE_API_TOKEN knowledge-api python -m ordivant_knowledge.mcp_server
+```sh
+docker compose exec work-api python -m ordivant.seed
+docker compose exec knowledge-api python -m ordivant_knowledge.seed
+docker compose exec code-api python -m ordivant_code.seed
 ```
 
-Use the Compose project name and file paths from your deployment in an external MCP client's configuration. Work uses `ORDIVANT_API_TOKEN` and `python -m ordivant.mcp_server`; Knowledge uses `ORDIVANT_KNOWLEDGE_API_TOKEN` and `python -m ordivant_knowledge.mcp_server`; Code uses `ORDIVANT_CODE_API_TOKEN` and `python -m ordivant_code.mcp_server`. Issue each agent its product-scoped credential; do not use a Gitea service token as an Ordivant bearer token.
+Examples create sample projects and agents, without human passwords or model connections. A normal production installation does not need these commands; do not add examples to an existing installation.
+
+## Provide team access through HTTPS {#https-access}
+
+The web service binds to local `127.0.0.1:8088` by default. For remote team access, configure an HTTPS reverse proxy on the server to forward to this local address, then use your actual public address in `.env`:
+
+```dotenv
+ORDIVANT_AUTH_ORIGINS=https://ordivant.example.com
+ORDIVANT_AUTH_COOKIE_SECURE=true
+ORDIVANT_SSO_PUBLIC_ORIGIN=https://ordivant.example.com
+```
+
+Run `docker compose up -d --wait` to apply the settings. A proxy in another container must join the same Compose network and forward to `web:80`; host loopback is not that container's loopback. For enterprise login, also verify the identity provider's Callback URL. [Enterprise login settings](enterprise-sso.md)

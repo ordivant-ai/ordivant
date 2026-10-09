@@ -51,6 +51,6 @@ Identity 的组织管理员（`admin`）可管理成员和授权；产品角色�
 
 ## Agent 与模型连接 {#agents-and-model-connections}
 
-模型连接由组织管理员设置端点、模型 ID 和 Provider API 密钥，再选择使用组织预设值或为 Agent 单独设置。Runtime 只会取得该次运行所需且受范围限制的设置；用户浏览器不会收到 Runtime／API 机密凭证。工具连接 token 仅能写入、不能读回，并会加密保存。详见[运行使用指南](../execution-usage.md)。
+组织管理员先设置模型供应商、API 网址、密钥及模型，再选择组织默认值。创建或编辑 Agent 时，可继承默认值或选用其他已设置模型。已保存的密钥与工具访问令牌不会回填明文；要更换时请输入新的值。操作步骤见[模型设置](../model-usage.md)与[Run 及工具指南](../execution-usage.md)。
 
 正式环境使用前，请检查 TLS、可信任的网站来源（Origin）、允许的成员布建策略、Project／Space 授权范围，以及恢复码的保管方式。SSO 不会取代各产品的服务器端授权。

@@ -20,6 +20,23 @@ Windows 開發者仍可使用既有 PowerShell 入口，例如 `scripts/setup.ps
 
 ## 本機檢查
 
+容器開發可直接使用以下入口；首次建立專用開發環境時，`-Seed` 會加入明確標示的 DEMO 資料，不會建立人的密碼帳號。既有資料不要重複初始化。
+
+```powershell
+pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Seed -WithGitea -WithRuntime -WithSandbox
+```
+
+開發模式掛載原始碼並啟用重新載入，網頁預設為 `http://127.0.0.1:5173`。狀態、日誌及停止命令使用相同的 `-Development` 與 `-ProjectName`。若開發與正式部署同時執行，需設定不同的專案名稱及主機連接埠。
+
+架構、REST 欄位與 MCP 整合見[開發參考](docs/reference.md)。API 映像包含各產品的 stdio MCP server；用戶端應透過自己的安全環境設定受範圍限制的 Agent token，再執行對應模組。例如 Knowledge：
+
+```powershell
+$env:ORDIVANT_SECRETS_DIR = Join-Path (Get-Location) '.data/container-secrets/ordivant-dev'
+docker compose -p ordivant-dev -f compose.yaml -f compose.dev.yaml exec -T -e ORDIVANT_KNOWLEDGE_API_TOKEN knowledge-api python -m ordivant_knowledge.mcp_server
+```
+
+Work 使用 `ORDIVANT_API_TOKEN` 與 `ordivant.mcp_server`；Code 使用 `ORDIVANT_CODE_API_TOKEN` 與 `ordivant_code.mcp_server`。不要將憑證放入命令參數、版控或日誌。
+
 Python 測試必須在各自的專案環境執行：
 
 ```sh

@@ -51,6 +51,6 @@ Identity 的組織管理員（`admin`）可管理成員和授權；產品角色�
 
 ## Agent 與模型連線 {#agents-and-model-connections}
 
-模型連線由組織管理員設定端點、模型 ID 和 Provider API 金鑰，再選擇使用組織預設值或為 Agent 個別設定。Runtime 只會取得該次執行所需且受範圍限制的設定；使用者的瀏覽器不會收到 Runtime／API 機密憑證。工具連線 token 僅能寫入、不能讀回，並會加密保存。詳見[執行使用指南](../execution-usage.md)。
+組織管理員先設定模型供應商、API 網址、金鑰及模型，再選擇組織預設值。建立或編輯 Agent 時，可繼承預設值或選用其他已設定模型。已保存的金鑰與工具存取權杖不會回填明文；要更換時請輸入新的值。操作步驟見[模型設定](../model-usage.md)與[Run 及工具指南](../execution-usage.md)。
 
 正式環境使用前，請檢查 TLS、可信任的網站來源（Origin）、允許的成員佈建策略、Project／Space 授權範圍，以及復原碼的保管方式。SSO 不會取代各產品的伺服器端授權。

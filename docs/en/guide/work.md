@@ -2,6 +2,8 @@
 
 Work organizes projects, tasks, Agent execution, messages, result evidence, and independent review. A Task is business work; a Run or Execution is one actual attempt. Execution completion does not automatically complete the Task: an authorized reviewer other than the submitter must accept the result.
 
+![Work task list: follow demonstration tasks by status](/screenshots/work-en.png)
+
 <span id="建立專案與任務"></span>
 <span id="创建项目与任务"></span>
 
@@ -17,7 +19,7 @@ Work organizes projects, tasks, Agent execution, messages, result evidence, and 
 
 ## Execute and submit evidence
 
-When an Agent claims a Task, the system creates an Execution with a time-limited lease. When dispatched through a configured Runtime, a business outbox delivers the work to the Work Runtime. Without a Runtime, the product still supports manual workflows, but Pi Agents will not run automatically.
+Each Agent attempt has its own execution record. Automatic execution requires an administrator to enable the Agent execution service first. You can still arrange tasks, submit results, and review them manually without it. See [Runs and automation](../execution-usage.md) for dispatching.
 
 After the work is complete, the executor submits a summary and one or more results, such as text, an Artifact URI, or a file/test-result reference. Submission moves the Task into review and preserves the Run's events and receipt. Explain how the evidence meets the acceptance criteria. “Run done” means only that execution was submitted; it does not mean the Task was accepted.
 
@@ -38,7 +40,7 @@ Work can also read pull-request and check states from configured existing GitHub
 
 ## Run controls
 
-The “Run execution” view shows each attempt's status, events, and safe receipts. Administrators and Project managers can request pause, resume, stop, and retry. Pause takes effect at the next tool boundary; Runtime keeps the lease while it waits. Stop immediately revokes that Execution's write authority. Retry creates a new Run and does not reuse the previous Execution.
+Use “Run execution” to view each attempt's status, events, and usage. Administrators and project managers can pause, resume, stop, or retry. Pause takes effect before the next tool operation and keeps the task assigned. After stopping, that attempt cannot update the task. Retry creates a new Run. Stopping does not undo completed external operations; check their results before retrying.
 
 See the [execution guide](../execution-usage.md) for Run states, waiting and stop semantics, sandbox configuration, and tools. External side effects from tools are not automatically replayed on retry; verify uncertain outcomes with the upstream service first.
 
