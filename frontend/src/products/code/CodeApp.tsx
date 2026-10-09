@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MarkdownContent } from '../../shared/MarkdownContent';
 import {
   Alert,
   Button,
@@ -563,7 +564,7 @@ function PullDetail({ context, canReport, onReport }: { context: PullRequestCont
   return (
     <div className="pull-detail">
       <div className="pull-detail-top"><Tag color={context.state === 'open' ? 'green' : 'default'}>{t(context.state === 'open' ? '開啟' : '關閉')}</Tag><span>{context.head} → {context.base}</span>{href && <a href={href} target="_blank" rel="noreferrer">{t('在 Gitea 開啟')}</a>}</div>
-      <Paragraph>{context.body || t('沒有 PR 描述。')}</Paragraph>
+      {context.body ? <MarkdownContent content={context.body} /> : <Paragraph>{t('沒有 PR 描述。')}</Paragraph>}
       <Descriptions size="small" column={1} colon={false}><Descriptions.Item label={t('Head SHA')}><code>{context.head_sha}</code></Descriptions.Item><Descriptions.Item label={t('建立時間')}>{dateText(context.created_at)}</Descriptions.Item><Descriptions.Item label={t('更新時間')}>{dateText(context.updated_at)}</Descriptions.Item></Descriptions>
       <div className="code-detail-section-head"><div><span className="eyebrow">{t('來源引用')}</span><h3>{t('來源與 provenance')}</h3></div><span>{formatNumber(context.source_refs.length)}</span></div>
       <ReferenceList references={context.source_refs} />

@@ -23,11 +23,10 @@ import {
   SearchOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { ProductApiError, createProductApi, productApiPrefix } from '../shared/productApi';
 import { ProductLogin } from '../shared/ProductLogin';
 import { ProductShell } from '../shared/ProductShell';
+import { MarkdownContent, MarkdownPreview } from '../../shared/MarkdownContent';
 import { AuthProvider, useAuth } from '../../auth/AuthContext';
 import { AuthAccessDenied } from '../../auth/AuthAccessDenied';
 import { ReferenceFields, ReferenceList } from '../shared/References';
@@ -445,7 +444,7 @@ function KnowledgeWorkspace() {
                 <div className="knowledge-list-heading"><span>{t('搜尋結果')}</span><span>{formatNumber(documents.length)}</span></div>
                 {documentsBusy && !documents.length && <div className="product-inline-loading"><Spin size="small" /></div>}
                 {!documentsBusy && documents.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t(query || tagFilter ? '沒有符合條件的文件' : '此 Space 尚無文件')}>{canWrite && !query && !tagFilter && <Button size="small" type="primary" onClick={openCreateDocument}>{t('建立文件')}</Button>}</Empty>}
-                {documents.map((document) => <button type="button" key={document.id} className={`knowledge-document-item${document.id === documentId ? ' knowledge-document-active' : ''}`} onClick={() => setDocumentId(document.id)}><span className="document-item-top"><strong>{document.title}</strong><Tag>v{document.version ?? document.current_version}</Tag></span><span className="document-item-summary">{document.snippet || document.summary || t('尚無摘要')}</span><span className="document-item-bottom"><span>{document.tags?.slice(0, 3).map((tag) => `#${tag}`).join(' ') || t('無標籤')}</span><time>{dateText(document.updated_at)}</time></span></button>)}
+                {documents.map((document) => <button type="button" key={document.id} className={`knowledge-document-item${document.id === documentId ? ' knowledge-document-active' : ''}`} onClick={() => setDocumentId(document.id)}><span className="document-item-top"><strong>{document.title}</strong><Tag>v{document.version ?? document.current_version}</Tag></span><MarkdownPreview className="document-item-summary" content={document.snippet || document.summary || t('尚無摘要')} /><span className="document-item-bottom"><span>{document.tags?.slice(0, 3).map((tag) => `#${tag}`).join(' ') || t('無標籤')}</span><time>{dateText(document.updated_at)}</time></span></button>)}
               </aside>
               <main className="knowledge-reader">
                 {documentBusy && !documentContext && <div className="product-inline-loading"><Spin /></div>}
@@ -536,11 +535,11 @@ function DocumentReader({
       <div className="reader-document-head"><div><div className="document-version-kicker">{context.document.space_id.slice(0, 8)} · {t('版本')} {formatNumber(selectedVersion.version)}</div><Title level={3}>{selectedVersion.title}</Title><Paragraph>{context.document.summary}</Paragraph></div><div className="reader-head-actions">{canWrite && <Button icon={<SafetyCertificateOutlined />} onClick={onCreateDecision}>{t('記錄決策')}</Button>}</div></div>
       <Space wrap className="document-tags">{context.document.tags?.map((tag) => <Tag key={tag}>{tag}</Tag>)}</Space>
       {busy && <div className="reader-loading"><Spin size="small" /> {t('載入版本')}</div>}
-      <article className="markdown-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedVersion.body}</ReactMarkdown></article>
+      <article className="markdown-content"><MarkdownContent content={selectedVersion.body} /></article>
       <section className="version-metadata"><div><span>{t('版本建立')}</span><strong>{dateText(selectedVersion.created_at)}</strong></div><div><span>{t('編輯者')}</span><strong>{selectedVersion.author_id}</strong></div><div><span>{t('內容 SHA-256')}</span><code>{selectedVersion.content_sha256}</code></div><div><span>{t('變更摘要')}</span><strong>{selectedVersion.change_summary || '—'}</strong></div></section>
       <section className="provenance-section"><div className="knowledge-subhead"><h3>{t('來源引用')}</h3><span>{formatNumber(selectedVersion.source_refs.length)}</span></div><ReferenceList references={selectedVersion.source_refs} /></section>
       <section className="version-history-section"><div className="knowledge-subhead"><h3>{t('不可變版本歷程')}</h3><span>{formatNumber(history.length)}</span></div>{history.slice().sort((a, b) => b.version - a.version).map((version) => <button type="button" key={version.id} className={`version-history-row${version.version === selectedVersion.version ? ' version-history-current' : ''}`} onClick={() => onVersion(version.version)}><span className="version-history-number">v{formatNumber(version.version)}</span><span className="version-history-summary">{version.change_summary || t('沒有變更摘要')}<small>{dateText(version.created_at)} · SHA-256 {version.content_sha256.slice(0, 12)}…</small></span>{version.version === context.document.current_version && <Tag color="green">{t('最新')}</Tag>}</button>)}</section>
-      {context.decisions.length > 0 && <section className="version-history-section"><div className="knowledge-subhead"><h3>{t('相關決策')}</h3><span>{formatNumber(context.decisions.length)}</span></div>{context.decisions.map((decision) => <div className="inline-decision" key={decision.id}><strong>{decision.title}</strong><span>{decision.body}</span><ReferenceList references={decision.source_refs} /></div>)}</section>}
+      {context.decisions.length > 0 && <section className="version-history-section"><div className="knowledge-subhead"><h3>{t('相關決策')}</h3><span>{formatNumber(context.decisions.length)}</span></div>{context.decisions.map((decision) => <div className="inline-decision" key={decision.id}><strong>{decision.title}</strong><MarkdownContent content={decision.body} /><ReferenceList references={decision.source_refs} /></div>)}</section>}
     </div>
   );
 }
@@ -548,6 +547,6 @@ function DocumentReader({
 function DecisionRow({ decision, documentTitle }: { decision: Decision; documentTitle?: string }) {
   const { t } = useI18n();
   return (
-    <article className="decision-row"><div className="decision-row-icon"><SafetyCertificateOutlined /></div><div className="decision-row-body"><div className="decision-row-header"><strong>{decision.title}</strong><time>{dateText(decision.created_at)}</time></div>{documentTitle && <span className="decision-document-link"><FileTextOutlined /> {documentTitle}</span>}<Paragraph>{decision.body}</Paragraph><div className="decision-provenance"><Text className="eyebrow">{t('來源追溯')}</Text><ReferenceList references={decision.source_refs} /></div><span className="decision-actor">{t('建立者')} {decision.actor_id}</span></div></article>
+    <article className="decision-row"><div className="decision-row-icon"><SafetyCertificateOutlined /></div><div className="decision-row-body"><div className="decision-row-header"><strong>{decision.title}</strong><time>{dateText(decision.created_at)}</time></div>{documentTitle && <span className="decision-document-link"><FileTextOutlined /> {documentTitle}</span>}<MarkdownContent content={decision.body} /><div className="decision-provenance"><Text className="eyebrow">{t('來源追溯')}</Text><ReferenceList references={decision.source_refs} /></div><span className="decision-actor">{t('建立者')} {decision.actor_id}</span></div></article>
   );
 }

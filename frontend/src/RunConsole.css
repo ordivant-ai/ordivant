@@ -49,8 +49,8 @@
 .run-sandbox-result > pre span { display: block; margin-bottom: 4px; color: #85808a; font: 11px/1.2 Inter, "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
 .run-sandbox-result > .run-sandbox-stderr { color: #8b3d37; background: #fff8f7; }
 .run-event details summary { color: #706a75; cursor: pointer; font-size: 11px; }
-.run-event pre, .run-json-block, .run-answer { overflow: auto; max-width: 100%; max-height: 360px; margin: 8px 0 0; padding: 10px; border: 1px solid var(--line); border-radius: 5px; color: #423e47; background: #f8f7f5; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
-.run-answer { max-height: 520px; }
+.run-event pre, .run-json-block { overflow: auto; max-width: 100%; max-height: 360px; margin: 8px 0 0; padding: 10px; border: 1px solid var(--line); border-radius: 5px; color: #423e47; background: #f8f7f5; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.run-answer { padding: 10px; border: 1px solid var(--line); border-radius: 5px; background: #fffefd; font-size: 12px; }
 
 @media (max-width: 560px) {
   .run-toolbar { flex-wrap: wrap; }

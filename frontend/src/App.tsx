@@ -56,6 +56,7 @@ import { api, createIdempotencyKey, isDefinitiveClientError } from './api';
 import { RunConsole } from './RunConsole';
 import { Automation } from './Automation';
 import { ToolSettings } from './ToolSettings';
+import { MarkdownContent } from './shared/MarkdownContent';
 import './AgentExecution.css';
 import { ProductSwitcher } from './products/shared/ProductSwitcher';
 import { AuthProvider, useAuth } from './auth/AuthContext';
@@ -1082,7 +1083,7 @@ function WorkWorkspace() {
   ];
 
   const inboxColumns: ColumnsType<ProjectMessage> = [
-    { title: t('訊息'), dataIndex: 'body', key: 'body', render: (body: string, item) => <div className="message-cell"><Tag>{t(({ question: '問題', reply: '回覆', help_request: '求助', decision: '決議', handoff: '交接' })[item.kind])}</Tag><span>{body}</span>{item.task_id && <span className="subline">{t('任務 {{key}}', { key: tasks.find((task) => task.id === item.task_id)?.key ?? item.task_id.slice(0, 8) })}</span>}</div> },
+    { title: t('訊息'), dataIndex: 'body', key: 'body', render: (body: string, item) => <div className="message-cell"><Tag>{t(({ question: '問題', reply: '回覆', help_request: '求助', decision: '決議', handoff: '交接' })[item.kind])}</Tag><MarkdownContent content={body} />{item.task_id && <span className="subline">{t('任務 {{key}}', { key: tasks.find((task) => task.id === item.task_id)?.key ?? item.task_id.slice(0, 8) })}</span>}</div> },
     { title: t('寄件者'), dataIndex: 'sender_id', key: 'sender_id', width: 150, render: (id: string) => nameFor(id, people, principal) },
     { title: t('狀態'), dataIndex: 'status', key: 'status', width: 100, render: (value: ProjectMessage['status']) => <Tag color={value === 'completed' ? 'green' : value === 'accepted' ? 'blue' : 'default'}>{t(({ delivered: '待處理', accepted: '已接收', completed: '已完成' })[value])}</Tag> },
     { title: t('時間'), dataIndex: 'created_at', key: 'created_at', width: 118, render: (value: string) => displayDate(value) },
@@ -1519,7 +1520,7 @@ function TaskSpecification({ task, context, agents }: { task: Task; context: Tas
 
 function SpecBlock({ title, value }: { title: string; value?: string | null }) {
   const { t } = useI18n();
-  return <div className="spec-block"><h4>{t(title)}</h4>{value ? <Paragraph>{value}</Paragraph> : <span className="empty-value">{t('尚未設定')}</span>}</div>;
+  return <div className="spec-block"><h4>{t(title)}</h4>{value ? <MarkdownContent content={value} /> : <span className="empty-value">{t('尚未設定')}</span>}</div>;
 }
 
 function ExecutionReview({ context, agents, canReview, projectId, hasLease, onUsePullRequest, onReview }: { context: TaskContext | null; agents: Agent[]; canReview: boolean; projectId: string; hasLease: boolean; onUsePullRequest: (result: ExistingPullRequest) => void; onReview: (decision: 'accept' | 'reject') => void }) {
@@ -1604,7 +1605,7 @@ function ExecutionRow({ execution, agentName }: { execution: Execution; agentNam
       <div className="execution-mark"><span /></div>
       <div className="execution-body">
         <div className="execution-top"><strong>{labels[execution.status] ? t(labels[execution.status]) : execution.status}</strong><span>{displayDate(execution.started_at)}</span></div>
-        {execution.summary && <Paragraph>{execution.summary}</Paragraph>}
+        {execution.summary && <MarkdownContent content={execution.summary} />}
         {execution.status === 'running' && <Progress percent={execution.progress} size="small" />}
         <div className="execution-meta"><Tag>{agentName}</Tag><span>{money(execution.cost_usd)}</span><Tag color={execution.cost_source === 'self_reported' ? 'orange' : 'green'}>{t(execution.cost_source === 'self_reported' ? '自陳' : '量測')}</Tag>{execution.finished_at && <span>{displayDate(execution.finished_at)}</span>}</div>
       </div>
@@ -1617,7 +1618,7 @@ function ArtifactRow({ artifact }: { artifact: Artifact }) {
   const safeUri = safeWebUrl(artifact.uri);
   const kinds: Record<string, string> = { document: '文件', url: '網址', test_report: '測試報告', file: '檔案', summary: '摘要' };
   return (
-    <div className="artifact-row"><div className="artifact-icon">{artifact.kind === 'url' ? <LinkOutlined /> : <FileSearchOutlined />}</div><div className="artifact-body"><strong>{artifact.title}</strong><span>{kinds[artifact.kind] ? t(kinds[artifact.kind]) : artifact.kind} · {displayDate(artifact.created_at)}</span>{safeUri && <a href={safeUri} target="_blank" rel="noreferrer">{safeUri}</a>}{artifact.uri && !safeUri && <code className="artifact-uri">{artifact.uri}</code>}{artifact.content && <Paragraph ellipsis={{ rows: 4, expandable: true, symbol: t('展開') }}>{artifact.content}</Paragraph>}</div></div>
+    <div className="artifact-row"><div className="artifact-icon">{artifact.kind === 'url' ? <LinkOutlined /> : <FileSearchOutlined />}</div><div className="artifact-body"><strong>{artifact.title}</strong><span>{kinds[artifact.kind] ? t(kinds[artifact.kind]) : artifact.kind} · {displayDate(artifact.created_at)}</span>{safeUri && <a href={safeUri} target="_blank" rel="noreferrer">{safeUri}</a>}{artifact.uri && !safeUri && <code className="artifact-uri">{artifact.uri}</code>}{artifact.content && <MarkdownContent content={artifact.content} />}</div></div>
   );
 }
 
@@ -1629,7 +1630,7 @@ function TaskCollaboration({ context, people, principal, onReply }: { context: T
   return (
     <div className="task-collaboration">
       {!context.messages.length && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('此任務尚無訊息')} />}
-      {context.messages.map((item) => <div className="thread-message" key={item.id}><div className="thread-message-head"><Avatar size={26}>{nameFor(item.sender_id, people, principal).slice(0, 1).toUpperCase()}</Avatar><strong>{nameFor(item.sender_id, people, principal)}</strong><Tag>{kinds[item.kind] ? t(kinds[item.kind]) : item.kind}</Tag><time>{displayDate(item.created_at)}</time></div><Paragraph>{item.body}</Paragraph><div className="thread-message-foot"><Tag color={item.status === 'completed' ? 'green' : item.status === 'accepted' ? 'blue' : 'default'}>{statuses[item.status] ? t(statuses[item.status]) : item.status}</Tag><Button size="small" type="link" onClick={() => onReply(item)}>{t('回覆')}</Button></div></div>)}
+      {context.messages.map((item) => <div className="thread-message" key={item.id}><div className="thread-message-head"><Avatar size={26}>{nameFor(item.sender_id, people, principal).slice(0, 1).toUpperCase()}</Avatar><strong>{nameFor(item.sender_id, people, principal)}</strong><Tag>{kinds[item.kind] ? t(kinds[item.kind]) : item.kind}</Tag><time>{displayDate(item.created_at)}</time></div><MarkdownContent content={item.body} /><div className="thread-message-foot"><Tag color={item.status === 'completed' ? 'green' : item.status === 'accepted' ? 'blue' : 'default'}>{statuses[item.status] ? t(statuses[item.status]) : item.status}</Tag><Button size="small" type="link" onClick={() => onReply(item)}>{t('回覆')}</Button></div></div>)}
     </div>
   );
 }
