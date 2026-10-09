@@ -1,101 +1,78 @@
 <span id="執行、範本、自動流程與工具環境"></span>
 <span id="运行、模板、自动流程与工具环境"></span>
 
-# Runs, Templates, Workflows, and Tool Environments
+# Runs, Templates, Workflows, and Tool Environments {#runs-templates-workflows-and-tool-environments}
 
-Run execution, Agent templates, workflows, and tool connections are managed by **Work**. Knowledge and Code remain independently usable and do not require a sandbox. See the [architecture and API reference](reference.md#work-api) for API and authorization rules.
+Work Runs can handle tasks, workflows, connected tools, and sandboxes. In Work, choose a project and task, assign an Agent, then follow its progress, results, and submitted work. See the [model connections guide](model-usage.md) for model setup and the [container deployment guide](containers.md) to enable services in a self-hosted environment.
 
-To get started, sign in to Work. An administrator configures the API endpoint, key, and default model under **Model connections**. Then create any required tool connections or sandbox profiles and Agents, and manually dispatch a task or start a workflow. Existing organization model settings can be reused. Runs are explicitly marked DEMO when no valid model is configured.
+![Run console with DEMO execution status and events](/screenshots/run-en.png)
 
 <span id="啟動"></span>
 <span id="启动"></span>
 
-## Start
+## Deployment and feature access {#start}
 
-Use the following Compose commands for development or a standard deployment:
-
-```powershell
-# Development mode with hot reload and the isolated executor.
-.\scripts\containers.ps1 -Development -WithRuntime -WithSandbox
-
-# Deployment images with local Nginx and PostgreSQL.
-.\scripts\containers.ps1 -WithRuntime -WithSandbox
-```
-
-For a new demo environment, add `-Seed`. It creates business data marked DEMO; the user still creates the administrator account in the browser. Add `-WithGitea` for Code's local forge. Development and production each keep their own data and accounts. The sandbox API does not publish a host port and accepts requests only from the internal runtime network.
+For an existing Work site, ask your administrator to confirm that the required execution services are enabled. Sandboxes are optional; tasks can run without them. To self-host, use the [container deployment guide](containers.md) to choose and enable services.
 
 <span id="run-執行控制台"></span>
 <span id="run-运行控制台"></span>
 
-## Run console
+## Run console {#run-console}
 
-1. Select a project and dispatch a Pi Agent from a task. A queued Run appears immediately.
-2. Open **Runs** to inspect the task, Agent, execution, status, and model snapshot. Select a Run to view events, tool results, and the observed token receipt.
-3. Administrators and project managers can request pause, resume, stop, or retry. Other members can inspect projects they are authorized to access.
+1. Select a project you can access. In a task's details, choose a Pi execution Agent and select **Dispatch to agent** to create a Run. Manual **Claim task** does not start automatic execution.
+2. Open **Run execution** to view its status, progress, tool results, and submitted work.
+3. An authorized manager can request pause, resume, stop, or retry. Another authorized member can review submitted work independently.
 
-Pause is cooperative: the Run waits before its next tool operation, while a model or tool call already in progress may finish. The UI distinguishes a pending pause request from a Run that has actually reached the paused state. Pi does not expose an API for immediately freezing a model request. The dispatcher continues renewing the lease while paused, and the global Run timeout still applies. Resume opens the gate for the same execution. After a restart, the service restores a Run only when its original execution lease is still valid; an expired or lost lease fails closed and requires a new dispatch. External side effects with an uncertain outcome are never replayed automatically.
+Pause takes effect after the current model or tool operation finishes; it does not forcibly interrupt that operation. Stop ends the Run and returns an unfinished task to a state where it can be dispatched again. It does not undo an operation that an external service has already completed. Submitted work remains available after a Run ends. Retrying creates a new Run; it does not reopen a task that has already passed review.
 
-Stop immediately fences the business execution's write access, then terminates the model and sandbox; the task returns to `ready`. Check the remote service's result if an already-started external tool may have caused a side effect. Stopping a Run does not delete its evidence. A failed or stopped Run can be retried, creating a new Run and execution with a link to its source. Retry does not reopen a task that has already been accepted.
-
-Run status `done` means model execution and submission have completed; the task is done only after an independent reviewer accepts it. DEMO does not call a paid model. A live receipt reports the model and usage actually returned. Unknown token usage or USD cost remains unknown.
+A Run marked complete or submitted does not mean the task has been accepted. The task is complete only after an authorized independent reviewer accepts it. DEMO demonstrates the workflow and does not call a paid model. For a real model call, the Run record shows the model and usage returned by the provider. Missing usage or dollar cost remains unknown and is not a bill.
 
 <span id="agent-範本"></span>
 <span id="agent-模板"></span>
 
-## Agent templates
+## Agent templates {#agent-templates}
 
-Under **Automation → Agent templates**, define the role, capabilities, instructions, model, tool allowlist, sandbox, and execution limits. Each change publishes a new immutable version. When creating or editing an Agent, select an exact version and optionally override individual settings. Changes take effect on its next dispatch.
+Under **Automation → Agent templates**, set an Agent's role, instructions, model, available tools, sandbox, and execution limits. Editing a template creates a new version. Choose the version when creating or editing an Agent; model and tool changes apply to tasks dispatched afterward.
 
-Previous template versions and dispatched Run snapshots remain traceable. Templates do not grant project access: the Agent must already be authorized for the project containing the tool connection and sandbox. Organization administrators continue to manage model connections; templates never store API keys.
+Templates do not grant project or tool access. An Agent must already be authorized for the project. Organization administrators manage model connections.
 
 <span id="自動工作流程"></span>
 <span id="自动工作流程"></span>
 
-## Automated workflows
+## Automated workflows {#automated-workflows}
 
-Under **Automation → Workflows**, define steps and their dependencies. Each step can name a Pi Agent or required capabilities, and may name an independent reviewer. Steps can run in parallel, but dependencies must form an acyclic graph.
+Under **Automation → Workflows**, add steps, select an Agent or required capabilities, and define dependencies and independent reviewers. Steps without dependencies can run at the same time.
 
-Provide text input for the whole workflow when starting it manually. The system creates a task for each step, and the runtime scheduler dispatches eligible work. A step waits if no suitable Agent is available or a dependency is still awaiting review. Once a reviewer accepts the prerequisite result, dependent steps start automatically. The workflow completes only after every step passes independent acceptance.
+When starting a workflow manually, enter the request for that run. Work creates a task for each step. A step waits when no suitable Agent is available or its prerequisite has not passed review. Once the prerequisite is accepted, the next steps can continue. The workflow completes after every step passes review.
 
-Scheduled starts use a minute interval and a maximum run count; the runtime must remain running. An active workflow prevents an overlapping start on the same schedule. Missed intervals during downtime are not replayed. Cancelling a workflow stops unfinished tasks and Runs while preserving accepted results. Publishing a new workflow version does not change instances already started.
+A schedule can set an interval and a maximum number of starts. It does not start a second workflow while one from the same schedule is still running, and it does not make up intervals missed during downtime. Cancelling a workflow stops unfinished steps but keeps accepted results. Updating a workflow does not change one that has already started.
 
 <span id="外部-mcp-工具"></span>
 
-## External MCP tools
+## External MCP tools {#external-mcp-tools}
 
-The deployment operator first allowlists the trusted MCP server host. A Work administrator can then add a project connection under **Tools and sandboxes**. The first release uses MCP Streamable HTTP and does not launch arbitrary host processes over stdio.
+Before a connection can be added, a deployment administrator must allow the trusted MCP server host. No external hosts are allowed by default. See the [container deployment guide](containers.md) for allowlist settings. A Work administrator can then add a project connection under **Tools and sandboxes**, enter the MCP HTTPS URL and bearer token, and choose which tool names an Agent may use. Select **Test connection** to check the available tools before assigning the connection to an Agent.
 
-```powershell
-$env:ORDIVANT_TOOL_ALLOWED_HOSTS = 'mcp.company.example'
-.\scripts\containers.ps1 -Development -WithRuntime -WithSandbox
-```
+Use the provider's HTTPS URL and enter the token in its dedicated field; never put credentials or tokens in the URL. The token is stored encrypted and is not shown again; leave the field blank to keep the current token. Authentication is not forwarded to another host after a redirect. Private or local HTTP services must be explicitly listed by the deployment administrator in `ORDIVANT_TOOL_HTTP_HOSTS`. If a host resolves to a private or loopback address, it must also be listed in `ORDIVANT_TOOL_PRIVATE_HOSTS`. Private HTTPS services still need a valid TLS certificate. `ORDIVANT_TOOL_ALLOWED_HOSTS` controls which MCP hosts are allowed.
 
-Enter an HTTPS MCP endpoint, a write-only bearer token, and the allowed tool names, then select **Test connection** to fetch a real `tools/list` response. HTTP is only for explicitly configured private or local test services and also requires `ORDIVANT_TOOL_HTTP_HOSTS`. In every mode, hosts resolving to private, loopback, or other non-public addresses must also appear in `ORDIVANT_TOOL_PRIVATE_HOSTS`. Private HTTPS services still need a valid TLS certificate. No external hosts are allowed by default. URLs cannot contain credentials, and redirects cannot forward authentication to another service.
-
-Connection credentials are encrypted and never returned to the form; leaving the field blank preserves the existing key. Changing an authenticated endpoint requires entering a new key. An Agent receives only tools allowed for its execution project, with namespaced tool names. External operations are not replayed automatically; uncertain side effects are neither reported as success nor repeated automatically.
-
-Bearer authentication is supported. Vendor-specific interactive MCP OAuth, stdio launchers, and remote A2A are not supported yet.
+Connections currently use bearer tokens; interactive MCP OAuth is not available. External tools may change data in another service. If an operation's outcome is uncertain, Work will not automatically repeat it. Check the selected tools and their effects before dispatching a task.
 
 <span id="沙箱"></span>
 
-## Sandboxes
+## Sandboxes {#sandboxes}
 
-An administrator creates a project sandbox profile with limits for command time, memory, CPU, process count, output bytes, and workspace size, then assigns it to an Agent. Dispatch stores an immutable profile snapshot. Runtime exposes sandbox tools to read and write files, list files, and execute argv commands.
+An administrator can set per-project sandbox limits for command time, memory, CPU, process count, output, and workspace size, then assign the profile to an Agent. Each Run gets its own temporary workspace and can execute commands within those limits.
 
-Each Run receives its own container and size-limited memory workspace. Jobs run as non-root with a read-only root filesystem, no network, no host directories, and no provider, tool, or platform credentials. The fixed image includes Python, Node.js, and Git for running programs and tests with the dependencies already in the image. Because networking is disabled, deployment operators must add required packages to the fixed job image in advance or write authorized files into the workspace. Arbitrary Git cloning and online package installation are not currently supported.
+A sandbox has no network access or access to host directories. It cannot download packages or clone arbitrary Git repositories online; it can use only the tools and dependencies already available in its environment. The result shows when a command fails or times out.
 
-Failed commands retain their non-zero exit code, and timeouts or truncated output are marked explicitly. File tools accept only relative workspace paths and reject traversal and symlink escapes. Submit result files and test output as evidence before the Run ends. The workspace is removed when a Run completes, stops, or reaches its global timeout; after restart the executor cleans up orphaned jobs it owns. A command timeout terminates that command's process group and returns an explicit result. The workspace is not persistent file storage.
-
-If the cleanup API does not confirm deletion, the console shows the sandbox as `failed` with an unconfirmed-cleanup error. If a temporary workspace becomes unreachable after restart, its status is `lost`. Model results and cleanup status are recorded separately. The operator must inspect or restart their executor to complete orphan cleanup; an unconfirmed deletion is never reported as successful, and model side effects are never replayed automatically.
-
-Only the separately trusted `sandbox-api` service holds the Docker daemon socket. Work, Runtime, the browser, and sandbox jobs do not. The deployment operator controls the executor's internal network and service credentials. Docker isolation shares the host kernel; organizations requiring a VM boundary should connect a VM or microVM executor.
+The workspace is removed when the Run ends, stops, or times out. Submit files and test output as work or evidence before ending the Run; the workspace is not long-term storage. If the page cannot confirm cleanup, ask your deployment administrator to inspect the execution environment. Docker sandboxes share the host kernel. Organizations that require VM-level isolation need a VM or microVM execution environment.
 
 <span id="隔離驗收"></span>
 
-## Validate runs in your project {#isolated-acceptance}
+## Check a run in your project {#isolated-acceptance}
 
-Run a low-risk task in your project and confirm that its Run moves from queued to execution and submission. Have a different authorized member review the result independently. DEMO validates the product workflow but does not call a paid model. When using a configured model connection, first confirm the provider, model, and spending policy.
+Start with a low-risk task. Confirm that its Run starts, submits results, and is independently reviewed by another authorized member. DEMO verifies the product workflow but does not call a paid model. Before using a configured model, check the provider and its spending policy.
 
-For a tool connection, use **Test connection** to confirm the allowed tool list, then dispatch a task that only reads data or creates test data that can be safely removed. Check the actual side effect in the upstream service. Stopping a Run does not undo an operation already completed by an external service, and uncertain operations are not replayed automatically.
+Before using an external tool, test the connection and review the available tool list. For the first check, choose a read-only operation or create test data that can be safely removed. Verify the actual result in the upstream service. Stopping a Run does not undo completed external operations, and an uncertain operation is not repeated automatically.
 
-If the Agent uses a sandbox, confirm that files and command results have been submitted as evidence before the Run ends, and that the workspace is cleaned up afterward. If the sandbox API cannot confirm deletion, the console reports unconfirmed cleanup; the deployment operator should inspect the executor they manage. Docker isolation shares the host kernel. Connect a VM or microVM executor when a VM boundary is required.
+For sandbox work, submit files and test results before ending the Run. Confirm that the workspace is shown as cleaned up afterward; ask your deployment administrator to investigate if cleanup is unconfirmed.

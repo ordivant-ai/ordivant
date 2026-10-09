@@ -10,7 +10,7 @@ Ordivant Work、Knowledge、Code 共用一個 Identity 服務。管理員可以�
 
 ## 管理員設定 {#administrator-setup}
 
-1. 在要使用的環境建立自己的第一位管理員並登入。開發與正式環境的帳號、SSO 設定及資料庫各自獨立。
+1. 以要設定的 Ordivant 管理員帳號登入。不同部署各自保存帳號及 SSO 設定，請確認使用正確的服務網址。
 2. 開啟「帳號與安全性 → 企業 SSO」。選擇身分服務範本，再填入組織專屬 Issuer URL、Client ID、Client Secret。
 3. 在身分服務建立 confidential OIDC Web application，允許 Authorization Code 和 PKCE S256。把 Ordivant 顯示的 Callback URL 完整註冊為 Redirect URI；不要使用萬用字元。
 4. 設定允許的完整電子郵件網域、成員佈建方式、預設權限及群組對應。先儲存，再執行「測試連線」。這項測試檢查 discovery/JWKS；真正登入仍需由身分服務授權。
@@ -43,7 +43,7 @@ Client Secret 留白會保留既有值；改變 Issuer 或 Client ID 必須明�
 
 - **僅受邀成員**：先由管理員建立 member 邀請。企業身分的電子郵件通過驗證並符合允許網域後，可以直接使用 SSO 接受邀請，沿用邀請中指定的產品與資源權限。企業登入不會自動建立管理員。
 - **JIT 自動佈建**：首次登入建立一般成員，套用明確的預設與群組權限。沒有設定權限的成員無法存取產品資料；同網域不代表全組織可見。
-- **群組同步**：JIT 管理的成員每次登入同步群組。移除群組會移除相應授權並撤銷舊工作階段；資料存取仍由各產品的 Python 服務檢查。
+- **群組同步**：JIT 管理的成員每次登入同步群組。移除群組會移除相應授權並撤銷舊工作階段；成員仍只能存取獲授權的產品與資源。
 - **既有帳號連結**：電子郵件相同不會自動合併帳號。管理員必須明確指定現有使用者與 IdP subject，並在登入時驗證對應。解除連結會撤銷企業登入工作階段。
 - **手動權限**：管理員明確修改成員權限後改為手動管理，避免下一次登入悄悄覆蓋設定。要恢復群組管理，透過身分連結重新指定管理方式。
 
@@ -60,27 +60,32 @@ SAML 串接時，在 Keycloak 新增 SAML Identity Provider，匯入上游 metad
 
 LDAP／AD 串接時，在 Keycloak 的 User Federation 新增 LDAP provider，填入企業提供的目錄位址、Users DN、搜尋條件與 username／email attribute，配置群組 mapper，並使用 LDAPS 或 StartTLS 與可信 CA。目錄 Bind Credential 與人員密碼由企業管理員直接在身分服務輸入。先驗證目錄連線與單一成員同步，再建立 OIDC client 接到 Ordivant；平台端仍套用允許網域、受邀／JIT 與明確資源授權。
 
-如需在同一套服務中使用 SAML 或 LDAP／AD，以下範例會啟動固定版本 Keycloak 26.8.0 與獨立 PostgreSQL。`ordivant-example` 是可調整的 Compose 專案名稱：
+如需 SAML 或 LDAP／AD，先完成[容器部署](containers.md)的初始化。在同一倉庫根目錄的 `.env` 加入以下設定，再啟動選用的 Keycloak 與獨立資料庫；若已使用其他 Compose 設定檔，請一併保留：
 
-```powershell
-.\scripts\containers.ps1 -Action up -WithIdentityBroker -ProjectName ordivant-example
+```dotenv
+ORDIVANT_BROKER_PUBLIC_URL=http://127.0.0.1:8093
+ORDIVANT_SSO_HTTP_HOSTS=identity-broker
+ORDIVANT_SSO_BACKCHANNEL_OVERRIDES={"http://127.0.0.1:8093":"http://identity-broker:8080"}
+```
+
+```sh
+docker compose -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d --wait identity-broker identity-api
 ```
 
 broker 預設只綁定 `127.0.0.1:8093`。可由呼叫端指定 `ORDIVANT_BROKER_PORT` 及 `ORDIVANT_BROKER_PUBLIC_URL`；跨電腦的企業部署使用固定 HTTPS 網址與可信反向代理。其他 OIDC 身分服務可直接設定，不需要啟用 broker 容器。
 
-broker 不會建立預設的人員管理員。以下命令以 `ordivant-example` 為例；請使用啟動 broker 時相同的專案名稱與機密資料夾。密碼由管理員直接在 tmux 的互動提示中輸入。Windows 可先開啟 WSL 工作階段，並確認 Docker Desktop 已啟用 WSL 整合：
+broker 不會建立預設的人員管理員。以下命令以 `ordivant` 為例；請使用啟動 broker 時相同的專案名稱與機密資料夾。密碼由管理員直接在 tmux 的互動提示中輸入。Windows 可先開啟 WSL 工作階段，並確認 Docker Desktop 已啟用 WSL 整合：
 
-```powershell
+```sh
 wsl -- tmux new-session -A -s ordivant-idp-admin
 ```
 
 Linux 可使用 `tmux new-session -A -s ordivant-idp-admin`。在 tmux 終端中切換至倉庫目錄，再執行一次性初始化：
 
 ```sh
-export ORDIVANT_SECRETS_DIR="$PWD/.data/container-secrets/ordivant-example"
-docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
-docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
-docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
+docker compose -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
+docker compose -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
+docker compose -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
 ```
 
 請勿將密碼放入聊天、命令、環境變數或檔案。以暫時管理員登入 broker 後建立正式管理員，再移除暫時管理員。[Keycloak 官方初始化與復原說明](https://www.keycloak.org/server/bootstrap-admin-recovery)
@@ -105,7 +110,7 @@ Ordivant 登出會撤銷三個模組共用的工作階段；企業其他應用�
 
 保留 Identity PostgreSQL、`identity_data`（包含 `sso.key`）、Compose service secrets。使用 broker 時還要保留 `identity_broker_postgres`。資料庫與加密金鑰須一起備份；只有資料庫無法還原已加密的 client secret。
 
-正式 HTTPS 環境設定 `ORDIVANT_AUTH_COOKIE_SECURE=true`、明確 `ORDIVANT_AUTH_ORIGINS` 和 `ORDIVANT_SSO_PUBLIC_ORIGIN`。若 provider discovery 的 token/JWKS endpoint 使用不同 host，使用 `ORDIVANT_SSO_ALLOWED_ENDPOINT_HOSTS` 指定額外可信 host。Google 的精確 HTTPS token/JWKS hosts 已受支援。私有 HTTP broker 需明確 `ORDIVANT_SSO_HTTP_HOSTS`；`-WithIdentityBroker` 會處理該 Compose network 的 backchannel 路由，外部 provider 不需此例外。
+正式 HTTPS 環境設定 `ORDIVANT_AUTH_COOKIE_SECURE=true`、明確 `ORDIVANT_AUTH_ORIGINS` 和 `ORDIVANT_SSO_PUBLIC_ORIGIN`。若 provider discovery 的 token/JWKS endpoint 使用不同 host，使用 `ORDIVANT_SSO_ALLOWED_ENDPOINT_HOSTS` 指定額外可信 host。Google 的精確 HTTPS token/JWKS hosts 已受支援。私有 HTTP broker 需明確 `ORDIVANT_SSO_HTTP_HOSTS`；上述 `.env` 設定將 broker 的回程連線導向其內部網址，外部 provider 不需此例外。
 
 私有企業 CA 可將 PEM trust bundle 掛載到 Identity 容器，再設定 `ORDIVANT_SSO_CA_BUNDLE` 為該檔案路徑；TLS 憑證驗證持續啟用。Compose 信任指定的 `web` proxy，由 Nginx 覆寫 `X-Real-IP`，依實際來源進行登入限流。自訂反向代理需在 `ORDIVANT_AUTH_TRUSTED_PROXY_HOSTS` 列出精確 proxy host／IP，並由它覆寫此 header；直接連到 Identity API 的偽造 header 不會被採用。
 

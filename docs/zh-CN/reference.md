@@ -94,7 +94,7 @@ Identity 原生端点以 `/api/auth` 为前缀，套件网页使用 `/auth-api`�
 
 ## MCP
 
-Work／Knowledge／Code 的 MCP stdio 桥接程序会调用各自的 REST API，并使用各自受范围限制的 Agent token。变更操作中的 `request_id` 会对应至 `Idempotency-Key`；调用者不能在请求正文伪造 `actor`。启动示例见[容器文档](./containers.md)，依产品使用 `ordivant.mcp_server`、`ordivant_knowledge.mcp_server` 或 `ordivant_code.mcp_server`。
+Work／Knowledge／Code 的 MCP stdio 桥接程序会调用各自的 REST API，并使用各自受范围限制的 Agent token。变更操作中的 `request_id` 会对应至 `Idempotency-Key`；调用者不能在请求正文伪造 `actor`。启动示例见[贡献指南](../../CONTRIBUTING.md)，依产品使用 `ordivant.mcp_server`、`ordivant_knowledge.mcp_server` 或 `ordivant_code.mcp_server`。
 
 Runtime 连接外部工具时使用 MCP Streamable HTTP。详见[外部工具指南](./execution-usage.md#external-mcp-tools)。
 

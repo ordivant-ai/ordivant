@@ -10,7 +10,7 @@ Ordivant Work, Knowledge, and Code share one Identity service. Administrators ca
 
 ## Administrator setup
 
-1. Create and sign in with the first administrator for the environment you intend to use. Development and production environments have separate accounts, SSO settings, and databases.
+1. Sign in as an administrator of the Ordivant deployment you want to configure. Deployments have separate accounts and SSO settings, so confirm that you are using the correct service URL.
 2. Open “Accounts and security → Enterprise SSO.” Choose an identity provider template, then enter the organization-specific Issuer URL, Client ID, and Client Secret.
 3. Create a confidential OIDC web application in the identity service with Authorization Code and PKCE S256 enabled. Register the complete Callback URL shown by Ordivant as a Redirect URI; do not use wildcards.
 4. Configure allowed full email domains, member provisioning, default permissions, and group mappings. Save, then run “Test connection.” This checks discovery and JWKS; actual sign-in still requires authorization by the identity service.
@@ -43,7 +43,7 @@ Official setup references: [Entra OIDC](https://learn.microsoft.com/en-us/entra/
 
 - **Invitation only:** An administrator first creates a member invitation. After the enterprise email is verified and matches an allowed domain, the member can accept the invitation through SSO and receives the product and resource permissions specified in it. Enterprise sign-in does not create administrators automatically.
 - **JIT provisioning:** The first sign-in creates a regular member with explicit default and group permissions. Members without configured permissions cannot access product data; sharing a domain does not grant organization-wide visibility.
-- **Group synchronization:** JIT-managed members have their groups synchronized at every sign-in. Removing a group removes the related grants and revokes existing sessions. Each product's Python service continues to enforce data access.
+- **Group synchronization:** JIT-managed members have their groups synchronized at every sign-in. Removing a group removes the related grants and revokes existing sessions. Members can still access only authorized products and resources.
 - **Existing account linking:** Matching email addresses do not merge accounts automatically. An administrator must explicitly map an existing user to an IdP subject, which is verified at sign-in. Unlinking revokes the enterprise sign-in session.
 - **Manual permissions:** When an administrator explicitly changes a member's permissions, those permissions become manually managed so the next sign-in does not silently overwrite them. To resume group management, set the management mode again through the identity link.
 
@@ -60,27 +60,32 @@ For SAML, add a SAML Identity Provider in Keycloak and import the upstream metad
 
 For LDAP/AD, add an LDAP provider under Keycloak User Federation. Enter the directory address, Users DN, search filters, and username/email attributes provided by the enterprise. Configure group mappers and use LDAPS or StartTLS with a trusted CA. Enterprise administrators enter directory bind credentials and member passwords directly in the identity service. Validate the directory connection and synchronization for one member before creating an OIDC client for Ordivant. Ordivant still applies allowed domains, invitation/JIT policy, and explicit resource grants.
 
-To use SAML or LDAP/AD federation in the same deployment, the following example starts pinned Keycloak 26.8.0 and its separate PostgreSQL database. `ordivant-example` is an adjustable Compose project name:
+For SAML or LDAP/AD, complete [container initialization](containers.md) first. Add these settings to the same repository root's `.env`, then start optional Keycloak and its separate database. Retain any other Compose files already used by the installation:
 
-```powershell
-.\scripts\containers.ps1 -Action up -WithIdentityBroker -ProjectName ordivant-example
+```dotenv
+ORDIVANT_BROKER_PUBLIC_URL=http://127.0.0.1:8093
+ORDIVANT_SSO_HTTP_HOSTS=identity-broker
+ORDIVANT_SSO_BACKCHANNEL_OVERRIDES={"http://127.0.0.1:8093":"http://identity-broker:8080"}
+```
+
+```sh
+docker compose -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d --wait identity-broker identity-api
 ```
 
 By default, the broker binds only to `127.0.0.1:8093`. The caller can set `ORDIVANT_BROKER_PORT` and `ORDIVANT_BROKER_PUBLIC_URL`; deployments across machines should use a fixed HTTPS URL and a trusted reverse proxy. Other OIDC providers can be configured directly without enabling the broker container.
 
-The broker does not create a default human administrator. These commands use `ordivant-example`; use the same project name and secret directory as the broker deployment. The administrator enters the password directly at the interactive prompt in tmux. On Windows, open a WSL session first and ensure Docker Desktop has WSL integration enabled:
+The broker does not create a default human administrator. These commands use `ordivant`; use the same project name and secret directory as the broker deployment. The administrator enters the password directly at the interactive prompt in tmux. On Windows, open a WSL session first and ensure Docker Desktop has WSL integration enabled:
 
-```powershell
+```sh
 wsl -- tmux new-session -A -s ordivant-idp-admin
 ```
 
 On Linux, use `tmux new-session -A -s ordivant-idp-admin`. Change to the repository directory in the tmux terminal, then run the one-time bootstrap:
 
 ```sh
-export ORDIVANT_SECRETS_DIR="$PWD/.data/container-secrets/ordivant-example"
-docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
-docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
-docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
+docker compose -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
+docker compose -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
+docker compose -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
 ```
 
 Do not put the password in chat, commands, environment variables, or files. Sign in to the broker as the temporary administrator, create the permanent administrator, then remove the temporary account. See [Keycloak's official bootstrap and recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery).
@@ -105,7 +110,7 @@ The “Identity audit” records sign-ins, provisioning, settings and permission
 
 Preserve Identity PostgreSQL, `identity_data` (including `sso.key`), and Compose service secrets. When using the broker, also preserve `identity_broker_postgres`. Back up databases with their encryption keys; a database alone cannot restore an encrypted Client Secret.
 
-For production HTTPS, set `ORDIVANT_AUTH_COOKIE_SECURE=true`, `ORDIVANT_AUTH_ORIGINS`, and `ORDIVANT_SSO_PUBLIC_ORIGIN` explicitly. If the token or JWKS endpoint found through provider discovery uses a different host, use `ORDIVANT_SSO_ALLOWED_ENDPOINT_HOSTS` to list additional trusted hosts. The exact Google HTTPS token/JWKS hosts are supported. A private HTTP broker requires explicit `ORDIVANT_SSO_HTTP_HOSTS`; `-WithIdentityBroker` configures back-channel routing on that Compose network, and external providers do not need this exception.
+For production HTTPS, set `ORDIVANT_AUTH_COOKIE_SECURE=true`, `ORDIVANT_AUTH_ORIGINS`, and `ORDIVANT_SSO_PUBLIC_ORIGIN` explicitly. If the token or JWKS endpoint found through provider discovery uses a different host, use `ORDIVANT_SSO_ALLOWED_ENDPOINT_HOSTS` to list additional trusted hosts. The exact Google HTTPS token/JWKS hosts are supported. A private HTTP broker requires explicit `ORDIVANT_SSO_HTTP_HOSTS`; the `.env` settings above route broker backchannel connections to its internal address, and external providers do not need this exception.
 
 For a private enterprise CA, mount its PEM trust bundle into the Identity container and set `ORDIVANT_SSO_CA_BUNDLE` to the file path; TLS certificate verification remains enabled. Compose trusts the designated `web` proxy, whose Nginx instance overwrites `X-Real-IP` so sign-in rate limits use the actual source. A custom reverse proxy must be listed by exact host/IP in `ORDIVANT_AUTH_TRUSTED_PROXY_HOSTS` and must overwrite this header; forged headers sent directly to the Identity API are ignored.
 

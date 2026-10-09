@@ -1,0 +1,16 @@
+services:
+  init:
+    image: python:3.13-alpine
+    command: ["python", "/opt/ordivant/container_init.py", "/secrets"]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+    network_mode: none
+    read_only: true
+    volumes:
+      - type: bind
+        source: ./scripts/container_init.py
+        target: /opt/ordivant/container_init.py
+        read_only: true
+      - type: bind
+        source: ${ORDIVANT_SECRETS_DIR:-./.data/container-secrets}
+        target: /secrets

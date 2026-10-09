@@ -1,60 +1,56 @@
 <span id="模型連線與-agent-設定"></span>
 <span id="模型连接与-agent-设置"></span>
 
-# Model connections and Agent settings
+# Model connections and Agent settings {#model-connections-and-agent-settings}
 
-Model settings belong to Work. Knowledge and Code can use their own APIs/MCP without a model connection. Development and deployment environments have separate databases, and settings do not synchronize between them.
+A Work organization administrator configures model connections. Agents can inherit the organization default or use an Agent-specific selection. Changes apply to tasks dispatched afterward.
 
 <span id="管理員設定全域連線"></span>
 <span id="管理员设置全域连接"></span>
 
-## Configure a global connection as an administrator
+## Configure a global connection as an administrator {#configure-a-global-connection-as-an-administrator}
 
-1. Sign in to Work and open “Model connections” in the sidebar. Only organization administrators can manage connections.
-2. Add a Provider with a name, ID, API base URL, and API key. A Responses API-compatible URL ends in `/v1`; the application calls its `/responses` endpoint.
-3. Add the model ID, display name, context/output limits, and supported reasoning efforts. These are configured values; they do not mean the platform has verified the provider's actual capacity or rates.
-4. Choose the organization's default Provider, model, reasoning effort, and per-response output limit, then save.
+1. Sign in to Work and open **Model connections** in the sidebar. Only organization administrators can manage provider connections.
+2. Add a provider with a name, ID, HTTPS API base URL, and API key. A Responses API-compatible URL commonly ends in `/v1`.
+3. Add the model ID and display name, then choose the reasoning options and context and per-response output limits supported by that model.
+4. Select the organization's default provider, model, reasoning option, and output limit, then save.
 
-Keys are written only to encrypted settings on the Work server. Reopening settings shows “Configured” without returning the original key; leaving it blank and saving preserves the current key. Changing only the model or reasoning effort does not require a new key. Changing the API base URL requires you to provide the key for that endpoint explicitly. A revision conflict prompts you to reload rather than overwrite another administrator's change.
+The API key is stored securely and is not shown again when you reopen settings. Leaving the key field blank and saving preserves the current key. When changing the API URL, enter the key supplied for that provider. If the page says another administrator changed the settings, reload before making your update.
 
 <span id="建立或編輯-agent"></span>
 <span id="创建或编辑-agent"></span>
 
-## Create or edit an Agent
+## Create or edit an Agent {#create-or-edit-an-agent}
 
-Add an Agent in “Agent directory” and select `Pi Durable` as its Runtime. Choose one of these model modes:
+In **Agent directory**, add or edit an Agent and choose how it gets model settings:
 
-| Mode | Behavior |
+| Mode | Description |
 |---|---|
-| Inherit global default | Each new dispatch uses the organization's default at that time; suitable for Agents sharing one connection. |
-| Agent-specific | Select the Provider, model, reasoning effort, and output limit; the saved key for that Provider is still used. |
+| Inherit global default | New tasks use the organization's current default model and options. |
+| Agent-specific | Choose a provider, model, reasoning option, and output limit for this Agent; it uses the key already configured for that provider. |
 
-Agent editing offers the same settings. Switching back to inheritance removes the individual selection; the Agent directory shows the effective selection. Already-dispatched work retains the model selection from dispatch time. Settings changes affect the next dispatch.
+You can switch between these modes when editing an Agent. When you switch back to inheritance, the directory shows the global options that will apply. Changes do not affect tasks that have already been dispatched; they apply on the next dispatch.
 
-An `External` Agent works through an external program via REST/MCP. The platform does not call a model on its behalf; its model name is only a description of the external executor.
+An Agent run by an external program is not called by Work. Its model name is only a label.
 
 <span id="provider-設定範例"></span>
 <span id="provider-设置范例"></span>
 
-## Provider configuration example
+## Provider configuration example {#provider-configuration-example}
 
-Enter the HTTPS base URL supplied by your model provider (for example, `https://api.example.com/v1`; this is a placeholder and cannot be called directly), along with Model IDs, reasoning efforts, and context/output limits actually supported by that provider. The platform does not include a model service or API key.
+Use the HTTPS URL, model ID, and options supplied by your model provider. `https://api.example.com/v1` is only a format example and cannot be called directly. Ordivant does not include a model service or API key.
 
-The model capacity ceiling and per-response output ceiling are separate settings. Start by testing with a low output limit; the Pi adapter minimum is 16. Every model request forces `store:false`. API compatibility, model responses, and rates remain subject to the provider's service.
+The context limit controls how much content a model can process; the output limit caps the length of one response. Enter values supported by your provider and start with a low output limit. These settings are not an overall spending cap. Rates and billing are determined by the provider. To limit actual spending, set a usage or spending limit in your provider account.
 
-Connections must be configured separately in development and production. When switching models, you can reuse the key already saved for the same Provider.
+Each Work environment stores its own settings. Configure the provider separately for each Work address you use.
 
 <span id="執行與證據"></span>
 <span id="运行与证据"></span>
 
-## Execution and evidence
+## Runs and evidence {#execution-and-evidence}
 
-Create a task, assign a Pi Agent with Project access, and dispatch it. A dispatch with a configured connection uses the real model; without one it uses a clearly labeled DEMO. Model or API failures leave a failed status and cannot fall back to a successful demonstration.
+Dispatching a task to an Agent with a configured model calls that provider and may incur charges. When no model is configured, the system clearly marks the run as DEMO; DEMO does not call a paid model. A provider failure is shown as a failure and is never presented as a successful DEMO.
 
-Pi models can call platform tools to read a task and report progress. Submitted results enter “In review” and require acceptance by an authorized independent reviewer. Execution receipts retain model token usage, the model ID reported upstream, tool names, and call counts. A reported model ID alone cannot prove the provider's underlying routing; dollar cost remains unknown, and token usage is not an invoice.
+A Run record may show the model name and token usage returned by the provider, but dollar cost may be unavailable. Token counts are not an invoice, and a reported model name alone cannot prove which route an intermediary service used. Check the provider's usage and billing pages for actual charges.
 
-The `mode` in the service health check is the default behavior for unconfigured work. Even if it says `demo`, a configured dispatch can have a `mode:live` receipt; use the individual work receipt to determine how that run executed.
-
-When backing up model settings, preserve the Work database and `model-settings.key` from the Work data volume together. Restoring only the database without its encryption key cannot decrypt existing Provider keys.
-
-For model connection and dispatch instructions, see the [Work guide](guide/work.md) and [execution and automation guide](execution-usage.md). See [Model API](reference.md#model-settings) for API and Runtime boundaries, and the [product roadmap](roadmap.md) for planned model features.
+After an Agent submits work, another authorized reviewer must accept the result before the task is complete. See the [Work task guide](guide/work.md) and [execution and automation guide](execution-usage.md) for the workflow, or the [container deployment guide](containers.md) for self-hosting and data backups.

@@ -94,7 +94,7 @@ Administrators use `sso/settings` and `sso/test` for OIDC configuration; `oidc/s
 
 ## MCP
 
-The Work, Knowledge, and Code MCP stdio bridges call their respective REST APIs with their own scoped Agent tokens. A mutation's `request_id` maps to `Idempotency-Key`; callers cannot forge the actor in a request body. For startup examples, see the [container guide](./containers.md). Depending on the product, use `ordivant.mcp_server`, `ordivant_knowledge.mcp_server`, or `ordivant_code.mcp_server`.
+The Work, Knowledge, and Code MCP stdio bridges call their respective REST APIs with their own scoped Agent tokens. A mutation's `request_id` maps to `Idempotency-Key`; callers cannot forge the actor in a request body. For startup examples, see the [contribution guide](../../CONTRIBUTING.md). Depending on the product, use `ordivant.mcp_server`, `ordivant_knowledge.mcp_server`, or `ordivant_code.mcp_server`.
 
 Runtime connections to external tools use MCP Streamable HTTP. See the [external tools guide](./execution-usage.md#external-mcp-tools).
 

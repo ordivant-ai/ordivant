@@ -2,6 +2,8 @@
 
 Knowledge stores traceable specifications, decisions, and background material. Each Space has an independent membership scope. Document contents use immutable versions, and search matches the titles and body text actually stored.
 
+![Knowledge document with content, published versions, and citations](/screenshots/knowledge-en.png)
+
 <span id="建立文件與版本"></span>
 <span id="创建文档与版本"></span>
 

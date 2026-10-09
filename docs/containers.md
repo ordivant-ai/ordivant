@@ -1,106 +1,125 @@
-# 容器開發與部署 {#container-workflow}
+# 自行部署 Ordivant {#container-workflow}
 
-`scripts/containers.ps1` 會透過 Docker Compose 建置並執行選定的產品。主機需要 Docker Engine／Desktop 與 Docker Compose，不需要安裝 `uv`、Python、Node.js 或 npm。
+<span id="development"></span>
 
-## 開發環境 {#development}
+用 Docker Compose 在自己的電腦或伺服器安裝 Ordivant。以下命令適用於 Linux、macOS，以及使用 Docker Desktop 的 Windows；不需要 PowerShell 7，也不用在主機安裝 Python 或 Node.js。已加入團隊的成員可直接閱讀[開始使用](guide/getting-started.md)。
 
-以下命令會啟動完整開發套件，明確建立本機示範資料，並啟用選配的 Gitea 與 Pi runtime 服務：
+## 安裝前準備 {#deployment-prerequisites}
 
-```powershell
-.\scripts\containers.ps1 -Development -Seed -WithGitea -WithRuntime
+準備 Git、Docker Engine 或 Docker Desktop，以及 Docker Compose v2。Docker Desktop 請使用 Linux containers。確認 `docker compose version` 能執行；首次建置需要網路連線下載映像與依賴。
+
+預設部署名稱為 `ordivant`，網址為 `http://127.0.0.1:8088`。若需要不同名稱或連接埠，在倉庫根目錄建立 `.env`，可從 `.env.compose.example` 複製。請在首次安裝前選定部署名稱與機密目錄，之後沿用相同設定。
+
+## 安裝並啟動 {#production-targets}
+
+在終端機依序執行：
+
+```sh
+git clone https://github.com/ordivant-ai/ordivant.git
+cd ordivant
+docker compose -f compose.init.yaml run --rm init
+docker compose up -d --build --wait
 ```
 
-輔助腳本會建置選定產品的開發映像，等待 API 與網頁服務就緒；只有提供 `-Seed` 時才初始化選定 API 的資料，提供 `-WithGitea` 時才初始化本機 Gitea 服務帳號。Work 已有初始化檔後，才會啟動 runtime。已設定模型的 Work 派發會使用實際模型連線；尚未設定的派發會使用有明確示範標示、結果固定的備援模式。詳見[模型設定](model-usage.md)。
+第一個 Compose 工作會建立必要的服務設定；不會建立人員帳號，也不會加入示範任務。第二個命令建置並啟動 Work、Knowledge、Code 與共用登入。首次建置需要一些時間；`--wait` 會等待服務健康。
 
-開發模式會將產品原始碼掛載到容器中，並提供與正式環境相同的完整帳號登入。無論選擇哪一個產品，都會包含 Identity API `8030` 與其獨立 PostgreSQL。預設主機連接埠為 Work API `8000`、Knowledge API `8010`、Code API `8020`、網頁 `5173`、runtime `8090`，以及 Gitea `3002`。若連接埠已被使用，可在 shell 中覆寫 Compose 的連接埠變數。
+開啟 `http://127.0.0.1:8088/work`，依畫面建立初始管理員並保存復原碼。平台沒有預設人員密碼。同一部署中的三個產品共用登入，但專案和權限各自管理。Code 的 repository 操作還需完成下方 Gitea 設定。
 
-若只要執行單一產品的獨立前端與 API，而不啟動其他產品：
+### 讓 Agent 自動執行 {#enable-agent-execution}
 
-```powershell
-.\scripts\containers.ps1 -Development -Products knowledge -Seed
-.\scripts\containers.ps1 -Development -Products code -Seed -WithGitea
+若要讓 Pi Agent 自動處理任務，再執行：
+
+```sh
+docker compose exec work-api python -m ordivant.bootstrap_runtime
+docker compose --profile runtime up -d --build --wait runtime
 ```
 
-選擇單一產品時，腳本會將 `ORDIVANT_PRODUCT_MODE` 設為該產品，並將網頁的 API 上游指向對應 API 容器。支援單一產品、全部三個產品，以及包含 Work 的兩產品組合。只有 Knowledge＋Code 的組合會被拒絕，因為套件路由需要 Work 作為 `/api` 的上游。支援的多產品組合會使用套件模式，並將 `/api` 導向 `work-api`。
+初始化命令只建立執行服務的機器身分，不加入 DEMO 專案、Agent 或人員帳號；重跑會沿用有效設定。它也可用於已有工作資料的部署。登入 Work 後，在「模型連線」設定供應商與模型，再在「Agent 名錄」建立 Pi 執行者；從任務詳細資料選擇 Agent 並按「派發給 Agent」。詳見[模型設定](model-usage.md)及[入門操作](guide/getting-started.md)。
 
-## 正式環境映像 {#production-targets}
+尚未設定模型的 Run 會標示 DEMO，不呼叫付費模型。若只需要人工追蹤、提交成果與審核，可省略執行服務。要讓一般重啟命令繼續啟用執行服務，在 `.env` 加入 `COMPOSE_PROFILES=runtime`。
 
-首次啟動時，網頁會要求使用者自行設定密碼並建立初始管理員。平台沒有預設的人類帳號；`-Seed` 只會建立業務示範資料與 Agent 憑證。開發與正式環境使用不同的 Identity 資料卷，以及各自 Compose 專案的 Cookie 名稱。邀請、權限、密碼復原與撤銷工作階段的方式，請參閱[帳號與登入](human-login.md)。所有已設定的產品都會在兩種模式中拒絕舊的本機工作階段端點。
+## 只安裝需要的產品 {#individual-products}
 
-除非明確提供設定，腳本會依選定的網頁主機連接埠推導精確的 `ORDIVANT_AUTH_ORIGINS`。遠端 HTTPS 部署需設定公開來源，以及 `ORDIVANT_AUTH_COOKIE_SECURE=true`。只有明確使用 HTTP 回送位址的來源可使用非安全 Cookie。Identity 服務秘密與資料庫連線檔保存在各專案已被 Git 忽略的秘密資料夾中。
+在全新的部署中，先於 `.env` 選擇產品，再執行初始化及表中的啟動命令。使用不同部署名稱及機密目錄，可與另一套 Ordivant 保持資料隔離；同時運行時也需指定不同 `ORDIVANT_WEB_PORT`。
 
-不加 `-Development`，即可建置並執行正式環境 Docker 映像。本機工作階段驗證仍保持停用：
+| 產品 | `.env` 的產品設定 | 啟動命令 |
+| --- | --- | --- |
+| Work | `ORDIVANT_PRODUCT_MODE=work`、`ORDIVANT_WEB_API_UPSTREAM=http://work-api:8000` | `docker compose up -d --build --wait work-api web` |
+| Knowledge | `ORDIVANT_PRODUCT_MODE=knowledge`、`ORDIVANT_WEB_API_UPSTREAM=http://knowledge-api:8010` | `docker compose up -d --build --wait knowledge-api web` |
+| Code | `ORDIVANT_PRODUCT_MODE=code`、`ORDIVANT_WEB_API_UPSTREAM=http://code-api:8020` | `docker compose up -d --build --wait code-api web` |
 
-```powershell
-.\scripts\containers.ps1 -Action up
-.\scripts\containers.ps1 -Action up -Products knowledge
+必要的登入服務與資料庫會一起啟動。Work 與 Knowledge 不需要 Code 或 Gitea；Code 要修改 repository 時，還需下方的 Gitea。
+
+## 啟用選用功能 {#optional-services}
+
+### Code 與 Gitea {#enable-gitea}
+
+在相同部署中執行：
+
+```sh
+docker compose --profile gitea up -d --wait gitea
+docker compose -f compose.yaml -f compose.gitea-init.yaml --profile gitea run --build --rm gitea-init
+docker compose up -d --no-deps --force-recreate --wait code-api
 ```
 
-選擇完整套件時，會使用套件前端模式，並以 Work 作為 `/api` 上游。單獨選擇 Knowledge 或 Code 時，會建置該產品的獨立前端。正式環境預設網頁連接埠為 `8088`。開發與正式環境的預設 Compose 專案名稱都包含儲存庫絕對路徑的雜湊，因此另一份 checkout 會取得獨立的專案與秘密資料夾。可使用 `-ProjectName` 指定固定的執行個體名稱。
+初始化工作會替 Code 設定服務連線；不會建立供人員使用的預設登入密碼。完成後回到 Code 建立專案、repository 和 PR。Gitea 預設網址是 `http://127.0.0.1:3002`。在 `.env` 的 `COMPOSE_PROFILES` 保留 `gitea`，例如 `runtime,gitea`，讓之後重啟仍包含它。
 
-若要同時執行開發與正式環境，請使用不同的 Compose 專案名稱及不衝突的主機連接埠。以下命令只是範例；請依部署名稱、可用連接埠與是否需要 Gitea 調整：
+### 執行沙箱 {#enable-sandbox}
 
-```powershell
-$env:ORDIVANT_DEV_WEB_PORT = '5173'
-$env:ORDIVANT_WEB_PORT = '8088'
-$env:ORDIVANT_GITEA_PORT = '3003'
-.\scripts\containers.ps1 -Development -ProjectName ordivant-dev-example -Seed -WithGitea -WithRuntime
-Remove-Item Env:ORDIVANT_GITEA_PORT
-.\scripts\containers.ps1 -ProjectName ordivant-prod-example -WithGitea
+先完成 Agent 執行服務的初始化，再建置沙箱工作映像並啟動：
+
+```sh
+docker compose -f compose.yaml -f compose.sandbox.yaml --profile sandbox build sandbox-job-image
+docker compose -f compose.yaml -f compose.sandbox.yaml --profile runtime --profile sandbox up -d --build --wait runtime
 ```
 
-這兩次執行會使用各 Compose 專案獨立的資料卷，以及 `.data/container-secrets/<ProjectName>/` 資料夾。正式環境的命令不會建立示範資料。
+若已啟用 Gitea，在第二個命令另加 `--profile gitea`。在 `.env` 保存啟用設定，後續即可沿用一般 `docker compose` 指令：
 
-## 操作與資料保存 {#actions-and-data}
-
-`-Action` 支援 `up`（預設）、`down`、`status` 與 `logs`。操作同一專案時，請使用相同的 `-Development` 與 `-ProjectName` 值。例如：
-
-```powershell
-.\scripts\containers.ps1 -Development -Action status
-.\scripts\containers.ps1 -Development -Action logs -WithGitea -WithRuntime
-.\scripts\containers.ps1 -Development -Action down
+```dotenv
+COMPOSE_PATH_SEPARATOR=,
+COMPOSE_FILE=compose.yaml,compose.sandbox.yaml
+COMPOSE_PROFILES=runtime,gitea,sandbox
 ```
 
-`down` 只會停止選定的 Compose 專案，並保留其具名資料庫、產品、runtime 與 Gitea 資料卷。腳本不會使用 `down -v`，也不會刪除秘密或資料。
+沒有啟用 Gitea 時移除清單中的 `gitea`。沙箱不連接網路，也不掛載主機資料；需要保存的成果必須在 Run 結束前提交。[工具與沙箱操作](execution-usage.md#sandboxes)
 
-必須明確提供 `-Seed` 才會在各選定產品的 API 容器內執行資料初始化模組。初始化資料及產生的 Bearer token 都是本機示範資料，不會設定企業 SSO。若使用 `-WithRuntime` 卻沒有提供 `-Seed`，腳本會要求該 Compose 專案的永久資料卷中已存在 Work `/data/bootstrap.json`；檔案不存在時會失敗，不會自行建立。
+### 企業登入與外部工具 {#enterprise-and-tools}
 
-使用 `-WithRuntime` 時，`-Products` 必須包含 `work`。`-WithGitea` 會啟動 `gitea` profile，預設將 Gitea 公開於回送連接埠 `3002`。輔助腳本會初始化本機 Gitea 服務身分，並將必要的服務憑證保存在該 Compose 專案的本機機密資料夾。重複執行時會驗證並保留既有憑證；若無法驗證，腳本會停止，不會悄悄更換憑證。
+OIDC 可直接連接公司的身分服務，無須額外容器。SAML／LDAP 可使用選用的 Keycloak；依[企業 SSO 指南](enterprise-sso.md#saml-ldap-and-active-directory)啟動與設定。自訂 Compose 檔案時，請把它加入既有 `COMPOSE_FILE`，不要覆蓋已啟用的沙箱設定。
 
-`-WithSandbox` 另外要求 Work 與 `-WithRuntime`。它會加入 `compose.sandbox.yaml`、建置固定的沙箱工作映像，並在 runtime 之前啟動內部受信任的執行器。只有 `sandbox-api` 持有 Docker daemon socket；工作容器、runtime 與網頁都不持有。沙箱工作以非 root 身分執行，採唯讀、禁止網路及資源限制設定，每次執行使用獨立且容量受限的 tmpfs 工作空間。產生的服務憑證保存在專案機密資料夾。執行控制、範本、工作流程排程與端點主機政策，請參閱[執行功能操作指南](execution-usage.md)。沙箱工作空間內容是暫存資料，不包含在資料卷備份中。
+外部 MCP 工具需先在 `.env` 的 `ORDIVANT_TOOL_ALLOWED_HOSTS` 加入精確主機名稱，再重啟 Work 與執行服務。不要把模型金鑰或人員密碼放入 `.env`；模型金鑰請在管理介面輸入。[工具連線操作](execution-usage.md#external-mcp-tools)
 
-每個 Compose 專案都有獨立的資料卷與機密資料夾。這些機密檔案已被 Git 忽略；請勿提交或公開。若要保留並還原對應資料庫，請將該專案的資料卷、機密資料夾及 Identity 加密金鑰一起安全備份。停止容器不會刪除這些資料。
+## 狀態、停止與備份 {#actions-and-data}
 
-正式環境建置使用 `ORDIVANT_MODE=production`，不提供本機工作階段驗證。明確使用 `-Seed` 仍會寫入示範身分與本機 Bearer 憑證，因此只有需要示範資料時才應使用。
+從同一倉庫目錄，使用安裝時相同的 `.env` 和 Compose 設定：
 
-分享 Docker Compose 錯誤輸出前，請先確認內容未包含機密、個人資料或內部網址。
-
-## Gitea 網址 {#gitea-urls}
-
-Code 在 Compose 網路中連線至 `http://gitea:3000`。瀏覽器與 clone 網址使用 Gitea 設定的 `ROOT_URL`；`PUBLIC_URL_DETECTION=never` 可避免內部 API 請求將這些連結改為 `gitea:3000`。部署到其他主機時，請將 `ORDIVANT_GITEA_PUBLIC_URL` 設為預定公開的 Gitea 網址。預設仍使用 `ORDIVANT_GITEA_PORT` 的回送網址。詳見 [Gitea 官方伺服器設定](https://docs.gitea.com/administration/config-cheat-sheet/#server-server)。
-
-Work 使用各專案自己的 `/data/vcs.json` 存取既有 VCS。其 Compose 設定明確允許私人 HTTP 主機 `gitea`；其他 HTTP 主機必須加入操作者設定的 `ORDIVANT_VCS_HTTP_HOSTS` 允許清單。呼叫者不能透過任務或工具請求指定伺服器網址。
-
-## 企業身分代理 {#enterprise-identity-broker}
-
-共用 Identity 服務支援直接 OIDC 連線，不需額外容器。請在「帳號與安全」中設定身分服務；每個 Compose 專案保有自己的加密設定與身分紀錄。備份 Identity 資料庫時，也必須保留 `identity_data/sso.key`。管理員需從精確信任的驗證來源中選擇正式的 `ORDIVANT_SSO_PUBLIC_ORIGIN`。
-
-如需 SAML 或 LDAP／AD 身分聯邦，可加入選配的 Keycloak 26.8.0 代理與其獨立 PostgreSQL：
-
-```powershell
-.\scripts\containers.ps1 -Development -WithIdentityBroker
-.\scripts\containers.ps1 -Development -Action status -WithIdentityBroker
+```sh
+docker compose ps
+docker compose logs --tail 100 work-api identity-api
+docker compose down
+docker compose up -d --wait
 ```
 
-代理綁定回送連接埠 `8093`；需要調整時，請在啟動前覆寫 `ORDIVANT_BROKER_PORT` 與 `ORDIVANT_BROKER_PUBLIC_URL`。代理沒有預設的人類管理員。請依[企業 SSO](enterprise-sso.md)的互動提示初始化 broker 管理員，並在建立正式管理員後移除暫時帳號。請勿將密碼放入命令、環境變數或檔案。`-WithIdentityBroker` 會設定明確的內部反向通道路由；外部 IdP 使用經驗證的 HTTPS。企業私人 CA 憑證組合可掛載至容器，並透過 `ORDIVANT_SSO_CA_BUNDLE` 指定。
+`down` 保留資料卷；不要加入 `-v`，那會刪除資料。備份需包含各產品資料庫、資料卷及 `.data/container-secrets/`（或自訂機密目錄），並與模型、SSO 的加密金鑰一起保存。[備份與還原步驟](guide/operations.md)
 
-## 無需主機 Python 的 MCP {#mcp-without-host-python}
+只有在尚未建立任何實際帳號或業務資料的全新試用環境，才可選擇加入 DEMO 範例；請在執行服務初始化與首次登入之前執行：
 
-每個 API 映像都包含自己的 stdio MCP 伺服器。設定 MCP 用戶端時，使用對應專案的 Compose 檔案與限定權限的 token 環境變數來執行 `docker`。主機不需要 Python 環境或 Pi runtime。例如，以下命令會轉送已在用戶端程序環境中設定的 token，其值不會出現在命令參數中：
-
-```powershell
-$env:ORDIVANT_SECRETS_DIR = Join-Path (Get-Location) '.data/container-secrets/ordivant-example'
-docker compose -p ordivant-example -f compose.yaml -f compose.dev.yaml exec -T -e ORDIVANT_KNOWLEDGE_API_TOKEN knowledge-api python -m ordivant_knowledge.mcp_server
+```sh
+docker compose exec work-api python -m ordivant.seed
+docker compose exec knowledge-api python -m ordivant_knowledge.seed
+docker compose exec code-api python -m ordivant_code.seed
 ```
 
-外部 MCP 用戶端的設定需使用該部署的 Compose 專案名稱與 Compose 檔案路徑。Work 使用 `ORDIVANT_API_TOKEN` 與 `python -m ordivant.mcp_server`；Knowledge 使用 `ORDIVANT_KNOWLEDGE_API_TOKEN` 與 `python -m ordivant_knowledge.mcp_server`；Code 使用 `ORDIVANT_CODE_API_TOKEN` 與 `python -m ordivant_code.mcp_server`。每個 Agent 應取得其產品限定權限的憑證；不要將 Gitea 服務 token 當成 Ordivant Bearer token。
+範例會建立示範專案及 Agent，不會建立人員密碼或串接模型。一般正式安裝無須執行這三個命令；已有資料的環境不要重新加入範例。
+
+## 使用 HTTPS 提供團隊存取 {#https-access}
+
+預設網頁只綁定本機 `127.0.0.1:8088`。若要讓團隊遠端使用，請在伺服器設定 HTTPS 反向代理，轉送到此本機位址，並在 `.env` 使用實際網址：
+
+```dotenv
+ORDIVANT_AUTH_ORIGINS=https://ordivant.example.com
+ORDIVANT_AUTH_COOKIE_SECURE=true
+ORDIVANT_SSO_PUBLIC_ORIGIN=https://ordivant.example.com
+```
+
+再執行 `docker compose up -d --wait` 重新套用設定。若反向代理在另一個容器內，需將它連到同一 Compose 網路並轉送至 `web:80`；主機的 `127.0.0.1` 不是另一個容器的本機位址。啟用企業登入時，另需核對身分服務的 Callback URL。[企業登入設定](enterprise-sso.md)

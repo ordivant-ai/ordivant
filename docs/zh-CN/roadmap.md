@@ -3,32 +3,32 @@
 
 # 路线图与功能边界 {#roadmap-and-feature-boundaries}
 
-本页列出 v0.1 的能力与后续候选，没有承诺日期。需求、优先顺序及进度可透过 [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues) 讨论与追踪。
+本页说明当前可以使用的功能与尚未支持的项目，不承诺推出日期。你可以通过 [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues) 提出需求、参与讨论或追踪进度；提出需求不代表一定会开发。
 
 <span id="v0-1-已交付"></span>
 
-## v0.1 已交付 {#delivered-in-v0-1}
+## 当前可以使用 {#delivered-in-v0-1}
 
-- Work 任务协作、独立 review、scope／lease／幂等、Run 事件与 controls。
-- Agent／流程不可变模板、DAG 依赖、手动与分钟间隔调度。
-- MCP Streamable HTTP 工具及 Bearer 认证；无网络 Docker job 沙箱。
-- Knowledge 文档版本、文字搜索、决策与精确引用。
-- 选配 Code/Gitea，既有 Git provider 的受限读取 adapter。
-- 原生人员登录、企业 OIDC、可选 Keycloak SAML／LDAP broker。
+- **Work：**创建项目和任务、指派 Agent、设置任务先后关系，并查看执行过程与提交的成果。工作流程可以手动启动或按分钟间隔排程。
+- **Knowledge：**保存文档版本、搜索文字内容、记录决策并引用确切来源。
+- **Code（选用）：**连接 Gitea 进行代码协作；Work 也可以查看已设置的 Git 平台上的合并请求信息。
+- **登录与权限：**提供普通账号登录和 OIDC 企业单点登录；SAML、LDAP／Active Directory 可以通过选用的 Keycloak 集成接入。
+- **外部工具：**管理员可以设置使用访问令牌连接的 MCP 工具。
+- **运行隔离：**Docker 工作环境默认不允许网络连接，但与主机共用内核，不能视为虚拟机等级的隔离。
+- **审查：**任务成果需要由另一位获授权的人员独立审查后才算完成。
 
 <span id="優先候選"></span>
 <span id="优先候选"></span>
 
-## 优先候选 {#candidates-for-future-work}
+## 当前限制与可能方向 {#candidates-for-future-work}
 
-| 方向 | 目前边界 |
-| --- | --- |
-| 运行前审批 | 已有成果独立 review；尚无完整工具副作用的事前审批政策 |
-| Token／金额治理 | 已有单次输出、turn、timeout 上限及用量收据；尚无可信费率与硬性总金额预算 |
-| 通知与 CI | 已有事件与 check receipt；尚无通知集成或内置外部 CI runner |
-| 企业生命周期 | OIDC 群组与禁用可撤权；SCIM 与客户真实 directory 验收仍待开发／设置 |
-| 工具互通 | Bearer MCP 已提供；交互式 MCP OAuth、stdio launcher、A2A 尚未提供 |
-| 知识导入 | 文字版本／检索已提供；文档解析、embedding／RAG 与批量来源同步尚未提供 |
-| 运行隔离与规模 | Docker 共用 kernel、无网络、单一 Pi storage writer；VM、分布式 dispatch 与大规模压测尚未提供 |
-
-公开 CI 使用可重现的脱机与合成测试。付费供应商的验收需由运营者明确设置，相关用量由运营者承担。
+| 项目 | 当前可用 | 尚未支持 |
+| --- | --- | --- |
+| 工作运行 | 由一个运行服务处理工作 | 多个运行服务分散处理工作或自动扩容 |
+| 操作前审批 | 可以由另一人审查已提交的成果 | 适用于所有外部工具操作的事前审批流程 |
+| 模型用量与费用 | 可设置单次输出、运行轮次和时间上限，也可查看用量记录 | 尚无涵盖所有供应商的可靠费用换算或全组织硬性支出上限 |
+| 通知与代码检查 | 可查看运行事件与已回报的检查结果 | 尚无内置邮件／聊天通知或代码构建服务 |
+| 账号管理 | 可通过 OIDC 群组和停用账号控制访问 | 尚无 SCIM 自动同步人员和群组 |
+| 外部工具登录 | 可使用访问令牌连接 MCP 工具 | 尚无交互式工具登录或 Agent 对 Agent（A2A）连接 |
+| 知识导入 | 可保存和搜索文字文档 | 尚无文档自动解析、图片文字识别、语义索引或批量来源同步 |
+| 沙箱隔离 | Docker 运行环境默认禁止网络，并与主机共用内核 | 尚无虚拟机等级隔离或多个服务分散运行 |

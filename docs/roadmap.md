@@ -3,32 +3,32 @@
 
 # 路線圖與功能邊界 {#roadmap-and-feature-boundaries}
 
-本頁列出 v0.1 的能力與後續候選，沒有承諾日期。需求、優先順序及進度可透過 [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues) 討論與追蹤。
+本頁說明目前可以使用的功能與尚未支援的項目，不承諾推出日期。你可以透過 [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues) 提出需求或追蹤討論；提出需求不代表一定會開發。
 
 <span id="v0-1-已交付"></span>
 
-## v0.1 已交付 {#delivered-in-v0-1}
+## 目前可以使用 {#delivered-in-v0-1}
 
-- Work 任務協作、獨立 review、scope／lease／冪等、Run 事件與 controls。
-- Agent／流程不可變範本、DAG 依賴、手動與分鐘間隔排程。
-- MCP Streamable HTTP 工具及 Bearer 認證；無網路 Docker job 沙箱。
-- Knowledge 文件版本、文字搜尋、決策與精確引用。
-- 選配 Code/Gitea，既有 Git provider 的受限讀取 adapter。
-- 原生人員登入、企業 OIDC、可選 Keycloak SAML／LDAP broker。
+- **Work：**建立專案與任務、指派 Agent、設定任務先後關係，並查看執行過程與提交的成果。工作流程可手動啟動或按分鐘間隔排程。
+- **Knowledge：**保存文件版本、搜尋文字內容、記錄決策，並引用確切來源。
+- **Code（選用）：**連接 Gitea 管理程式碼協作；Work 也可查看已設定 Git 平台上的合併請求資訊。
+- **登入與權限：**提供一般帳號登入及 OIDC 企業單一登入；SAML、LDAP／Active Directory 可透過選用的 Keycloak 整合。
+- **外部工具：**管理者可設定使用存取權杖連接的 MCP 工具。
+- **執行隔離：**Docker 工作環境預設不允許網路連線，但與主機共用核心，不能視為虛擬機等級的隔離。
+- **審查：**任務成果需由另一位獲授權的人員獨立審查後才算完成。
 
 <span id="優先候選"></span>
 <span id="优先候选"></span>
 
-## 優先候選 {#candidates-for-future-work}
+## 目前限制與可能方向 {#candidates-for-future-work}
 
-| 方向 | 目前邊界 |
-| --- | --- |
-| 執行前審批 | 已有成果獨立 review；尚無完整工具副作用的事前審批政策 |
-| Token／金額治理 | 已有單次輸出、turn、timeout 上限及用量收據；尚無可信費率與硬性總金額預算 |
-| 通知與 CI | 已有事件與 check receipt；尚無通知整合或內建外部 CI runner |
-| 企業生命週期 | OIDC 群組與停用可撤權；SCIM 與客戶真實 directory 驗收仍待開發／設定 |
-| 工具互通 | Bearer MCP 已提供；互動式 MCP OAuth、stdio launcher、A2A 尚未提供 |
-| 知識匯入 | 文字版本／檢索已提供；文件解析、embedding／RAG 與批次來源同步尚未提供 |
-| 執行隔離與規模 | Docker 共用 kernel、無網路、單一 Pi storage writer；VM、分散式 dispatch 與大規模壓測尚未提供 |
-
-公開 CI 使用可重現的離線與合成測試。付費供應商的驗收需由營運者明確設定，相關用量由營運者負擔。
+| 項目 | 目前可用 | 尚未支援 |
+| --- | --- | --- |
+| 工作執行 | 由一個執行服務處理工作 | 多台執行服務分散工作或自動擴充 |
+| 執行前核准 | 可要求另一位人員審查已提交的成果 | 尚無適用所有外部工具操作的事前核准流程 |
+| 模型用量與費用 | 可設定單次輸出、執行輪次與時間上限，也可查看用量紀錄 | 尚無涵蓋所有供應商的可靠費用換算或全組織硬性支出上限 |
+| 通知與程式碼檢查 | 可查看執行事件與已回報的檢查結果 | 尚無內建電子郵件／聊天通知或程式碼建置服務 |
+| 人員帳號管理 | 可透過 OIDC 群組和停用帳號控制存取 | 尚無 SCIM 自動同步人員與群組 |
+| 外部工具登入 | 可使用存取權杖連接 MCP 工具 | 尚無互動式工具登入或 Agent 對 Agent（A2A）連線 |
+| 知識匯入 | 可保存和搜尋文字文件 | 尚無文件自動解析、影像文字辨識、語意索引或批次來源同步 |
+| 沙箱隔離 | Docker 執行環境預設禁止網路，並與主機共用核心 | 尚無虛擬機等級隔離或多服務分散執行 |

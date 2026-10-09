@@ -3,22 +3,23 @@
 
 # 运维与备份 {#operations-and-backups}
 
-本地与容器服务的生命周期由 `scripts/containers.ps1` 控制。初次操作请指定固定的 `-ProjectName`；此脚本按该名称隔离 Compose 项目、具名数据卷及 `.data/container-secrets/<ProjectName>`。从另一份 Git 工作副本启动时，必须明确使用相同名称，才能连接到原有数据。
+本指南说明如何使用 Docker Compose 管理服务、备份数据及启用 Agent 自动执行。所有 Compose 命令都从 repository root 运行。默认部署名称为 `ordivant`，由 `compose.yaml` 固定；默认不需要创建 `.env`。如需自定义名称，请在 repository root 创建 `.env`，设置 `COMPOSE_PROJECT_NAME`，并在该部署期间保持不变。服务机密默认位于 `.data/container-secrets/`；如果设置了 `ORDIVANT_SECRETS_DIR`，请备份该实际路径。
 
 <span id="服務狀態與更新"></span>
 <span id="服务状态与更新"></span>
 
 ## 服务状态与更新 {#service-status-and-updates}
 
-```powershell
-pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Action status
-pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Action logs -WithRuntime -WithGitea -WithSandbox
-pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev
+```sh
+docker compose ps
+docker compose logs --tail 100
+docker compose up -d --build --wait
+docker compose down
 ```
 
-每次调用脚本时，都要使用相同的开发或生产模式及项目名称。查看 `logs` 时，加入要检查的可选服务配置文件参数；`down` 会一并处理已启用的可选配置文件，并停止该 Compose 项目。它会保留数据卷和机密文件，但不等于备份。删除 Compose 项目的数据卷会永久删除该项目的数据。
+默认网址为 `http://127.0.0.1:8088`。上述命令使用默认部署名称 `ordivant`。停止服务会保留数据卷和机密文件，但不等于备份；`docker compose down -v` 会删除数据卷并造成数据丢失。
 
-开发版 Web 默认只监听本地环回地址（loopback）的 `5173` 端口；Gitea 默认使用 `3002`。若主机端口冲突，可分别设置 `ORDIVANT_DEV_WEB_PORT` 和 `ORDIVANT_GITEA_PORT`。开发脚本也会让 API 端口仅监听本地环回地址。生产版 Web 默认使用 `8088`；对外部署时，请自行设置 HTTPS 反向代理、正式网站来源及安全 Cookie。
+默认网页端口是 `8088`，Gitea 是 `3002`。若端口冲突，可在 repository root 的 `.env` 中设置 `ORDIVANT_WEB_PORT` 或 `ORDIVANT_GITEA_PORT`。如果安装时启用了 Runtime、Gitea 等 profile，每条命令都要使用相同的 `--profile` 选项。如果启用 Sandbox，所有命令也必须使用相同的 Compose 文件组合 `-f compose.yaml -f compose.sandbox.yaml`。允许团队从远程访问前，请设置 HTTPS、正式网站来源和安全 Cookie，详见[容器部署指南](../containers.md)。
 
 <span id="需要備份的資料"></span>
 <span id="需要备份的数据"></span>
@@ -35,27 +36,27 @@ pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivan
 | Code | `code_postgres`、`code_data` | Code 范围、repository 绑定、PR 与状态收据 |
 | Gitea（若启用） | `gitea_data` | Repository、分支、提交、PR 的实际 Git 数据 |
 | Keycloak broker（若激活） | `identity_broker_postgres` | Broker realm 与连接设置 |
-| Compose 机密 | `.data/container-secrets/<ProjectName>/` | 数据库密码／URL、内部服务 token、Gitea 与其他服务设置 |
+| Compose 机密与设置 | 默认 `.data/container-secrets/`；自定义时使用 `ORDIVANT_SECRETS_DIR` 指定的路径；自定义部署还包含 `.env` | 数据库密码／URL、Runtime 和内部服务 token、Gitea 设置、Compose 项目名称与端口设置 |
 
-实际数据卷清单会依启用的产品和配置文件而异。Work 的 `model-settings.key` 用于解密模型及 MCP 工具连接设置；Identity 的 `sso.key` 用于解密企业 IdP 设置。加密密钥必须与对应数据库和数据卷一起备份，不可单独更换，否则无法解密已有密文。Runtime 的 Pi 状态位于 Work 数据卷。每次 sandbox 的工作目录都是临时数据，不是成果保存位置。
+实际数据卷清单会依启用的产品和配置文件而异。Work 的 `model-settings.key` 用于解密模型及 MCP 工具连接设置；Identity 的 `sso.key` 用于解密企业 IdP 设置。加密密钥必须与对应数据库和数据卷一起备份，不可单独更换，否则无法解密已有密文。Agent 的执行状态位于 Work 数据卷。每次 sandbox 的工作目录都是临时数据，不是成果保存位置。
 
-在 Docker Desktop 或 Docker CLI 中，可用 Compose 项目标记查出此环境实际创建的数据卷名称：
+可用 Compose 项目标记查出此环境实际创建的数据卷名称：
 
-```powershell
-docker volume ls --filter "label=com.docker.compose.project=ordivant-dev"
+```sh
+docker volume ls --filter "label=com.docker.compose.project=ordivant"
 ```
 
-请将列出的所有产品、Identity 及已启用配置文件的数据卷纳入备份；实际清单以此命令结果为准，不要只依范例名称猜测。
+如果自定义了 `COMPOSE_PROJECT_NAME`，请将筛选值改为 `.env` 中的名称。请将列出的所有产品、Identity 及已启用 profile 的数据卷纳入备份；实际清单以命令结果为准，不要只依范例名称猜测。
 
 <span id="一致性與還原"></span>
 <span id="一致性与还原"></span>
 
 ## 一致性与还原 {#consistency-and-restoration}
 
-1. 确认备份目标是正确的 Compose 项目名称。使用 `-Action down` 停止该环境，让文件数据与 PostgreSQL 数据卷保持一致；这不会删除数据。
-2. 使用组织核准的 Docker 数据卷快照或备份工具，备份该项目标记下需要的全部数据卷。也要一并保存同一项目中被 Git 忽略的 `container-secrets` 目录。
+1. 确认备份目标是正确的 Compose 项目名称。使用 `docker compose down` 停止该环境，让文件数据与 PostgreSQL 数据卷保持一致；这不会删除数据。
+2. 使用组织批准的 Docker 数据卷快照或备份工具，备份该项目标记下需要的全部数据卷。也要一并保存默认的 `.data/container-secrets/` 目录，或 `ORDIVANT_SECRETS_DIR` 指定的实际目录；如有自定义 `.env`，也应加密保存。
 3. 将备份和主机上的机密目录加密保存、限制访问，并定期测试还原。不要把 `.data`、初始设置 token 或 Gitea／服务凭证上传到公开 issue、聊天或 Git。
-4. 还原时先恢复同名 Compose 数据卷及原有机密，再使用相同项目名称与原产品／配置文件启动。不要混用不同环境的加密密钥和数据库。
+4. 还原时先恢复同名 Compose 数据卷及原有机密，再使用相同部署名称、profile 和 Compose 文件组合启动。不要混用不同环境的加密密钥和数据库。
 
 若使用单一产品或部分产品模式，请备份该模式创建的所有数据卷及共用 Identity 数据卷。Knowledge 引用和 Code PR 的来源追溯信息不能代替目标产品数据备份；也需保存来源产品及实际 Gitea 数据。
 
@@ -64,6 +65,27 @@ docker volume ls --filter "label=com.docker.compose.project=ordivant-dev"
 
 ## 运行与调度 {#execution-and-scheduling}
 
-定期间隔工作流程需要 Work Runtime 持续运行。服务停止期间错过的计划不会全部补跑；同一计划已有进行中的工作流程时，不会重叠启动。每次沙箱工作区都有资源限制，并在 Run 结束时清理，不应用来长期保存文件。Run、成果物和 Knowledge 文档请通过相应产品保存。
+首次安装请先按照[容器部署指南](../containers.md)完成 Compose 初始化和服务启动。一般正式安装接着在浏览器创建第一位人员管理员，再由管理员在模型管理页设置 provider、API key 和 model；只有实际派发任务后才会调用已配置模型。没有有效模型时，Run 会标记为 DEMO。
 
-运行控制、工具允许连接的主机及沙箱限制见[运行使用指南](../execution-usage.md)。Runtime 未设置有效模型时会使用 DEMO 后备模式；DEMO 不代表付费模型运行，也不是费率估算。
+如果要在全新环境试用 DEMO，请在 Compose 初始化和服务启动后、首次登录及首次运行 `bootstrap_runtime` 之前创建示例数据。此选项只适用于尚未创建任何真实数据的全新试用环境；只运行所需产品对应的命令。Seed 完成后再在浏览器创建第一位人员管理员。既有部署不可执行 Seed：
+
+```sh
+docker compose exec work-api python -m ordivant.seed
+docker compose exec knowledge-api python -m ordivant_knowledge.seed
+docker compose exec code-api python -m ordivant_code.seed
+```
+
+要启用 Agent Runtime，请确认 Work API 已健康，然后运行：
+
+```sh
+docker compose exec work-api python -m ordivant.bootstrap_runtime
+docker compose --profile runtime up -d --build --wait runtime
+```
+
+`bootstrap_runtime` 只初始化 Runtime 机器身份，不会创建 DEMO、人员或项目，可在已有正式数据的环境中运行。如果已存在有效的 `runtime_token`，重新运行不会轮换该 token。如果同时使用 Sandbox，启动 Runtime 时必须沿用安装时的 Compose 文件和 profile：
+
+```sh
+docker compose -f compose.yaml -f compose.sandbox.yaml --profile runtime --profile sandbox up -d --build --wait runtime
+```
+
+定期间隔工作流程需要 Work Runtime 持续运行。服务停止期间错过的计划不会全部补跑；同一计划已有进行中的工作流程时，不会重叠启动。每次沙箱工作区都有资源限制，并在 Run 结束时清理，不应用来长期保存文件。Run、成果物和 Knowledge 文档请通过相应产品保存。运行控制、工具允许连接的主机及沙箱限制见[运行使用指南](../execution-usage.md)。
