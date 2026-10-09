@@ -3,6 +3,8 @@
 
 # 開始使用 Ordivant {#getting-started-with-ordivant}
 
+這是快速認識平台的入門頁。第一次建立自己的工作區，請跟著[第一個專案完整教學](first-project.md)逐欄建立專案、Agent 與任務，完成提交及審核。管理員邀請成員時，請搭配[建立團隊](team-setup.md)。
+
 以「整理產品上線清單」為例，帶你從登入、建立任務到審查成果。使用團隊提供的 Ordivant 網址；若是自己部署，請先完成安裝，再開啟你的平台網址。
 
 <span id="準備環境"></span>
@@ -73,3 +75,7 @@
 - [Code：Repository 與 Pull Request](code.md)
 - [管理員、角色與 SSO](administration.md)
 - [帳號與登入](../human-login.md)
+
+- [第一個專案完整教學](first-project.md)
+- [建立團隊與邀請成員](team-setup.md)
+- [功能導覽](../features.md)

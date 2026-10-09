@@ -20,6 +20,8 @@ The API key is stored securely and is not shown again when you reopen settings. 
 <span id="建立或編輯-agent"></span>
 <span id="创建或编辑-agent"></span>
 
+![Model connection: enter the provider URL and supported models, using your own provider-issued API key](/screenshots/models-en.png)
+
 ## Create or edit an Agent {#create-or-edit-an-agent}
 
 In **Agent directory**, add or edit an Agent and choose how it gets model settings:
@@ -35,6 +37,8 @@ An Agent run by an external program is not called by Work. Its model name is onl
 
 <span id="provider-設定範例"></span>
 <span id="provider-设置范例"></span>
+
+![Agent settings: select Pi Durable, capability tags, and model inheritance](/screenshots/agent-en.png)
 
 ## Provider configuration example {#provider-configuration-example}
 

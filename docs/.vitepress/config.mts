@@ -16,7 +16,7 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
   const isSimplified = language === 'zh-Hans'
   const text = isEnglish ? {
     start: 'Get started', deploy: 'Self-host', usage: 'User guides',
-    startGroup: 'Get started', overview: 'About Ordivant', install: 'Your first project', release: 'Release notes',
+    startGroup: 'Get started', overview: 'About Ordivant', features: 'Feature tour', install: 'Quick introduction', tutorial: 'First project, step by step', team: 'Set up your team', release: 'Release notes',
     guide: 'Daily work', work: 'Work tasks and collaboration', runs: 'Runs, templates and automation',
     knowledge: 'Knowledge and citations', code: 'Code and version control', models: 'Model settings', login: 'Accounts and login',
     admin: 'Administration and deployment', permissions: 'Permissions and organization', sso: 'Enterprise SSO',
@@ -29,7 +29,7 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     footer: 'MIT licensed · Self-hosted',
   } : isSimplified ? {
     start: '开始使用', deploy: '自行部署', usage: '操作指南',
-    startGroup: '开始使用', overview: '产品介绍', install: '开始第一个项目', release: '版本说明',
+    startGroup: '开始使用', overview: '产品介绍', features: '功能导览', install: '快速入门', tutorial: '第一个项目完整教程', team: '建立团队与邀请成员', release: '版本说明',
     guide: '日常操作', work: 'Work 任务与协作', runs: 'Run、模板与自动化',
     knowledge: 'Knowledge 文档与引用', code: 'Code 与版本控制', models: '模型设置', login: '账号与登录',
     admin: '管理与部署', permissions: '权限与组织管理', sso: '企业 SSO',
@@ -42,7 +42,7 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     footer: 'MIT 许可 · 自行部署',
   } : {
     start: '開始使用', deploy: '自行部署', usage: '操作指南',
-    startGroup: '開始使用', overview: '產品介紹', install: '開始第一個專案', release: '版本說明',
+    startGroup: '開始使用', overview: '產品介紹', features: '功能導覽', install: '快速入門', tutorial: '第一個專案完整教學', team: '建立團隊與邀請成員', release: '版本說明',
     guide: '日常操作', work: 'Work 任務與協作', runs: 'Run、範本與自動化',
     knowledge: 'Knowledge 文件與引用', code: 'Code 與版控', models: '模型設定', login: '帳號與登入',
     admin: '管理與部署', permissions: '權限與組織管理', sso: '企業 SSO',
@@ -57,7 +57,8 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
   const route = (path: string) => `${prefix === '/' ? '' : prefix}${path}`
   return {
     nav: [
-      { text: text.start, link: route('/guide/getting-started') },
+      { text: text.start, link: route('/guide/first-project') },
+      { text: text.features, link: route('/features') },
       { text: text.usage, link: route('/guide/work') },
       { text: text.deploy, link: route('/containers') },
       { text: 'v0.1.0', link: route('/release') },
@@ -65,7 +66,9 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     sidebar: [
       { text: text.startGroup, items: [
         { text: text.overview, link: route('/overview') },
+        { text: text.features, link: route('/features') },
         { text: text.install, link: route('/guide/getting-started') },
+        { text: text.tutorial, link: route('/guide/first-project') },
         { text: text.login, link: route('/human-login') },
         { text: text.release, link: route('/release') },
         { text: text.roadmap, link: route('/roadmap') },
@@ -78,6 +81,7 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
         { text: text.models, link: route('/model-usage') },
       ] },
       { text: text.admin, items: [
+        { text: text.team, link: route('/guide/team-setup') },
         { text: text.permissions, link: route('/guide/administration') },
         { text: text.sso, link: route('/enterprise-sso') },
         { text: text.containers, link: route('/containers') },
@@ -139,6 +143,15 @@ export default defineConfig({
         const source = env.path ?? env.filePath ?? ''
         const relative = path.relative(docsRoot, source).split(path.sep).join('/')
         return relative.startsWith('en/') ? 'Copy code' : relative.startsWith('zh-CN/') ? '复制代码' : '複製程式碼'
+      }
+      const image = md.renderer.rules.image!
+      md.renderer.rules.image = (tokens, index, options, env, renderer) => {
+        const token = tokens[index]
+        const src = token.attrGet('src') ?? ''
+        if (/^\/screenshots\/[a-zA-Z0-9-]+\.png$/.test(src)) {
+          return `<DocScreenshot src="${md.utils.escapeHtml(src)}" alt="${md.utils.escapeHtml(token.content)}" />`
+        }
+        return image(tokens, index, options, env, renderer)
       }
       const fence = md.renderer.rules.fence!
       md.renderer.rules.fence = (tokens, index, options, env, renderer) => {

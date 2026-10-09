@@ -8,6 +8,9 @@ Ordivant brings projects, versioned knowledge, code provenance, durable runs, an
 
 [Documentation and setup](https://ordivant-ai.github.io/en/) · [Releases](https://github.com/ordivant-ai/ordivant/releases) · [Issues](https://github.com/ordivant-ai/ordivant/issues) · [MIT license](LICENSE)
 
+
+[Feature guide](docs/en/features.md) · [Full first-project tutorial](docs/en/guide/first-project.md) · [Team setup](docs/en/guide/team-setup.md)
+
 [![CI](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml)
 [![Docs](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml)
 

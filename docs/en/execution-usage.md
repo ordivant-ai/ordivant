@@ -39,6 +39,8 @@ Templates do not grant project or tool access. An Agent must already be authoriz
 <span id="自動工作流程"></span>
 <span id="自动工作流程"></span>
 
+![Agent template: save role, instructions, and execution settings for reuse](/screenshots/template-en.png)
+
 ## Automated workflows {#automated-workflows}
 
 Under **Automation → Workflows**, add steps, select an Agent or required capabilities, and define dependencies and independent reviewers. Steps without dependencies can run at the same time.
@@ -48,6 +50,8 @@ When starting a workflow manually, enter the request for that run. Work creates 
 A schedule can set an interval and a maximum number of starts. It does not start a second workflow while one from the same schedule is still running, and it does not make up intervals missed during downtime. Cancelling a workflow stops unfinished steps but keeps accepted results. Updating a workflow does not change one that has already started.
 
 <span id="外部-mcp-工具"></span>
+
+![Workflow: define steps, dependencies, and acceptance criteria](/screenshots/workflow-en.png)
 
 ## External MCP tools {#external-mcp-tools}
 
@@ -68,6 +72,8 @@ A sandbox has no network access or access to host directories. It cannot downloa
 The workspace is removed when the Run ends, stops, or times out. Submit files and test output as work or evidence before ending the Run; the workspace is not long-term storage. If the page cannot confirm cleanup, ask your deployment administrator to inspect the execution environment. Docker sandboxes share the host kernel. Organizations that require VM-level isolation need a VM or microVM execution environment.
 
 <span id="隔離驗收"></span>
+
+![Tools and sandboxes: inspect the project execution profile](/screenshots/tools-en.png)
 
 ## Check a run in your project {#isolated-acceptance}
 

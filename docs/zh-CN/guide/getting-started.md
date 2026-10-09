@@ -3,6 +3,8 @@
 
 # 开始使用 Ordivant {#getting-started-with-ordivant}
 
+这是快速认识平台的入门页。第一次建立自己的工作区，请跟着[第一个项目完整教程](first-project.md)逐栏创建项目、Agent 与任务，完成提交及审核。管理员邀请成员时，请搭配[建立团队](team-setup.md)。
+
 以“整理产品上线清单”为例，带你从登录、创建任务到审查成果。使用团队提供的 Ordivant 网址；若是自己部署，请先完成安装，再打开你的平台网址。
 
 <span id="準備環境"></span>
@@ -73,3 +75,7 @@
 - [Code：仓库与 Pull Request](code.md)
 - [管理员、角色与 SSO](administration.md)
 - [账号与登录](../human-login.md)
+
+- [第一个项目完整教程](first-project.md)
+- [建立团队与邀请成员](team-setup.md)
+- [功能导览](../features.md)

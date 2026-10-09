@@ -1,20 +1,24 @@
 ---
 layout: home
 title: 开源 Agent 协作平台
+description: 认识 Ordivant 的任务协作、Agent 执行、工作流程、知识与程式码管理，跟着完整教学部署并完成第一个项目。
 hero:
   name: Ordivant
   text: 让团队与 Agent 一起把工作完成。
-  tagline: 安排任务与自动流程、整理项目知识、协作代码；看见每次运行，审查每份成果。
+  tagline: 把目标拆成任务，让 Agent 带着规格与工具执行；团队掌握进度、保留知识，并用成果证据确认交付。
   image:
     src: /screenshots/work-zh-CN.png
     alt: Ordivant Work 任务工作区
   actions:
     - theme: brand
-      text: 开始使用
-      link: /zh-CN/guide/getting-started
+      text: 完成第一个项目
+      link: /zh-CN/guide/first-project
     - theme: alt
-      text: 自行部署
+      text: Docker Compose 安装
       link: /zh-CN/containers
+    - theme: alt
+      text: 看功能画面
+      link: /zh-CN/#product-tour
 ---
 
 <span id="從規格-到經過驗收的成果"></span>
@@ -22,84 +26,129 @@ hero:
 
 ## 从规格，到经过验收的成果 {#from-specifications-to-reviewed-results}
 
-Ordivant 是开源、可自行部署的 Agent 项目协作平台。你先说明要做的事、所需资料与验收条件，再把工作交给人员或 Agent；团队能查看进度、讨论问题、保存成果，最后由独立审查者确认完成。
+Ordivant 是开源、可自行部署的 Agent 项目协作平台。它把**要做的工作、执行的过程、交付的成果，以及团队的审核**放在同一个项目里：先写清楚目标和验收条件，交给人员或 Agent，查看每次尝试，最后由独立审查者决定是否完成。
 
-**Work** 管理工作，**Knowledge** 保存知识，可选的 **Code** 处理代码协作。它们共用人员登录，但各自保留项目与权限；可以部署全套，也可以只选需要的产品。
+团队可以从一个文件整理任务开始，逐步加入模型、工具、知识库与自动工作流程。每个人的权限、Agent 能使用的工具及执行环境，都由你自己的部署与管理者设定。
+
+**这个网站是产品介绍与使用手册。** 使用平台时，开启团队提供的 Ordivant 网址，或依[安装指南](./containers.md)在自己的环境启动；网站本身不提供云端帐号或模型服务。
 
 ## 哪些工作适合交给 Ordivant？ {#use-cases}
 
-- **产品与项目推进**：把上线目标拆成任务，安排负责人、前置依赖与验收条件，追踪哪些工作尚未完成。
-- **团队文档与决策**：集中整理需求、操作文档与决策，引用特定文档版本，让下一位接手的人找得到依据。
-- **Agent 协作与代码交付**：让 Agent 按指定模型与工具运行，查看 Run 记录，把文档或 PR 作为成果交给审查者。
+| 想完成的工作 | 交给平台的数据与安排 | 团队可以检查的交付 |
+| --- | --- | --- |
+| 准备产品上线 | 产品规格、服务清单、待办任务、依赖关系 | 有负责人与状态的上线清单，以及逐项成果证据 |
+| 整理团队知识 | 操作文件、需求、会议决策与来源 | 可搜索的文件、发布版本、引用及决策纪录 |
+| 协作程式码变更 | 变更目标、范围、验收条件、规格引用 | 分支、commit、PR 和测试证据，连回相关任务 |
+| 执行重复性工作 | Agent 范本、固定步骤、前置依赖、执行输入 | 每次流程产生的任务、Run、提交成果与审核纪录 |
+
+例如每周整理发布准备情况：先整理你提供的数据，再检查缺漏、提出待确认事项，经审核后才让依赖它的下一个步骤开始。若需要读取外部系统，管理者先连接对应工具并授权；数据不会因为写入网址就自动取得。
 
 ## 一次看懂主要功能 {#product-tour}
 
-下列画面来自实际平台的示范工作区。示范任务及 DEMO Run 用于说明操作，不代表付费模型已完成工作。
+切换下方产品，查看实际界面及适用的工作。每张文档截图都能点击放大，也能切回原始尺寸查看字段。画面以示例数据展示平台功能；DEMO Run 用来说明操作，不代表付费模型已完成任务。
 
-### Work：把目标变成可以追踪的任务 {#work-preview}
+<FeatureExplorer />
 
-用任务清单管理优先顺序、依赖与进度。每张任务可写入目标、输入资料、运行范围与验收条件，指派 Agent，保留讨论及成果证据。提交后由不同的审查者接受或退回，避免只凭“运行结束”就算完成。
+### Work：任务、协作与独立审核 {#work-preview}
 
-![Work 任务清单：查看示范项目的状态、优先顺序与负责人](/screenshots/work-zh-CN.png)
+在任务规格写下目标、输入数据、范围、限制及验收条件。安排负责人、优先顺序与依赖；遇到问题时，从任务发起求助或委派子任务，让讨论与交付保留在同一脉络。每项工作都有自己的提交及审核纪录。
 
-[了解任务创建、指派与审查 →](./guide/work.md)
+[任务与审核操作](./guide/work.md) · [求助与委派](./features.md#work-help-and-delegation)
 
-### Run：看见 Agent 做了什么 {#runs-preview}
+### Run：Agent 执行与自动化 {#runs-preview}
 
-从 Run 查看运行事件、工具调用、产出与可取得的用量。需要介入时可暂停、继续、停止或重试；常用做法可保存为 Agent 模板，再组成具有依赖的自动工作流程。外部工具连接与运行沙箱由管理者启用。
+派发给 Pi Agent 后，在 Run 查看状态、执行事件、工具结果、产出及供应商回报的用量。获授权的人员可要求暂停、继续、停止或重试。常用设定保存为 Agent 范本；工作流程可以手动或定期启动，依赖步骤会等待前置成果通过审核。
 
-![Run 控制台：查看示范运行的事件与成果](/screenshots/run-zh-CN.png)
+[Run、范本与工作流程操作](./execution-usage.md) · [模型连线与 Agent 设定](./model-usage.md)
 
-[了解 Run、模板、工作流程与工具 →](./execution-usage.md)
+### Knowledge：文件版本与决策依据 {#knowledge-preview}
 
-### Knowledge：保存团队共用的项目背景 {#knowledge-preview}
+用 Space 整理项目文件，搜索标题、内容与标签。每次发布保存不可变的版本；任务或 PR 可引用确切版本，方便回查当时使用的数据。另以决策纪录保存选择的理由及来源。引用保留来源，读取权限仍由 Space 管理。
 
-用 Space 组织文档，保留每次发布的版本，搜索规格与决策。引用可指向特定版本和段落，方便任务或代码审查回查当时使用的资料；更新文档不会改写先前的引用。
+[文件、版本、搜索与引用操作](./guide/knowledge.md)
 
-![Knowledge 工作区：查看示范文档、版本与引用](/screenshots/knowledge-zh-CN.png)
+### Code：程式码交付与 PR {#code-preview}
 
-[了解文档、版本、决策与引用 →](./guide/knowledge.md)
+选用 Gitea 后，从 Code 建立 repository、分支、commit 与 PR，附上相关任务及文件来源，再沿用团队的程式码审查流程。使用既有 GitHub、GitLab 或 Gitea 的团队，可先在 Work 设定读取 PR 与检查结果的连线。
 
-### Code：把代码变更连回工作 {#code-preview}
+[Code 操作指南](./guide/code.md) · [选择需要的产品](./overview.md#four-service-boundaries)
 
-启用 Gitea 后，在 Code 创建 repository、分支、commit 与 Pull Request，附上相关任务和规格来源。团队已有 GitHub 或 GitLab 时，也可沿用既有版本控制；Work 能读取管理者已设置的 PR 与检查结果，Code 并非必要服务。
+## 团队每个角色可以做什么？ {#team-roles}
 
-![Code 工作区：查看示范 repository 与 Pull Request](/screenshots/code-zh-CN.png)
+| 角色 | 日常工作 |
+| --- | --- |
+| 项目负责人 | 建立项目与规格、拆分任务、安排依赖和人员、派发 Agent、处理阻碍 |
+| 执行者 | 依规格完成工作、提出问题、保存来源及成果、提交审核 |
+| 审查者 | 对照验收条件检查成果与证据，接受或说明需要修改的地方 |
+| 知识维护者 | 发布与更新文件、记录决策、提供可追溯的版本引用 |
+| 部署与组织管理员 | 设定帐号、资源权限、模型连线、企业 SSO、工具与沙箱 |
 
-[了解 repository、PR 与审查 →](./guide/code.md)
+一个帐号可在同一部署登入三个产品；Work 项目、Knowledge Space、Code 项目各自授权。人员帐号与 Agent 是分开的身分，建立 Agent 不会替团队成员授予权限。[建立团队与邀请成员](./guide/team-setup.md)
 
 <span id="開始第一個專案"></span>
 <span id="开始第一个项目"></span>
 
-## 从一个小任务开始 {#start-your-first-project}
+## 跟着完成第一个项目 {#start-your-first-project}
 
-例如“整理产品上线清单”：
+完整教学使用「整理产品上线清单」作为范例。你会从空白工作区建立 LAUNCH 项目，填写一份可执行的规格，走完提交与审核；可以选择 Pi Agent 或人工执行路线。
 
-1. **登录并选择项目**：使用团队提供的 Ordivant 网址，以受邀账号或企业账号登录 Work。
-2. **说明要交付什么**：新增任务，写明产品背景、必须涵盖的项目与验收条件；已有规格时，加入 Knowledge 引用。
-3. **选择 Agent 并派发**：管理者先设置模型连接及 Agent。派发后，在 Run 查看进度与成果；未设置模型的示范运行会标示 DEMO。
-4. **审查成果**：由另一位获授权的审查者检查清单与证据，接受成果或退回修改。只有审查接受后，任务才算完成。
+1. **登入与建立团队**：新部署先建立初始管理员；既有团队接受邀请或用企业帐号登入。邀请另一位成员，让执行与审核由不同人负责。
+2. **建立项目与数据背景**：建立「产品上线准备」项目。已有规格时，发布到 Knowledge，保存版本引用；也可先把必要数据放入任务输入。
+3. **准备执行者**：自动执行需要启用 Runtime，设定自己的模型供应商与金钥，建立有项目权限的 Pi Agent。人工路线可先不设定外部模型。
+4. **新增具体任务**：填写目标、输入、范围、限制与逐项验收条件；范例字段和可以复制的内容都在教学中。
+5. **派发并查看过程**：从任务选择 Pi Agent 并派发，到 Run 查看进度。人工执行者则先认领任务，完成实际清单后提交。
+6. **检查交付与独立审核**：执行者提交摘要、清单及来源证据；另一位有权限的人接受或退回。审核接受后，任务才标示完成。
+7. **建立后续流程**：为下一项工作设定依赖，让它等待这份清单被接受，再将常用 Agent 设定和步骤保存为范本及工作流程。
 
-[跟着入门指南操作 →](./guide/getting-started.md)
+![成果审核：检查示范清单、提交证据与审核结果](/screenshots/review-zh-CN.png)
+
+[开始第一个项目完整教学 →](./guide/first-project.md)
+
+## 如何写一份 Agent 能使用的任务？ {#writing-a-useful-task}
+
+先提供可取得的数据，再说清楚交付格式与界线。以下是教学中的规格方向：
+
+| 字段 | 「整理产品上线清单」的例子 |
+| --- | --- |
+| 目标 | 根据提供的产品背景，整理上线前必须确认的项目 |
+| 输入与范围 | 提供登入、备份及操作指南的现况；只整理清单与缺漏 |
+| 限制 | 未提供的资讯标为待确认，不自行声称已完成检查或变更外部服务 |
+| 验收条件 | 每项列出负责角色、状态及来源；至少涵盖登入、备份与使用说明 |
+| 成果证据 | 实际清单内容、来源引用，以及哪些项目仍待人员确认 |
+
+遇到 Agent 缺乏数据或工具时，先补充输入、授权合适的工具，或拆出需要人员处理的工作。一次模型回复、Run 已提交或一笔自报状态，都要由审查者对照实际成果。[查看完整字段与提交范例](./guide/first-project.md)
+
+## 选择你的开始方式 {#choose-your-start}
+
+**已加入团队**：取得管理者提供的平台网址与邀请，阅读[快速入门](./guide/getting-started.md)。看不到项目时，请管理者授予对应资源权限。
+
+**自己安装**：准备 Git 与 Docker Compose v2，依[部署指南](./containers.md)下载、初始化并启动，开启平台建立第一个管理员。需要自动 Agent 执行、Code 或沙箱时，再启用对应服务。
+
+**企业导入**：先由[团队设定](./guide/team-setup.md)安排角色及资源，再串接[企业 SSO](./enterprise-sso.md)、[模型](./model-usage.md)和经允许的[工具及沙箱](./execution-usage.md#external-mcp-tools)。同时规划[备份与运维](./guide/operations.md)。
 
 ## 找到你需要的操作指南 {#find-your-guide}
 
 | 想做的事 | 从这里开始 |
 | --- | --- |
-| 加入团队、登录平台 | [账号与邀请](./human-login.md) |
-| 创建第一个任务 | [开始使用](./guide/getting-started.md) |
-| 设置 API 连接与 Agent 模型 | [模型设置](./model-usage.md) |
-| 管理成员与访问权 | [权限与组织管理](./guide/administration.md) |
-| 连接公司登录 | [企业 SSO](./enterprise-sso.md) |
-| 安装与保存自己的数据 | [Docker Compose 部署](./containers.md)・[备份与运维](./guide/operations.md) |
+| 了解每项功能怎么用 | [功能导览](./features.md) |
+| 从空白工作区完成第一个成果 | [第一个项目完整教学](./guide/first-project.md) |
+| 邀请成员、安排执行与审核角色 | [建立团队](./guide/team-setup.md) |
+| 设定 API 连线与 Agent 模型 | [模型设定](./model-usage.md) |
+| 管理 Run、范本及多步骤工作 | [执行与自动化](./execution-usage.md) |
+| 发布项目文件、决策与引用 | [Knowledge 指南](./guide/knowledge.md) |
+| 提交程式码变更与 PR | [Code 指南](./guide/code.md) |
+| 串接公司登入与资源权限 | [企业 SSO](./enterprise-sso.md)・[组织管理](./guide/administration.md) |
+| 安装、升级、备份及排解问题 | [Docker Compose](./containers.md)・[运维](./guide/operations.md)・[疑难排解](./guide/troubleshooting.md) |
 
 <span id="部署在自己的環境"></span>
 <span id="部署在自己的环境"></span>
 
 ## 部署在自己的环境 {#deploy-in-your-own-environment}
 
-Ordivant 采用 **MIT 许可**，可以自行使用、修改及部署。用 Docker Compose 在自己的电脑或服务器启动，数据由你管理；企业可连接现有 OIDC 身份服务，或通过可选的 Keycloak 整合 SAML／LDAP。
+Ordivant 采 **MIT 授权**，可自行使用、修改及部署。Work、Knowledge 与 Code 可各自部署；数据由你管理。共用登入支援本地帐号与企业 OIDC，选用 Keycloak 可桥接 SAML／LDAP。
 
-这个网站是介绍及操作文档，平台需自行部署。现阶段为 **v0.1.0 早期公开版**；Knowledge 提供文字搜索，Code 需要 Gitea 才能变更 repository，尚未提供内置 CI、SCIM 或分布式运行。选用外部模型可能产生供应商费用；DEMO 不调用付费模型。
+现阶段为 **v0.1.0 早期公开版**。Knowledge 提供文字搜索，Code 的写入操作需要 Gitea；尚未提供向量搜索、内置 CI、SCIM、硬性金额预算或分布式执行。Docker 沙箱没有网络或主机目录访问，使用已备妥的工具执行工作；需要更强隔离时应配置 VM 执行环境。
 
-[自行部署 →](./containers.md) · [功能与限制](./roadmap.md) · [GitHub 源代码](https://github.com/ordivant-ai/ordivant)
+外部模型与工具需自行提供连线及授权，可能产生供应商费用。未设定模型的 DEMO 只演示执行流程；真实交付请核对成果、来源与供应商用量。
+
+[自行部署 →](./containers.md) · [现有功能与规划](./roadmap.md) · [GitHub 原始码](https://github.com/ordivant-ai/ordivant)

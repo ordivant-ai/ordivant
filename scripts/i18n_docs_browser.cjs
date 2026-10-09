@@ -72,6 +72,47 @@ async function main() {
       check(`${locale.key}: homepage shows a real localized product screenshot`,
         await heroImage.count() === 1 && await heroImage.evaluate((img, suffix) => img.complete && img.naturalWidth >= 1200 && img.src.endsWith(`/work-${suffix}.png`), screenshotLocale));
       check(`${locale.key}: homepage explains features and first-use steps`, await page.locator('#use-cases, #product-tour, #start-your-first-project, #find-your-guide').count() === 4);
+      const featureTabs = page.locator('.feature-tabs [role="tab"]');
+      check(`${locale.key}: product tour exposes four accessible tabs`, await featureTabs.count() === 4);
+      for (const [index, feature] of ['work', 'workflow', 'knowledge', 'code'].entries()) {
+        await featureTabs.nth(index).click();
+        const panel = page.locator('.feature-panel[role="tabpanel"]');
+        const preview = panel.locator('img');
+        await preview.waitFor({ state: 'visible' });
+        await preview.evaluate(img => img.complete ? Promise.resolve() : new Promise(resolve => {
+          img.addEventListener('load', resolve, { once: true });
+          img.addEventListener('error', resolve, { once: true });
+        }));
+        check(`${locale.key}: ${feature} tab shows its localized screenshot`, await preview.evaluate((img, suffix) => img.naturalWidth === 1400 && img.src.endsWith(suffix), `/screenshots/${feature}-${screenshotLocale}.png`));
+        check(`${locale.key}: ${feature} tab links to a localized guide`, new URL(await panel.locator('.feature-action').getAttribute('href'), base).pathname.startsWith('/' + locale.prefix));
+        check(`${locale.key}: ${feature} is the single selected tab`, await page.locator('.feature-tabs [aria-selected="true"]').count() === 1 && await featureTabs.nth(index).getAttribute('aria-selected') === 'true');
+      }
+      await featureTabs.nth(3).press('Home');
+      check(`${locale.key}: keyboard Home selects Work`, await featureTabs.nth(0).getAttribute('aria-selected') === 'true' && await featureTabs.nth(0).evaluate(element => element === document.activeElement));
+      await featureTabs.nth(0).press('ArrowRight');
+      check(`${locale.key}: keyboard arrows select automation`, await featureTabs.nth(1).getAttribute('aria-selected') === 'true');
+      await featureTabs.nth(1).press('End');
+      check(`${locale.key}: keyboard End selects Code`, await featureTabs.nth(3).getAttribute('aria-selected') === 'true');
+      await featureTabs.nth(3).press('Home');
+      const screenshotTrigger = page.locator('.feature-panel .screenshot-trigger');
+      const viewerLabels = {
+        root: { open: '放大畫面', original: '原始尺寸', fit: '符合螢幕', close: '關閉畫面' },
+        en: { open: 'Enlarge screenshot', original: 'Original size', fit: 'Fit to screen', close: 'Close screenshot' },
+        'zh-CN': { open: '放大画面', original: '原始尺寸', fit: '适应屏幕', close: '关闭画面' },
+      }[locale.key];
+      check(`${locale.key}: screenshot control has localized accessible text`, (await screenshotTrigger.getAttribute('aria-label')).startsWith(viewerLabels.open + ':'));
+      await screenshotTrigger.focus();
+      await screenshotTrigger.press('Enter');
+      const viewer = page.locator('dialog.screenshot-viewer[open]');
+      await viewer.waitFor({ state: 'visible' });
+      check(`${locale.key}: screenshot opens a modal and prevents background scroll`, await viewer.evaluate(element => element.matches(':modal') && document.documentElement.style.overflow === 'hidden'));
+      await viewer.getByRole('button', { name: viewerLabels.original, exact: true }).click();
+      check(`${locale.key}: original screenshot size is available`, await viewer.locator('.original-size img').evaluate(img => Math.round(img.getBoundingClientRect().width) === 1400));
+      await viewer.getByRole('button', { name: viewerLabels.fit, exact: true }).click();
+      check(`${locale.key}: screenshot returns to fit view`, await viewer.locator('.original-size').count() === 0);
+      await page.keyboard.press('Escape');
+      await viewer.waitFor({ state: 'hidden' });
+      check(`${locale.key}: Escape restores focus and scrolling`, await screenshotTrigger.evaluate(element => element === document.activeElement && document.documentElement.style.overflow !== 'hidden'));
       const homeDesktopWidth = await page.evaluate(() => ({ inner: window.innerWidth, document: document.documentElement.scrollWidth }));
       check(`${locale.key}: desktop homepage has no horizontal overflow`, homeDesktopWidth.document <= homeDesktopWidth.inner, homeDesktopWidth);
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${locale.key}-home-desktop.png`), fullPage: false });
@@ -80,6 +121,19 @@ async function main() {
       const homeMobileWidth = await page.evaluate(() => ({ inner: window.innerWidth, document: document.documentElement.scrollWidth }));
       check(`${locale.key}: 390px homepage has no horizontal overflow`, homeMobileWidth.document <= homeMobileWidth.inner, homeMobileWidth);
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${locale.key}-home-mobile.png`), fullPage: false });
+      await page.locator('.feature-panel .screenshot-trigger').click();
+      const mobileViewer = page.locator('dialog.screenshot-viewer[open]');
+      await mobileViewer.waitFor({ state: 'visible' });
+      await mobileViewer.getByRole('button', { name: viewerLabels.original, exact: true }).click();
+      check(`${locale.key}: mobile original-size image scrolls inside the viewer`, await mobileViewer.locator('.screenshot-canvas').evaluate(element => element.scrollWidth > element.clientWidth && document.documentElement.scrollWidth <= window.innerWidth));
+      await mobileViewer.getByRole('button', { name: new RegExp(viewerLabels.close) }).click();
+      await mobileViewer.waitFor({ state: 'hidden' });
+      await page.goto(new URL(`${locale.prefix}guide/first-project.html`, base).href, { waitUntil: 'networkidle' });
+      check(`${locale.key}: complete tutorial includes setup, execution, and independent review`, await page.locator('#create-project, #configure-model, #create-agent, #create-task, #dispatch-and-run, #submit-review, #manual-route, #templates-workflows').count() === 8);
+      check(`${locale.key}: complete tutorial supplies copyable specification examples`, await page.locator('.vp-doc table').count() >= 3 && await page.locator('.vp-doc pre').count() >= 2);
+      const tutorialMobileWidth = await page.evaluate(() => ({ inner: window.innerWidth, document: document.documentElement.scrollWidth }));
+      check(`${locale.key}: 390px complete tutorial has no horizontal overflow`, tutorialMobileWidth.document <= tutorialMobileWidth.inner, tutorialMobileWidth);
+      await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${locale.key}-first-project-mobile.png`), fullPage: false });
       await page.setViewportSize({ width: 1440, height: 1000 });
 
       const articleUrl = new URL(`${locale.prefix}guide/getting-started.html`, base).href;

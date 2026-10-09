@@ -8,6 +8,9 @@
 
 [文件與安裝指南](https://ordivant-ai.github.io/) · [版本下載](https://github.com/ordivant-ai/ordivant/releases) · [問題回報](https://github.com/ordivant-ai/ordivant/issues) · [MIT 授權](LICENSE)
 
+
+[功能導覽](docs/features.md) · [第一個專案完整教學](docs/guide/first-project.md) · [建立團隊](docs/guide/team-setup.md)
+
 [![CI](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml)
 [![Docs](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml)
 
