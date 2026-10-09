@@ -60,31 +60,30 @@ SAML 串接時，在 Keycloak 新增 SAML Identity Provider，匯入上游 metad
 
 LDAP／AD 串接時，在 Keycloak 的 User Federation 新增 LDAP provider，填入企業提供的目錄位址、Users DN、搜尋條件與 username／email attribute，配置群組 mapper，並使用 LDAPS 或 StartTLS 與可信 CA。目錄 Bind Credential 與人員密碼由企業管理員直接在身分服務輸入。先驗證目錄連線與單一成員同步，再建立 OIDC client 接到 Ordivant；平台端仍套用允許網域、受邀／JIT 與明確資源授權。
 
-提供固定版本 Keycloak 26.8.0 與獨立 PostgreSQL 的容器設定：
+如需在同一套服務中使用 SAML 或 LDAP／AD，以下範例會啟動固定版本 Keycloak 26.8.0 與獨立 PostgreSQL。`ordivant-example` 是可調整的 Compose 專案名稱：
 
 ```powershell
-.\scripts\containers.ps1 -Action up -WithIdentityBroker
+.\scripts\containers.ps1 -Action up -WithIdentityBroker -ProjectName ordivant-example
 ```
 
 broker 預設只綁定 `127.0.0.1:8093`。可由呼叫端指定 `ORDIVANT_BROKER_PORT` 及 `ORDIVANT_BROKER_PUBLIC_URL`；跨電腦的企業部署使用固定 HTTPS 網址與可信反向代理。其他 OIDC 身分服務可直接設定，不需要啟用 broker 容器。
 
-broker 不安裝預設人員管理員。初始化時讓使用者在 WSL tmux 的互動提示輸入密碼：
+broker 不會建立預設的人員管理員。以下命令以 `ordivant-example` 為例；請使用啟動 broker 時相同的專案名稱與機密資料夾。密碼由管理員直接在 tmux 的互動提示中輸入。Windows 可先開啟 WSL 工作階段，並確認 Docker Desktop 已啟用 WSL 整合：
 
 ```powershell
 wsl -- tmux new-session -A -s ordivant-idp-admin
 ```
 
-在該終端機內，以實際 Compose project 名稱執行（以下是本機正式模式）：
+Linux 可使用 `tmux new-session -A -s ordivant-idp-admin`。在 tmux 終端中切換至倉庫目錄，再執行一次性初始化：
 
-```bash
-cd '/path/to/ordivant'  # Windows WSL 可使用 /mnt/c/path/to/ordivant
-export ORDIVANT_SECRETS_DIR="$PWD/.data/container-secrets/ordivant-local"
-docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
-docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
-docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
+```sh
+export ORDIVANT_SECRETS_DIR="$PWD/.data/container-secrets/ordivant-example"
+docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker stop identity-broker
+docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker run --rm identity-broker bootstrap-admin user --username temp-admin
+docker compose -p ordivant-example -f compose.yaml -f compose.identity-broker.yaml --profile identity-broker up -d identity-broker
 ```
 
-密碼只在提示中輸入，不放進聊天、指令、環境變數或檔案。以暫時管理員登入 broker 後建立正式管理員，再移除暫時管理員。WSL 需啟用 Docker Desktop integration。[Keycloak 官方初始化說明](https://www.keycloak.org/server/bootstrap-admin-recovery)
+請勿將密碼放入聊天、命令、環境變數或檔案。以暫時管理員登入 broker 後建立正式管理員，再移除暫時管理員。[Keycloak 官方初始化與復原說明](https://www.keycloak.org/server/bootstrap-admin-recovery)
 
 <span id="工作階段、安全與稽核"></span>
 <span id="工作阶段、安全与审核"></span>
@@ -110,4 +109,4 @@ Ordivant 登出會撤銷三個模組共用的工作階段；企業其他應用�
 
 私有企業 CA 可將 PEM trust bundle 掛載到 Identity 容器，再設定 `ORDIVANT_SSO_CA_BUNDLE` 為該檔案路徑；TLS 憑證驗證持續啟用。Compose 信任指定的 `web` proxy，由 Nginx 覆寫 `X-Real-IP`，依實際來源進行登入限流。自訂反向代理需在 `ORDIVANT_AUTH_TRUSTED_PROXY_HOSTS` 列出精確 proxy host／IP，並由它覆寫此 header；直接連到 Identity API 的偽造 header 不會被採用。
 
-原生 SAML 協定端點、SCIM 2.0 自動離職同步及特定企業 tenant 的整合驗收是獨立後續工作；SAML 身分代理與 OIDC 主流程的實際驗收結果見 `sso-validation.md`。
+Ordivant 以 OIDC 作為身分整合協定，SAML 與 LDAP／AD 透過選配的 Keycloak broker 聯邦。原生 SAML 協定端點及 SCIM 2.0 自動離職同步尚未實作；各客戶的 IdP tenant 與 LDAP／AD 目錄也尚未逐一驗證。上線前請在各組織環境核對 claims、MFA、網域限制與資源授權政策。

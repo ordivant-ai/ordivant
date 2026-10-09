@@ -31,13 +31,13 @@ If you forget your password, select “Use a recovery code” and enter your ema
 
 ## Environments and deployment
 
-The development entry point is `http://127.0.0.1:5173/work`; local production mode uses `http://127.0.0.1:8088/work`. The two environments store separate accounts and business data, and each needs its own administrator. `-Seed` adds only clearly labeled business demo data; it does not create a human password account.
+Open Ordivant at the deployment URL provided by your administrator. Each deployment stores accounts and business data separately; create an initial administrator in each environment you use. `-Seed` adds only clearly labeled business demo data; it does not create a human password account.
 
 The Docker helper creates the Identity API, a separate PostgreSQL database, and internal service credentials. Products check sign-in state through the internal Identity service; they do not read the Identity database. Browser sessions use HttpOnly/SameSite cookies, and write operations check Origin and CSRF. Agent REST/MCP continues to use scoped Bearer tokens.
 
 External deployments require HTTPS, `ORDIVANT_AUTH_COOKIE_SECURE=true`, and an explicit `ORDIVANT_AUTH_ORIGINS`. The local exception permits HTTP only for literal localhost, `127.0.0.1`, or `::1` origins. Sign-in and human business authorization are denied if configuration is incomplete or Identity is offline. If a product database has multiple organizations, configure `ORDIVANT_WORK_IDENTITY_ORG_ID`, `ORDIVANT_KNOWLEDGE_IDENTITY_ORG_ID`, and `ORDIVANT_CODE_IDENTITY_ORG_ID` in Compose/the launcher; each is passed to that product's own `ORDIVANT_IDENTITY_ORG_ID`. Do not mix projects from different organizations into one sign-in scope.
 
-Preserve and back up Identity volumes, business volumes, and `.data/container-secrets/<ProjectName>/` together. Stopping containers does not delete data. Enterprise settings also require `sso.key` from the Identity data volume for decryption during restoration.
+Preserve and back up Identity volumes, business volumes, and the service-secret storage configured for the deployment together. Stopping containers does not delete data. Enterprise settings also require `sso.key` from the Identity data volume for decryption during restoration.
 
 <span id="企業-sso"></span>
 <span id="企业-sso"></span>

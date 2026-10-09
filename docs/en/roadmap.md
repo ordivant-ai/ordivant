@@ -3,7 +3,7 @@
 
 # Roadmap and feature boundaries
 
-This page describes v0.1 capabilities and future candidates; it does not promise delivery dates. Discuss requirements and implementation through [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues).
+This page describes v0.1 capabilities and future candidates; it does not promise delivery dates. Discuss and track requirements, priorities, and progress through [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues).
 
 <span id="v0-1-已交付"></span>
 
@@ -31,4 +31,4 @@ This page describes v0.1 capabilities and future candidates; it does not promise
 | Knowledge ingestion | Text versions and retrieval are available; document parsing, embeddings/RAG, and batch source synchronization are not. |
 | Isolation and scale | Docker uses a shared kernel, networking is disabled, and one Pi storage writer is supported; VM isolation, distributed dispatch, and large-scale load testing are not. |
 
-See [feature gap research](./feature-gap-research.md) for more design context. Public CI verifies reproducible offline and synthetic tests. Acceptance against a paid provider requires explicit operator configuration and incurs usage on that provider.
+Public CI uses reproducible offline and synthetic tests. Acceptance against a paid provider requires explicit operator configuration, and the operator is responsible for the resulting usage.

@@ -79,3 +79,7 @@ CI 使用 `demo` Runtime 模式，不呼叫付費模型。除非測試明確要�
 ## 介面與文件翻譯
 
 介面訊息使用 `frontend/src/i18n` 的 `t`／`useI18n`，英文詞庫依模組存放，禁止翻譯使用者內容與 API 值。修改後執行 `npm --prefix frontend run i18n:generate` 與 `npm --prefix frontend run i18n:check`。新增文件時，請同時維護原始繁中、`docs/zh-CN`、`docs/en` 的同路徑頁面。完整流程見 [語言與翻譯](docs/i18n.md)。
+
+文件站只發布 `docs/.vitepress/public-pages.json` 明確列出的文章及其三語版本。新增 Markdown 不會自動進入網站、搜尋或 sitemap；新增公開文章時須同步更新清單、導覽及相關連結。PM 台帳、需求研究、開發契約及驗收紀錄保留於 GitHub，供維護者協作與重跑測試。這是網站的內容範圍，不是保密機制；公開 repo 中仍不得放入憑證或私人資料。
+
+文件變更至少執行 `npm --prefix docs run build`、`uv run --project backend --no-sync python scripts/check_docs.py` 和 `node scripts/build_docs_redirects.mjs`。建置檢查會拒絕清單外的 HTML、搜尋索引或 sitemap 項目，避免內部紀錄再次進入文件站。

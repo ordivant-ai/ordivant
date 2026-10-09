@@ -43,7 +43,8 @@ function expectedArticlePath(base, localeKey) {
 
 async function main() {
   const base = parseBase(process.argv);
-  const { documentPaths, languageIssues } = await import(pathToFileURL(path.resolve('scripts/check_docs_i18n.mjs')).href);
+  const { languageIssues } = await import(pathToFileURL(path.resolve('scripts/check_docs_i18n.mjs')).href);
+  const { publicDocumentPaths, repositoryDocumentPaths } = await import(pathToFileURL(path.resolve('scripts/docs_pages.mjs')).href);
   fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 
@@ -98,6 +99,9 @@ async function main() {
       const expectedGuidePath = new URL(`${locale.prefix}execution-usage.html`, base).pathname;
       const resultPath = resultHref ? new URL(resultHref, base).pathname : null;
       check(`${locale.key}: local search returns localized sandbox guide`, resultPath === expectedGuidePath, resultHref);
+      const repositoryRoutes = repositoryDocumentPaths().map(document => document.replace(/\.md$/, '.html'));
+      const resultLinks = await page.locator('.VPLocalSearchBox a.result').evaluateAll(links => links.map(link => link.getAttribute('href')));
+      check(`${locale.key}: local search contains only public articles`, resultLinks.every(href => !repositoryRoutes.some(route => new URL(href, base).pathname.endsWith('/' + route))));
       await page.keyboard.press('Escape');
       await page.locator('.VPLocalSearchBox').waitFor({ state: 'hidden' });
 
@@ -119,7 +123,7 @@ async function main() {
         check(`${locale.key}: switched page remains quickstart`, (await page.getByRole('heading', { level: 1 }).first().innerText()).includes('Ordivant'));
       }
 
-      for (const document of documentPaths()) {
+      for (const document of publicDocumentPaths()) {
         const route = `${locale.prefix}${document.replace(/\.md$/, '.html')}`;
         const response = await page.goto(new URL(route, base).href, { waitUntil: 'domcontentloaded' });
         await page.locator('.vp-doc').first().waitFor({ state: 'attached' });
@@ -151,6 +155,17 @@ async function main() {
       await page.goto(new URL(`${locale.prefix}missing-i18n-page.html`, base).href, { waitUntil: 'networkidle' });
       const missingTitle = { root: '找不到頁面', en: 'Page not found', 'zh-CN': '找不到页面' }[locale.key];
       check(`${locale.key}: localized 404 message`, await page.locator('.NotFound .title').innerText() === missingTitle);
+
+      for (const document of repositoryDocumentPaths()) {
+        const route = `${locale.prefix}${document.replace(/\.md$/, '.html')}`;
+        const response = await page.goto(new URL(route, base).href, { waitUntil: 'domcontentloaded' });
+        await page.locator('.NotFound .title').waitFor({ state: 'visible' });
+        // VitePress preview serves its fallback with HTTP 200; GitHub Pages returns 404.
+        check(`${locale.key}: repository-only ${document} is unavailable`,
+          response && (new URL(base).hostname !== 'ordivant-ai.github.io' || response.status() === 404)
+          && await page.locator('.vp-doc').count() === 0
+          && await page.locator('.NotFound .title').innerText() === missingTitle);
+      }
 
       await page.goto(articleUrl, { waitUntil: 'networkidle' });
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${locale.key}-desktop.png`), fullPage: true });

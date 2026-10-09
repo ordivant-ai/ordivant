@@ -1,0 +1,20 @@
+[
+  "index.md",
+  "overview.md",
+  "release.md",
+  "guide/getting-started.md",
+  "guide/work.md",
+  "guide/knowledge.md",
+  "guide/code.md",
+  "guide/administration.md",
+  "guide/operations.md",
+  "guide/troubleshooting.md",
+  "containers.md",
+  "human-login.md",
+  "enterprise-sso.md",
+  "model-usage.md",
+  "execution-usage.md",
+  "reference.md",
+  "roadmap.md",
+  "i18n.md"
+]

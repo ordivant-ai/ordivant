@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { excludedDocumentPaths } from '../../scripts/docs_pages.mjs'
 
 const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(docsRoot, '..')
@@ -20,8 +21,8 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     knowledge: 'Knowledge and citations', code: 'Code and version control', models: 'Model settings', login: 'Accounts and login',
     admin: 'Administration and deployment', permissions: 'Permissions and organization', sso: 'Enterprise SSO',
     containers: 'Docker development and deployment', ops: 'Backup and operations', troubleshooting: 'Troubleshooting',
-    dev: 'Development and validation', reference: 'Architecture and API reference', validation: 'Validation records', i18n: 'Language and translation',
-    execValidation: 'Execution validation', roadmap: 'Roadmap', contribute: 'Contributing', security: 'Security policy',
+    dev: 'Integration and contributing', reference: 'Architecture and API reference', i18n: 'Language and translation',
+    roadmap: 'Roadmap', contribute: 'Contributing', security: 'Security policy',
     outline: 'On this page', previous: 'Previous page', next: 'Next page', updated: 'Last updated',
     languageMenu: 'Change language', menu: 'Open navigation menu', appearance: 'Appearance', lightMode: 'Switch to light theme',
     darkMode: 'Switch to dark theme', returnTop: 'Return to top', skipContent: 'Skip to content',
@@ -34,8 +35,8 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     knowledge: 'Knowledge 文档与引用', code: 'Code 与版本控制', models: '模型设置', login: '账号与登录',
     admin: '管理与部署', permissions: '权限与组织管理', sso: '企业 SSO',
     containers: 'Docker 开发／部署', ops: '备份与运维', troubleshooting: '问题排查',
-    dev: '开发与验证', reference: '架构与 API 索引', validation: '验收记录', i18n: '语言与翻译',
-    execValidation: '执行功能验收', roadmap: '路线图', contribute: '参与贡献', security: '安全政策',
+    dev: '集成与贡献', reference: '架构与 API 索引', i18n: '语言与翻译',
+    roadmap: '路线图', contribute: '参与贡献', security: '安全政策',
     outline: '本页内容', previous: '上一页', next: '下一页', updated: '最后更新',
     languageMenu: '切换语言', menu: '打开导航菜单', appearance: '外观', lightMode: '切换到浅色主题',
     darkMode: '切换到深色主题', returnTop: '返回顶部', skipContent: '跳到正文',
@@ -48,8 +49,8 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     knowledge: 'Knowledge 文件與引用', code: 'Code 與版控', models: '模型設定', login: '帳號與登入',
     admin: '管理與部署', permissions: '權限與組織管理', sso: '企業 SSO',
     containers: 'Docker 開發／部署', ops: '備份與維運', troubleshooting: '問題排查',
-    dev: '開發與驗證', reference: '架構與 API 索引', validation: '驗收紀錄', i18n: '語言與翻譯',
-    execValidation: '執行功能驗收', roadmap: '路線圖', contribute: '參與貢獻', security: '安全政策',
+    dev: '整合與貢獻', reference: '架構與 API 索引', i18n: '語言與翻譯',
+    roadmap: '路線圖', contribute: '參與貢獻', security: '安全政策',
     outline: '本頁內容', previous: '上一頁', next: '下一頁', updated: '最後更新',
     languageMenu: '切換語言', menu: '開啟導覽選單', appearance: '外觀', lightMode: '切換為淺色主題',
     darkMode: '切換為深色主題', returnTop: '回到頁首', skipContent: '跳至正文',
@@ -87,8 +88,6 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
       ] },
       { text: text.dev, items: [
         { text: text.reference, link: route('/reference') },
-        { text: text.validation, link: route('/validation') },
-        { text: text.execValidation, link: route('/execution-validation') },
         { text: text.i18n, link: route('/i18n') },
         { text: text.roadmap, link: route('/roadmap') },
         { text: text.contribute, link: `${repository}/blob/main/CONTRIBUTING.md` },
@@ -116,6 +115,7 @@ export default defineConfig({
   lang: 'zh-Hant', title: 'Ordivant',
   description: '開源、自行部署的 Agent 協作平台：Work、Knowledge、Code。',
   base, cleanUrls: false, lastUpdated: true,
+  srcExclude: excludedDocumentPaths(),
   themeConfig: {
     logo: '/logo.svg', siteTitle: 'Ordivant', i18nRouting: true,
     search: { provider: 'local', options: { locales: {

@@ -36,4 +36,4 @@ Code permissions are scoped to a Code Project: **Manager** creates and manages p
 
 “Report status” sends pending, success, failure, or error for a selected commit to Gitea. Such receipts are marked `agent_reported`; they do not mean that a CI runner actually ran tests. A valid Gitea webhook receipt is marked `gitea_webhook`. This release does not include a CI runner, so state the source of a status and whether a test really ran.
 
-PR references provide provenance; they do not grant Code users access to Work, Knowledge, or external systems. Work can independently read PR and check states from configured existing VCS providers without enabling Code. See the [product contracts](../suite-contracts.md) for the boundary between them.
+PR references provide provenance; they do not grant Code users access to Work, Knowledge, or external systems. Work can independently read PR and check states from configured existing VCS providers without enabling Code. See the [architecture and API reference](../reference.md) for the boundary between them.

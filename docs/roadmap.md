@@ -3,7 +3,7 @@
 
 # 路線圖與功能邊界 {#roadmap-and-feature-boundaries}
 
-本頁列出 v0.1 的能力與後續候選，沒有承諾日期。需求及實作可透過 [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues) 討論。
+本頁列出 v0.1 的能力與後續候選，沒有承諾日期。需求、優先順序及進度可透過 [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues) 討論與追蹤。
 
 <span id="v0-1-已交付"></span>
 
@@ -31,4 +31,4 @@
 | 知識匯入 | 文字版本／檢索已提供；文件解析、embedding／RAG 與批次來源同步尚未提供 |
 | 執行隔離與規模 | Docker 共用 kernel、無網路、單一 Pi storage writer；VM、分散式 dispatch 與大規模壓測尚未提供 |
 
-更完整的設計背景見[功能缺口研究](./feature-gap-research.md)。公開 CI 驗證可重現的離線與合成測試；付費供應商的驗收需操作者明確設定並自行負擔用量。
+公開 CI 使用可重現的離線與合成測試。付費供應商的驗收需由營運者明確設定，相關用量由營運者負擔。
