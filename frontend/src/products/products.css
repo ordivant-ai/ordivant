@@ -61,24 +61,6 @@
 .document-tags .ant-tag { font-size: 8px; }
 .reader-loading { display: flex; align-items: center; gap: 7px; margin: 11px 0; color: #89848d; font-size: 9px; }
 .markdown-content { min-height: 200px; padding: 17px 0 22px; color: #3e3a43; font-size: 11px; line-height: 1.75; overflow-wrap: anywhere; }
-.markdown-content > :first-child { margin-top: 0; }
-.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 { margin: 23px 0 9px; color: #2f2c33; font-weight: 650; line-height: 1.4; }
-.markdown-content h1 { font-size: 20px; }
-.markdown-content h2 { font-size: 17px; }
-.markdown-content h3 { font-size: 14px; }
-.markdown-content h4 { font-size: 12px; }
-.markdown-content p, .markdown-content ul, .markdown-content ol { margin: 8px 0; }
-.markdown-content ul, .markdown-content ol { padding-left: 22px; }
-.markdown-content li + li { margin-top: 4px; }
-.markdown-content blockquote { margin: 12px 0; padding: 8px 12px; border-left: 3px solid #a194d3; color: #716b7a; background: #f7f5fb; }
-.markdown-content code { padding: 1px 4px; border-radius: 3px; color: #544485; background: #f0edf6; font-size: 9px; }
-.markdown-content pre { overflow: auto; padding: 12px; border-radius: 5px; color: #eae7ee; background: #302e35; font-size: 9px; line-height: 1.6; }
-.markdown-content pre code { padding: 0; color: inherit; background: transparent; }
-.markdown-content table { display: block; max-width: 100%; overflow: auto; border-collapse: collapse; }
-.markdown-content th, .markdown-content td { padding: 6px 9px; border: 1px solid #e6e1db; text-align: left; }
-.markdown-content th { color: #625d67; background: #f7f5f2; }
-.markdown-content a { color: #5f4caf; text-decoration: underline; text-underline-offset: 2px; }
-.markdown-content img { max-width: 100%; height: auto; }
 .version-metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 6px; background: #fbfaf8; }
 .version-metadata > div { display: grid; min-width: 0; gap: 5px; padding: 8px 0; border-bottom: 1px solid #ece8e3; }
 .version-metadata > div:nth-last-child(-n+2) { border-bottom: 0; }

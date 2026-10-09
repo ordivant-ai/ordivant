@@ -5,6 +5,7 @@ import { PauseOutlined, PlayCircleOutlined, ReloadOutlined, StopOutlined } from 
 import { api, createIdempotencyKey, isDefinitiveClientError } from './api';
 import { formatDate, formatNumber, useI18n } from './i18n';
 import type { Run, RunEvent } from './types';
+import { MarkdownContent } from './shared/MarkdownContent';
 import './RunConsole.css';
 
 const { Text, Title } = Typography;
@@ -271,7 +272,7 @@ export function RunConsole({ projectId, canControl }: { projectId: string; canCo
             </article>)}</div>}
           </div>
           {selectedRun.sandbox && <div className="run-inspect-section"><div className="run-section-heading"><strong>{t('Sandbox 狀態與輸出')}</strong></div><pre className="run-json-block">{JSON.stringify(selectedRun.sandbox, null, 2)}</pre></div>}
-          {selectedRun.answer && <div className="run-inspect-section"><div className="run-section-heading"><strong>{t('Run 回覆')}</strong><span>{t('模型回合已提交，任務仍須獨立審核')}</span></div><pre className="run-answer">{selectedRun.answer}</pre></div>}
+          {selectedRun.answer && <div className="run-inspect-section"><div className="run-section-heading"><strong>{t('Run 回覆')}</strong><span>{t('模型回合已提交，任務仍須獨立審核')}</span></div><MarkdownContent className="run-answer" content={selectedRun.answer} /></div>}
         </>}
       </Drawer>
     </section>

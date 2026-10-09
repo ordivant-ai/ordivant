@@ -13,6 +13,7 @@ const VIEWPORT = { width: 1400, height: 900 };
 const ADMIN_EMAIL_ENV = 'ORDIVANT_QA_EMAIL';
 const ADMIN_PASSWORD_ENV = 'ORDIVANT_QA_PASSWORD';
 const RUN_TAG = Date.now().toString(36);
+const MARKDOWN_CHECK_ONLY = process.argv.includes('--markdown-check');
 
 const LOCALES = [
   { key: 'zh-TW', label: '繁體中文', htmlLang: 'zh-Hant' },
@@ -36,6 +37,31 @@ const WORKFLOW_NAME = '產品上線核對流程';
 const REVIEW_TASK_TITLE = 'DEMO · Northstar synthetic launch checklist · independent review';
 const REVIEW_ARTIFACT_TITLE = 'Northstar synthetic launch checklist';
 const PUBLIC_GUIDE_URI = 'docs/guide/first-project.md#practice-background';
+const MARKDOWN_CHECK_CONTENT = [
+  '# Markdown safety check',
+  '',
+  'This is **bold** and *emphasized* text.',
+  'Inline `code` stays literal.',
+  '',
+  '[Safe external link](https://docs.example.org/guide)',
+  '',
+  '| Area | Status |',
+  '| --- | --- |',
+  '| Product | Unknown |',
+  '',
+  '```html',
+  '<script>window.__markdownCodeExecuted = true</script>',
+  '```',
+  '',
+  '- [ ] Unchecked task',
+  '- [x] Checked task',
+  '',
+  '<script>window.__markdownScriptRan = true</script>',
+  '<img src="data:image/png;base64,invalid" onerror="window.__markdownImageHandlerRan = true" />',
+  '[JavaScript link](javascript:window.__markdownScriptRan=true)',
+  '[Data link](data:text/html,blocked)',
+  '![Unsafe image](javascript:window.__markdownImageHandlerRan=true)',
+].join('\n');
 const REVIEW_WORKER_EMAIL = 'qa-handbook-worker@example.com';
 const REVIEW_WORKER_NAME = 'QA Review Separation Worker';
 
@@ -765,11 +791,137 @@ async function captureReview(page, project, task, locale, outputs) {
   await reviewView.getByText(translation('已通過', locale), { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 });
   const artifact = drawer.locator('.artifact-row').filter({ hasText: REVIEW_ARTIFACT_TITLE });
   await artifact.waitFor({ state: 'visible', timeout: 15000 });
-  await artifact.locator('.ant-typography-expand').click();
+  const checkboxes = artifact.locator('input[type="checkbox"]');
+  assert(await checkboxes.count() === 6, 'The Markdown renderer must produce six task-list checkboxes.');
+  const checkboxStates = await checkboxes.evaluateAll(items => items.map(item => ({ disabled: item.disabled, checked: item.checked })));
+  assert(checkboxStates.every(item => item.disabled && !item.checked),
+    'Every review checklist checkbox must be disabled and unchecked.');
   const artifactText = await artifact.innerText();
   assert(['Product', 'Login', 'Backup', 'Docs', 'Support', 'Analytics'].every(area => artifactText.includes(area)),
     'The review screenshot does not show all six checklist areas.');
+  assert(!/-\s*\[\s*\]/.test(artifactText), 'The review artifact exposes raw Markdown task-list syntax.');
+  await assertSafeMarkdownDom(artifact);
   await saveScreenshot(page, 'review', locale, outputs);
+}
+
+async function assertSafeMarkdownDom(container) {
+  const unsafe = await container.evaluate(element => {
+    const descendants = [...element.querySelectorAll('*')];
+    return descendants.some(node => {
+      if (['SCRIPT', 'IFRAME', 'OBJECT', 'EMBED'].includes(node.tagName)) return true;
+      return [...node.attributes].some(attribute => {
+        const name = attribute.name.toLowerCase();
+        const value = attribute.value.trim();
+        return name.startsWith('on')
+          || (['href', 'src', 'xlink:href'].includes(name) && /^(?:javascript|data):/i.test(value));
+      });
+    });
+  });
+  assert(!unsafe, 'The rendered Markdown contains an unsafe element, event handler, or URL.');
+}
+
+async function runMarkdownCheck(browser, adminPage, contexts, adminEmail, adminPassword) {
+  const projects = await callApi(adminPage, '/api/projects');
+  const project = projects.find(item => item.key === PROJECT.key);
+  assert(project && project.id, 'The existing handbook QA project is unavailable for the Markdown check.');
+  const tasks = await callApi(adminPage, '/api/tasks?project_id=' + encodeURIComponent(project.id));
+  const task = tasks.find(item => item.title === REVIEW_TASK_TITLE);
+  assert(task && task.id && task.status === 'done', 'The accepted handbook QA task is unavailable for the Markdown check.');
+  const original = await callApi(adminPage, '/api/tasks/' + encodeURIComponent(task.id) + '/context');
+  const originalArtifact = original.artifacts.find(item => item.title === REVIEW_ARTIFACT_TITLE);
+  assert(originalArtifact && typeof originalArtifact.content === 'string'
+    && !originalArtifact.content.includes('Markdown safety check'),
+  'The stored review artifact is not the expected public handbook fixture.');
+
+  const markdownContext = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+  contexts.push(markdownContext);
+  installBrowserGuards(markdownContext);
+  await markdownContext.addInitScript(() => {
+    window.__markdownScriptRan = false;
+    window.__markdownImageHandlerRan = false;
+    window.__markdownCodeExecuted = false;
+  });
+  const page = await markdownContext.newPage();
+  trackPageErrors(page);
+  let interceptedContexts = 0;
+  const contextPath = '/api/tasks/' + encodeURIComponent(task.id) + '/context';
+  await markdownContext.route(BASE + contextPath, async route => {
+    assert(route.request().method() === 'GET', 'The Markdown overlay only permits the task context GET request.');
+    const response = await route.fetch();
+    assert(response.ok(), 'The Markdown check could not load the actual task context.');
+    const apiContext = await response.json();
+    const artifact = apiContext.artifacts.find(item => item.title === REVIEW_ARTIFACT_TITLE);
+    assert(artifact, 'The Markdown check could not find the actual API artifact.');
+    artifact.content = MARKDOWN_CHECK_CONTENT;
+    const headers = response.headers();
+    delete headers['content-length'];
+    delete headers['content-encoding'];
+    delete headers['transfer-encoding'];
+    await route.fulfill({ status: response.status(), headers, body: JSON.stringify(apiContext) });
+    interceptedContexts += 1;
+  });
+
+  await loginWithPassword(page, adminEmail, adminPassword, false);
+  await openWorkProject(page, project);
+  const locale = LOCALES.find(item => item.key === 'en');
+  await selectLocale(page, locale);
+  await clickNav(page, '任務', locale);
+  await waitHeading(page, '任務工作區', locale);
+  const drawer = await openTask(page, task, locale);
+  await drawer.locator('.detail-tabs .ant-tabs-tab').filter({ hasText: translation('執行與審核', locale) }).click();
+  const reviewView = drawer.locator('.execution-view');
+  await reviewView.waitFor({ state: 'visible', timeout: 15000 });
+  const artifact = drawer.locator('.artifact-row').filter({ hasText: REVIEW_ARTIFACT_TITLE });
+  await artifact.waitFor({ state: 'visible', timeout: 15000 });
+  assert(interceptedContexts > 0, 'The isolated Markdown response overlay was not used.');
+
+  await artifact.getByRole('heading', { name: 'Markdown safety check', exact: true }).waitFor({ state: 'visible' });
+  assert(await artifact.locator('strong').filter({ hasText: 'bold' }).count() === 1,
+    'Markdown bold text was not rendered.');
+  assert(await artifact.locator('em').filter({ hasText: 'emphasized' }).count() === 1,
+    'Markdown emphasis was not rendered.');
+  assert(await artifact.locator('table th').count() === 2, 'Markdown GFM table headers were not rendered.');
+  assert((await artifact.locator('code').allTextContents()).some(value => value.includes('<script>window.__markdownCodeExecuted = true</script>')),
+    'The fenced code example was not preserved as literal code.');
+  assert(await artifact.locator('input[type="checkbox"]').count() === 2,
+    'Markdown GFM task lists were not rendered.');
+  const taskStates = await artifact.locator('input[type="checkbox"]').evaluateAll(items => items.map(item => ({ disabled: item.disabled, checked: item.checked })));
+  assert(taskStates.length === 2 && taskStates.every(item => item.disabled)
+    && taskStates[0].checked === false && taskStates[1].checked === true,
+  'Markdown task list controls do not preserve their disabled checked states.');
+  assert(await artifact.locator('script, iframe, object, embed').count() === 0,
+    'Raw HTML rendered an active script or embedded element.');
+  assert(await artifact.locator('[onerror]').count() === 0,
+    'Raw HTML retained an image error handler.');
+  const imageSources = await artifact.locator('img').evaluateAll(images => images.map(image => image.getAttribute('src') || ''));
+  assert(imageSources.every(source => !/^(?:javascript|data):/i.test(source)),
+    'An unsafe Markdown image URL remained active.');
+  const unsafeLinkTargets = await artifact.locator('a').evaluateAll(links => links
+    .map(link => link.getAttribute('href') || '')
+    .filter(href => /^(?:javascript|data):/i.test(href)));
+  assert(unsafeLinkTargets.length === 0, 'A JavaScript or data URL remained active in Markdown.');
+  const externalLink = artifact.getByRole('link', { name: 'Safe external link', exact: true });
+  assert(await externalLink.getAttribute('href') === 'https://docs.example.org/guide'
+    && await externalLink.getAttribute('target') === '_blank'
+    && (await externalLink.getAttribute('rel') || '').split(/\s+/).includes('noopener')
+    && (await externalLink.getAttribute('rel') || '').split(/\s+/).includes('noreferrer'),
+  'Safe external Markdown links must open in a protected new tab.');
+  assert((await artifact.locator('code').allTextContents()).includes('code'),
+    'Inline Markdown code was not preserved exactly.');
+  await assertSafeMarkdownDom(artifact);
+  assert(await page.evaluate(() => !window.__markdownScriptRan && !window.__markdownImageHandlerRan && !window.__markdownCodeExecuted),
+    'Markdown test content executed script or image event-handler code.');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(100);
+  const widths = await page.evaluate(() => ({ viewport: window.innerWidth, document: document.documentElement.scrollWidth }));
+  assert(widths.document <= widths.viewport, 'The Markdown review page overflows at 390px width.');
+
+  const after = await callApi(adminPage, '/api/tasks/' + encodeURIComponent(task.id) + '/context');
+  const storedAfter = after.artifacts.find(item => item.title === REVIEW_ARTIFACT_TITLE);
+  assert(storedAfter && storedAfter.content === originalArtifact.content
+    && !storedAfter.content.includes('Markdown safety check'),
+  'The Markdown check altered the persisted task evidence.');
 }
 
 function verifyPng(filePath) {
@@ -781,6 +933,7 @@ function verifyPng(filePath) {
 }
 
 async function main() {
+  assert(!(REVIEW_ONLY && MARKDOWN_CHECK_ONLY), 'Choose either --review-only or --markdown-check.');
   inspectQaPortOwner();
   const adminEmail = process.env[ADMIN_EMAIL_ENV];
   const adminPassword = process.env[ADMIN_PASSWORD_ENV];
@@ -810,25 +963,30 @@ async function main() {
     const review = await ensureAcceptedReview(browser, adminPage, fixtures, adminPrincipal, adminPassword);
     if (review.workerContext) contexts.push(review.workerContext);
 
-    for (const locale of LOCALES) {
-      await openWorkProject(adminPage, fixtures.project);
-      await selectLocale(adminPage, locale);
-      if (REVIEW_ONLY) {
+    if (MARKDOWN_CHECK_ONLY) {
+      await runMarkdownCheck(browser, adminPage, contexts, adminEmail, adminPassword);
+    } else {
+      for (const locale of LOCALES) {
+        await openWorkProject(adminPage, fixtures.project);
+        await selectLocale(adminPage, locale);
+        if (REVIEW_ONLY) {
+          await captureReview(adminPage, fixtures.project, fixtures.reviewTask, locale, outputs);
+          continue;
+        }
+        await captureAgent(adminPage, fixtures.project, fixtures.agent, locale, outputs);
+        await captureModels(adminPage, fixtures.project, locale, outputs);
+        await captureTemplate(adminPage, fixtures.project, fixtures.template, fixtures.profile, locale, outputs);
+        await captureWorkflow(adminPage, fixtures.project, fixtures.workflow, locale, outputs);
+        await captureTools(adminPage, fixtures.project, fixtures.profile, locale, outputs);
         await captureReview(adminPage, fixtures.project, fixtures.reviewTask, locale, outputs);
-        continue;
       }
-      await captureAgent(adminPage, fixtures.project, fixtures.agent, locale, outputs);
-      await captureModels(adminPage, fixtures.project, locale, outputs);
-      await captureTemplate(adminPage, fixtures.project, fixtures.template, fixtures.profile, locale, outputs);
-      await captureWorkflow(adminPage, fixtures.project, fixtures.workflow, locale, outputs);
-      await captureTools(adminPage, fixtures.project, fixtures.profile, locale, outputs);
-      await captureReview(adminPage, fixtures.project, fixtures.reviewTask, locale, outputs);
     }
 
     assert(pageErrorCount === 0, 'The browser recorded ' + pageErrorCount + ' JavaScript errors.');
     assert(externalHttpRequests.length === 0, 'The app or Provider attempted an external HTTP(S) request to: '
       + [...new Set(externalHttpRequests)].join(', '));
-    assert(outputs.length === (REVIEW_ONLY ? 3 : 18), 'Unexpected screenshot count: ' + outputs.length + '.');
+    const expectedCaptureCount = MARKDOWN_CHECK_ONLY ? 0 : REVIEW_ONLY ? 3 : 18;
+    assert(outputs.length === expectedCaptureCount, 'Unexpected screenshot count: ' + outputs.length + '.');
     const screenshotRecords = [];
     for (const locale of LOCALES) {
       for (const screenName of SCREEN_NAMES) {
@@ -836,7 +994,7 @@ async function main() {
         const expected = path.join(OUTPUT_DIR, fileName);
         assert(fs.existsSync(expected), 'A required handbook screenshot is missing.');
         verifyPng(expected);
-        if (!REVIEW_ONLY) assert(outputs.includes(expected), 'A required handbook screenshot was not refreshed.');
+        if (!REVIEW_ONLY && !MARKDOWN_CHECK_ONLY) assert(outputs.includes(expected), 'A required handbook screenshot was not refreshed.');
         screenshotRecords.push({
           path: 'docs/public/screenshots/' + fileName,
           locale: locale.key,
@@ -859,12 +1017,15 @@ async function main() {
       review: acceptance,
       browser: {
         javascript_errors: pageErrorCount,
+        markdown_dom_checks_run: MARKDOWN_CHECK_ONLY,
+        response_overlay_used: MARKDOWN_CHECK_ONLY,
         app_provider_external_http_requests: externalHttpRequests.length,
         blocked_injected_requests: { host: blockedInjectedHost, count: blockedInjectedRequestCount },
       },
     }, null, 2) + '\n', 'utf8');
     for (const output of outputs) process.stdout.write(path.relative(process.cwd(), output).replaceAll('\\', '/') + '\n');
-    process.stdout.write((REVIEW_ONLY ? '3 review screenshots refreshed; ' : '18 screenshots captured; ')
+    process.stdout.write((MARKDOWN_CHECK_ONLY ? 'Markdown DOM safety checks passed; '
+      : REVIEW_ONLY ? '3 review screenshots refreshed; ' : '18 screenshots captured; ')
       + 'all 18 valid 1400x900 screenshots verified; browser JavaScript errors: 0; '
       + 'app/Provider external HTTP(S) requests: 0; blocked injected ' + blockedInjectedHost
       + ' requests: ' + blockedInjectedRequestCount + '\n');

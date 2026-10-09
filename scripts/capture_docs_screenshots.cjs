@@ -7,7 +7,8 @@ const { execFileSync } = require('node:child_process');
 const { chromium } = require(path.resolve('.cache/browser-qa/node_modules/playwright'));
 
 const BASE = 'http://127.0.0.1:8092';
-const EXPECTED_COMPOSE_PROJECT = 'ordivant-docs-compose-qa';
+const EXPECTED_COMPOSE_PROJECT = process.argv.includes('--handbook-qa') ? 'ordivant-docs-handbook-qa' : 'ordivant-docs-compose-qa';
+const CONTENT_ONLY = process.argv.includes('--content-only');
 const OUTPUT_DIR = path.resolve('docs/public/screenshots');
 const VIEWPORT = { width: 1400, height: 900 };
 const ADMIN_EMAIL_ENV = 'ORDIVANT_QA_EMAIL';
@@ -482,6 +483,8 @@ async function expectHeading(page, text) {
 }
 
 async function capture(page, pageName, locale) {
+  if (CONTENT_ONLY && !['run', 'knowledge', 'code'].includes(pageName)) return null;
+  await page.locator('.ant-message-notice:visible').first().waitFor({ state: 'hidden', timeout: 10000 });
   const fileName = pageName + '-' + locale + '.png';
   await page.screenshot({ path: path.join(OUTPUT_DIR, fileName), fullPage: false });
   return 'docs/public/screenshots/' + fileName;
@@ -577,6 +580,7 @@ async function captureWorkPage(page, locale, project, task, runTask, agent, shou
 async function captureRunPage(page, locale, runId) {
   const row = page.locator('.run-table-shell tr[aria-label*="' + runId + '"]');
   await row.waitFor({ state: 'visible', timeout: 30000 });
+  await row.getByText(catalogMessage('已提交', locale.key), { exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   await row.click();
   const drawer = page.locator('.run-drawer');
   await drawer.waitFor({ state: 'visible' });
@@ -584,6 +588,8 @@ async function captureRunPage(page, locale, runId) {
   const eventList = drawer.locator('.run-event-list');
   await eventList.waitFor({ state: 'visible', timeout: 20000 });
   assert(await eventList.locator('.run-event').count() > 0, 'The DEMO Run has no timeline events.');
+  await drawer.locator('.run-answer.rendered-markdown').waitFor({ state: 'visible' });
+  assert(await drawer.locator('pre.run-answer').count() === 0, 'The Run reply is still rendered as raw source.');
   await drawer.locator('.ant-drawer-body').evaluate(element => { element.scrollTop = element.scrollHeight; });
   return capture(page, 'run', locale.key);
 }
@@ -600,6 +606,8 @@ async function captureKnowledgePage(page, locale, fixture) {
   const versionSelect = page.locator('.knowledge-reader .ant-select-selection-item');
   await versionSelect.waitFor({ state: 'visible' });
   assert((await versionSelect.innerText()).includes('2'), 'The Knowledge example has no published second version.');
+  await page.locator('.knowledge-reader .markdown-content .rendered-markdown').waitFor({ state: 'visible' });
+  assert(!/#|\*\*/.test(await document.locator('.document-item-summary').innerText()), 'The Knowledge search preview exposes Markdown heading or emphasis syntax.');
   return capture(page, 'knowledge', locale.key);
 }
 
@@ -620,6 +628,7 @@ async function captureCodePage(page, locale, fixture) {
   await drawer.waitFor({ state: 'visible' });
   await drawer.getByText(fixture.pull.title, { exact: false }).first().waitFor({ state: 'visible' });
   assert((await drawer.innerText()).includes(fixture.pull.title), 'The Code pull request detail is missing.');
+  await drawer.locator('.rendered-markdown').waitFor({ state: 'visible' });
   const screenshot = await capture(page, 'code', locale.key);
   await drawer.locator('.ant-drawer-close').click();
   await drawer.waitFor({ state: 'hidden' });
@@ -644,7 +653,7 @@ async function main() {
   assert(email && password, 'The parent QA wrapper must provide the synthetic login through environment variables.');
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-  const browser = await chromium.launch({ channel: 'chrome', headless: true });
+  const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--disable-extensions', '--disable-background-networking'] });
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
   await context.route('**/*', route => {
     let origin = '';
@@ -703,9 +712,11 @@ async function main() {
     }
 
     assert(pageErrorCount === 0, 'The browser recorded ' + pageErrorCount + ' page JavaScript errors.');
-    assert(outputs.length === 18, 'Expected 18 screenshots but captured ' + outputs.length + '.');
-    for (const output of outputs) process.stdout.write(output + '\n');
-    process.stdout.write(String(outputs.length) + ' screenshots captured\n');
+    const captured = outputs.filter(Boolean);
+    const expected = CONTENT_ONLY ? 9 : 18;
+    assert(captured.length === expected, 'Expected ' + expected + ' screenshots but captured ' + captured.length + '.');
+    for (const output of captured) process.stdout.write(output + '\n');
+    process.stdout.write(String(captured.length) + ' screenshots captured; Markdown content surfaces verified; browser JavaScript errors: 0\n');
   } finally {
     await context.close();
     await browser.close();
