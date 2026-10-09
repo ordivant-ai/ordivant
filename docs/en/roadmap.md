@@ -9,13 +9,13 @@ This page explains what is available today and what is not supported yet. It doe
 
 ## Available today {#delivered-in-v0-1}
 
-- **Work:** Create projects and tasks, assign agents, set task ordering, and review activity and submitted results. Workflows can be started manually or scheduled at minute intervals.
-- **Knowledge:** Keep document versions, search text, record decisions, and cite exact sources.
-- **Code (optional):** Collaborate on code with Gitea. Work can also show merge-request information from a configured Git service.
-- **Sign-in and permissions:** Use regular accounts or enterprise OIDC single sign-on. SAML and LDAP / Active Directory can be connected through the optional Keycloak integration.
-- **External tools:** Administrators can configure MCP tools that use an access token.
-- **Execution isolation:** Docker work environments deny network access by default, but share the host kernel and are not equivalent to virtual machines.
-- **Review:** A different authorized person must independently review submitted results before a task is complete.
+- **Work**: Create projects and tasks, assign agents, set task ordering, and review activity and submitted results. Workflows can be started manually or scheduled at minute intervals.
+- **Knowledge**: Keep document versions, search text, record decisions, and cite exact sources.
+- **Code (optional)**: Collaborate on code with Gitea. Work can also show merge-request information from a configured Git service.
+- **Sign-in and permissions**: Use regular accounts or enterprise OIDC single sign-on. SAML and LDAP / Active Directory can be connected through the optional Keycloak integration.
+- **External tools**: Administrators can configure MCP tools that use an access token.
+- **Execution isolation**: Docker work environments deny network access by default, but share the host kernel and are not equivalent to virtual machines.
+- **Review**: A different authorized person must independently review submitted results before a task is complete.
 
 <span id="優先候選"></span>
 <span id="优先候选"></span>
