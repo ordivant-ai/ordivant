@@ -1,8 +1,14 @@
-# 開始使用 Ordivant
+<span id="開始使用-ordivant"></span>
+<span id="开始使用-ordivant"></span>
+
+# 開始使用 Ordivant {#getting-started-with-ordivant}
 
 本指南以 Docker Compose 建立本機開發環境。Work、Knowledge、Code 和 Identity 會啟動在同一個瀏覽器入口；資料仍分別存放在各產品自己的資料庫與 volume。
 
-## 準備環境
+<span id="準備環境"></span>
+<span id="准备环境"></span>
+
+## 準備環境 {#prepare-the-environment}
 
 - Git。
 - Docker Desktop（Windows/macOS，使用 Linux containers）或 Linux Docker Engine。
@@ -11,12 +17,15 @@
 
 不需要先在主機安裝 Python、Node.js 或 `uv`。第一次啟動會建置映像並下載所需容器映像，所需時間取決於網路和主機效能。
 
-## 複製並啟動
+<span id="複製並啟動"></span>
+<span id="拷贝并启动"></span>
+
+## 複製並啟動 {#clone-and-start}
 
 在 Windows PowerShell 7 中執行：
 
 ```powershell
-git clone https://github.com/bigtongue5566/ordivant.git
+git clone https://github.com/ordivant-ai/ordivant.git
 Set-Location ordivant
 pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Seed
 ```
@@ -24,7 +33,7 @@ pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivan
 在 Linux shell 也可以這樣呼叫：
 
 ```bash
-git clone https://github.com/bigtongue5566/ordivant.git
+git clone https://github.com/ordivant-ai/ordivant.git
 cd ordivant
 pwsh -NoProfile -File ./scripts/containers.ps1 -Development -ProjectName ordivant-dev -Seed
 ```
@@ -41,13 +50,19 @@ pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivan
 
 Linux 使用 `./scripts/containers.ps1` 路徑。若已先啟動最小環境，使用相同 `-Development` 和 `-ProjectName` 加上 `-WithGitea -WithRuntime -WithSandbox` 即可；不要再次加 `-Seed`。新環境若只要 Runtime、不需要 Code 寫入或沙箱，可只加 `-WithRuntime`。`-WithSandbox` 必須同時啟動 Work 和 Runtime。
 
-## Seed 與 Runtime
+<span id="seed-與-runtime"></span>
+<span id="seed-与-runtime"></span>
+
+## Seed 與 Runtime {#seed-and-runtime}
 
 Seed 和 Runtime 是兩個不同步驟。Seed 在 Work 的持久資料目錄建立 `bootstrap.json`，Runtime 啟動時使用它取得服務所需的初始連線資料。新環境若直接加 `-WithRuntime` 卻沒有既有 Work bootstrap，helper 會停止並提示使用 `-Seed`；它不會在背景偷偷產生示範資料。對已初始化的資料，之後可在同一 Compose project 加入 Runtime。
 
 Runtime 未取得可用的模型連線時，執行會使用明確標示的 DEMO fallback；這不是付費模型執行。模型連線由管理員在 Work 設定並按 Agent 套用，請參閱[執行與自動化指南](../execution-usage.md)。
 
-## 檢查與停止
+<span id="檢查與停止"></span>
+<span id="检查与停止"></span>
+
+## 檢查與停止 {#check-and-stop}
 
 以相同的專案名稱查看服務狀態、查看服務日誌或停止容器：
 
@@ -61,7 +76,10 @@ Linux 將腳本路徑改為 `./scripts/containers.ps1`。`down` 只停止該 Com
 
 PowerShell 7 在 Linux 可參考[容器操作說明](../containers.md)。生產目標不加 `-Development`，預設 Web port 是 `8088`；對外提供服務前，需設定可信 HTTPS origin、secure cookie、身分服務及資料備份，不能把本機開發設定直接當成正式部署。
 
-## 接下來
+<span id="接下來"></span>
+<span id="接下来"></span>
+
+## 接下來 {#next-steps}
 
 - [Work：任務與審核](work.md)
 - [Knowledge：文件、版本與引用](knowledge.md)

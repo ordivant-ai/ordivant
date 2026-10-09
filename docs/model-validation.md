@@ -1,14 +1,20 @@
-# 真實模型與設定驗收
+<span id="真實模型與設定驗收"></span>
+<span id="真实模型与设置验收"></span>
+
+# 真實模型與設定驗收 {#live-model-and-settings-acceptance}
 
 日期：2026-10-07，Asia/Taipei。模型設定、Pi runtime 和前端分別由三位 luna-worker 實作，PM 負責共同契約、受信任的本機匯入、容器整合、HTTP／滑鼠／真實模型驗收。
 
-## 實際完成範圍
+<span id="實際完成範圍"></span>
+<span id="实际完成范围"></span>
+
+## 實際完成範圍 {#scope-actually-completed}
 
 | 驗收 | 證據 | 結果 |
 |---|---|---|
-| Work 設定與安全性單元測試 | `backend/tests/test_model_settings.py`；全 Work 測試 | 31 passed；加密、跨組織隔離、管理員限制、revision、錯誤遮蔽、null 清除、快照、handoff scope/fence/期限與撤銷 |
-| Runtime 與 Responses adapter | `runtime/test/runtime.test.mjs` | 5 passed；實際 Pi Harness／本機合成 Responses server、工具回合、usage cache breakdown、redirect 拒絕且只請求一次、pending live 重啟等候 handoff |
-| 前端 | TypeScript；suite/work/knowledge/code builds | 全部通過 |
+| Work 設定與安全性單元測試 | `backend/tests/test_model_settings.py`；全 Work 測試 | 31 項測試通過；加密、跨組織隔離、管理員限制、revision、錯誤遮蔽、null 清除、快照、handoff scope/fence/期限與撤銷 |
+| Runtime 與 Responses adapter | `runtime/test/runtime.test.mjs` | 5 項測試通過；實際 Pi Harness／本機合成 Responses server、工具回合、usage cache breakdown、redirect 拒絕且只請求一次、pending live 重啟等候 handoff |
+| 前端 | TypeScript；Suite／Work／Knowledge／Code 建置 | 全部通過 |
 | 真實端點協定測試 | `.data/validation/live-probe-388b5ccd/report.json` | `/models` 找到指定模型；兩個串流 `/responses` 完成事件、模型發起工具呼叫並使用 42 的工具結果 |
 | Cookie 管理員與 scoped manager 設定 | `.data/validation/model-settings-76ed3fd4/report.json` | 全部通過；只使用隔離 QA 合成 key，未呼叫模型 |
 | 桌面／390px 真實滑鼠操作 | `.data/validation/model-browser/report.json` 及 PNG | 全域保存、key 空白、Agent 新建 override、編輯繼承、reload 保留、Modal popup 命中與手機保存通過 |
@@ -38,7 +44,10 @@
 
 較早的 `.data/validation/live-work-2be61825/` 是修正 cache 統計前的驗收，其 input 欄位只有 uncached 部分；以最後報告為準。沒有改寫或丟棄先前歷史紀錄。
 
-## 重現
+<span id="重現"></span>
+<span id="重现"></span>
+
+## 重現 {#reproduce}
 
 一般程式檢查不會呼叫外部模型：
 
@@ -63,7 +72,7 @@ $env:ORDIVANT_WEB_PORT = '8092'
 uv run --project backend --no-sync python scripts/model_settings_acceptance.py
 ```
 
-公開版本的 Live 驗收需依[Live 驗收設定](execution-usage.md#隔離驗收)明確提供 `ORDIVANT_TEST_PROVIDER_BASE`、`ORDIVANT_TEST_PROVIDER_MODEL`、`ORDIVANT_TEST_PROVIDER_PROJECT`（隔離 `*-qa` Compose project）與 `ORDIVANT_TEST_PROVIDER_KEY_FILE`。沒有預設付費端點，不會自動讀取主環境金鑰；請先在自己的隔離 QA 設定相容 Responses 模型。
+公開版本的 Live 驗收需依[Live 驗收設定](execution-usage.md#isolated-acceptance)明確提供 `ORDIVANT_TEST_PROVIDER_BASE`、`ORDIVANT_TEST_PROVIDER_MODEL`、`ORDIVANT_TEST_PROVIDER_PROJECT`（隔離 `*-qa` Compose project）與 `ORDIVANT_TEST_PROVIDER_KEY_FILE`。沒有預設付費端點，不會自動讀取主環境金鑰；請先在自己的隔離 QA 設定相容 Responses 模型。
 
 ```powershell
 uv run --project backend --no-sync python scripts/model_probe.py
@@ -71,11 +80,14 @@ uv run --project backend --no-sync python scripts/live_model_acceptance.py --res
 uv run --project backend --no-sync python scripts/live_model_record_checks.py PATH_TO_LIVE_REPORT
 ```
 
-Operator 匯入只作用於明確指定且 ownership 相符的隔離 QA，透過 Docker exec stdin 傳遞 credential，不放入 process arguments；HTTP 仍要求 Identity admin。上述摘要是公開前的歷史證據，原始 `.data/validation/` 報告與私人連線不包含在 clone 中。
+操作員匯入只會作用於明確指定且所有權相符的隔離 QA 環境；憑證透過 Docker exec 的 stdin 傳遞，不會放入程序引數。HTTP 仍要求 Identity 管理員權限。上述摘要是公開前留下的歷史證據，原始 `.data/validation/` 報告與私人連線設定不包含在儲存庫副本中。
 
 `scripts/integration.py` 的原有 runtime 驗收明確限制未設定的 DEMO Agent，避免把 live run 誤標為 demo；已設定模型時應使用獨立 live 腳本。
 
-## 驗收限制
+<span id="驗收限制"></span>
+<span id="验收限制"></span>
+
+## 驗收限制 {#acceptance-limitations}
 
 只傳送合成算術／任務資料，沒有傳送倉庫或使用者專案內容。驗證的是此端點的實際模型請求、上游回報的 model ID、usage 和平台工具；代理服務的底層模型路由、容量與美元帳單未獨立驗證。Context／output ceilings 是使用者提供的 metadata。硬性費用上限、費率與帳單比對、企業 SSO、外部 CI、完整備份還原、多人負載仍是各自獨立門檻。
 

@@ -1,6 +1,12 @@
+<span id="企業登入與身分管理"></span>
+<span id="企业登录与身分管理"></span>
+
 # Enterprise sign-in and identity management
 
 Ordivant Work, Knowledge, and Code share one Identity service. Administrators can connect an existing enterprise OIDC identity service and control member provisioning, product and Project permissions, sign-in policy, and sessions. Enterprise passwords and MFA are handled by the identity service; Ordivant does not receive enterprise passwords.
+
+<span id="管理員設定"></span>
+<span id="管理员设置"></span>
 
 ## Administrator setup
 
@@ -11,6 +17,9 @@ Ordivant Work, Knowledge, and Code share one Identity service. Administrators ca
 5. Validate sign-in, product access, and sign-out with one enterprise member before enabling “Enterprise SSO only.” The local administrator credentials remain available as a recovery path.
 
 Leaving Client Secret blank preserves the existing value; changing the Issuer or Client ID requires you to enter a new value explicitly. After saving, the interface clears the Secret and the API returns only whether one is configured. The configured canonical origin is the public source of truth. If sign-in starts from another localhost or `127.0.0.1` alias, the interface first redirects to that origin.
+
+<span id="常見身分服務"></span>
+<span id="常见身分服务"></span>
 
 ## Common identity providers
 
@@ -27,6 +36,9 @@ These templates provide standard setup patterns. A real enterprise tenant still 
 
 Official setup references: [Entra OIDC](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc), [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect), [Okta OIDC](https://developer.okta.com/docs/guides/implement-grant-type/authcode/main/), [Auth0 Regular Web Apps](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow), and the [Keycloak administration guide](https://www.keycloak.org/docs/latest/server_admin/index.html).
 
+<span id="成員與權限"></span>
+<span id="成员与权限"></span>
+
 ## Members and permissions
 
 - **Invitation only:** An administrator first creates a member invitation. After the enterprise email is verified and matches an allowed domain, the member can accept the invitation through SSO and receives the product and resource permissions specified in it. Enterprise sign-in does not create administrators automatically.
@@ -36,6 +48,9 @@ Official setup references: [Entra OIDC](https://learn.microsoft.com/en-us/entra/
 - **Manual permissions:** When an administrator explicitly changes a member's permissions, those permissions become manually managed so the next sign-in does not silently overwrite them. To resume group management, set the management mode again through the identity link.
 
 Successful sign-in creates a platform session only; it does not grant credentials for Agents or version-control services. Agent REST/MCP continues to use separate project-scoped identities.
+
+<span id="saml、ldap-與-active-directory"></span>
+<span id="saml、ldap-与-active-directory"></span>
 
 ## SAML, LDAP, and Active Directory
 
@@ -71,6 +86,9 @@ docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml
 
 Enter the password only at the prompt; do not put it in chat, commands, environment variables, or files. Sign in to the broker as the temporary administrator, create the permanent administrator, then remove the temporary account. Docker Desktop integration must be enabled for WSL. See [Keycloak's official bootstrap and recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery).
 
+<span id="工作階段、安全與稽核"></span>
+<span id="工作阶段、安全与审核"></span>
+
 ## Sessions, security, and audit
 
 The platform uses HttpOnly, SameSite, and Origin/CSRF protections. OIDC uses one-time state, browser binding, nonce, PKCE S256, and signature/issuer/audience validation. Client Secrets are encrypted at rest; authorization codes, ID tokens, and access tokens are not written to business databases, API responses, or sign-in logs.
@@ -80,6 +98,9 @@ Disabling an account, changing permissions, unlinking an enterprise identity, or
 Signing out of Ordivant revokes the session shared by its three modules; the IdP manages sessions in other enterprise applications. Configure enterprise MFA, Conditional Access, password policies, and offboarding in the IdP. If the IdP does not send back-channel logout, administrators must also disable the member in Ordivant; disabling an IdP account alone does not immediately invalidate an existing platform session.
 
 The “Identity audit” records sign-ins, provisioning, settings and permission changes, linking/unlinking, and sign-outs. Only administrators can view it. It contains no passwords, cookies, Client Secrets, or provider tokens.
+
+<span id="維運與備份"></span>
+<span id="运维与备份"></span>
 
 ## Operations and backups
 

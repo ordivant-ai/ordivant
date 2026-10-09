@@ -4,7 +4,7 @@ Ordivant v0.1 是可自行部署的早期公開版本。維護與安全修正以
 
 ## 回報漏洞
 
-請使用 [GitHub private vulnerability reporting](https://github.com/bigtongue5566/ordivant/security/advisories/new) 私下回報認證繞過、跨專案資料存取、憑證洩漏或沙箱逃逸。請提供受影響版本、最小重現方式、預期／實際行為及影響範圍。不要在公開 issue 放入有效金鑰、session cookie、使用者資料或完整資料庫。
+請使用 [GitHub private vulnerability reporting](https://github.com/ordivant-ai/ordivant/security/advisories/new) 私下回報認證繞過、跨專案資料存取、憑證洩漏或沙箱逃逸。請提供受影響版本、最小重現方式、預期／實際行為及影響範圍。不要在公開 issue 放入有效金鑰、session cookie、使用者資料或完整資料庫。
 
 若私人回報功能暫時無法使用，請先開不含利用方式及敏感內容的 issue，要求維護者提供私人聯絡方式。請勿測試他人的公開實例。
 

@@ -1,6 +1,12 @@
+<span id="開始使用-ordivant"></span>
+<span id="开始使用-ordivant"></span>
+
 # Getting started with Ordivant
 
 This guide uses Docker Compose to create a local development environment. Work, Knowledge, Code, and Identity share one browser entry point; each product's data remains in its own database and volume.
+
+<span id="準備環境"></span>
+<span id="准备环境"></span>
 
 ## Prepare the environment
 
@@ -11,12 +17,15 @@ This guide uses Docker Compose to create a local development environment. Work, 
 
 You do not need to install Python, Node.js, or `uv` on the host. The first startup builds application images and downloads required container images; the time required depends on network and host performance.
 
+<span id="複製並啟動"></span>
+<span id="拷贝并启动"></span>
+
 ## Clone and start
 
 Run this in Windows PowerShell 7:
 
 ```powershell
-git clone https://github.com/bigtongue5566/ordivant.git
+git clone https://github.com/ordivant-ai/ordivant.git
 Set-Location ordivant
 pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivant-dev -Seed
 ```
@@ -24,7 +33,7 @@ pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivan
 On Linux, use the same helper with a Unix-style path:
 
 ```bash
-git clone https://github.com/bigtongue5566/ordivant.git
+git clone https://github.com/ordivant-ai/ordivant.git
 cd ordivant
 pwsh -NoProfile -File ./scripts/containers.ps1 -Development -ProjectName ordivant-dev -Seed
 ```
@@ -41,11 +50,17 @@ pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivan
 
 On Linux, use the path `./scripts/containers.ps1`. If the minimal environment is already running, rerun the helper with the same `-Development` and `-ProjectName` values plus `-WithGitea -WithRuntime -WithSandbox`; do not add `-Seed` again. To add only Runtime to a new environment without Code writes or a sandbox, use `-WithRuntime`. `-WithSandbox` requires Work and Runtime to be enabled as well.
 
+<span id="seed-與-runtime"></span>
+<span id="seed-与-runtime"></span>
+
 ## Seed and Runtime
 
 Seed and Runtime are separate steps. Seed creates `bootstrap.json` in Work's persistent data directory; Runtime uses it on startup to obtain initial connection data for the service. If you add `-WithRuntime` in a new environment before Work has a bootstrap file, the helper stops and asks you to use `-Seed`. It will not silently create demo data in the background. You can add Runtime to initialized data later under the same Compose project.
 
 If Runtime has no usable model connection, execution uses an explicitly labeled DEMO fallback; this is not a paid-model run. An administrator configures model connections in Work and selects settings for each Agent. See the [execution and automation guide](../execution-usage.md).
+
+<span id="檢查與停止"></span>
+<span id="检查与停止"></span>
 
 ## Check and stop
 
@@ -60,6 +75,9 @@ pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivan
 On Linux, change the script path to `./scripts/containers.ps1`. `down` stops only that Compose project and preserves named volumes; it does not erase data. To start again, use the same project name and feature options as before.
 
 For PowerShell 7 on Linux, see the [container guide](../containers.md). For production, omit `-Development`; the default Web port is `8088`. Before exposing the service, configure a trusted HTTPS origin, secure cookies, the Identity service, and data backups. Do not treat local development settings as a production deployment.
+
+<span id="接下來"></span>
+<span id="接下来"></span>
 
 ## Next steps
 

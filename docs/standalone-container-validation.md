@@ -1,8 +1,14 @@
-# Knowledge 獨立容器驗收
+<span id="knowledge-獨立容器驗收"></span>
+<span id="knowledge-独立容器验收"></span>
+
+# Knowledge 獨立容器驗收 {#knowledge-standalone-container-acceptance}
 
 `scripts/standalone_container_acceptance.py` 對由 `scripts/containers.ps1` 啟動的 Knowledge-only Production Compose project 執行黑箱驗收。它不執行 `up`、`down`、停止其他服務或刪除 volumes；唯一的 lifecycle 操作是重啟指定 project 的 `knowledge-api`，然後透過 Web proxy 等待 API 健康。
 
-## 啟動與驗收
+<span id="啟動與驗收"></span>
+<span id="启动与验收"></span>
+
+## 啟動與驗收 {#start-and-acceptance}
 
 PowerShell 從 repository root 執行：
 

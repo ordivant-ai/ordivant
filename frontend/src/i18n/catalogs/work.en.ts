@@ -64,6 +64,8 @@ export default {
   'Runtime': 'Runtime',
   '外部 Runtime': 'External runtime',
   'Agent 作業管理': 'Agent operations',
+  'Pi 執行環境': 'Pi runtime',
+  '外部執行環境': 'External runtime',
   '執行中': 'Running',
   '自陳': 'Self-reported',
   '量測': 'Measured',

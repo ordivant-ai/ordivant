@@ -1,6 +1,12 @@
+<span id="專案介紹"></span>
+<span id="项目介绍"></span>
+
 # Project overview
 
 Ordivant is an open-source, self-hosted collaboration platform for agent projects. Its interface is available in Traditional Chinese, Simplified Chinese, and English. The platform focuses on team permissions, traceable specifications, agent collaboration, execution evidence, and independent review.
+
+<span id="四個服務邊界"></span>
+<span id="四个服务边界"></span>
 
 ## Four service boundaries
 
@@ -13,9 +19,15 @@ Ordivant is an open-source, self-hosted collaboration platform for agent project
 
 Each product has its own Python API, database, and MCP entry point. The React interface can be built as a Suite or as a single product. Products connect through APIs and do not query one another's business databases directly.
 
+<span id="完成與證據"></span>
+<span id="完成与证据"></span>
+
 ## Completion and evidence
 
 Tasks, Executions, and Runs are separate records. A completed Run means execution and submission have finished; a Task is completed only after an authorized independent reviewer accepts its result. Model-reported numbers, synthetic DEMO activity, and usage returned by an actual provider are clearly distinguished. Unknown costs remain unknown.
+
+<span id="適用與限制"></span>
+<span id="适用与限制"></span>
 
 ## Intended use and limits
 

@@ -6,10 +6,10 @@
 
 面向 Agent 的自托管协作：项目、版本化知识、代码溯源、持久运行与独立审查。应用和文档支持繁体中文、简体中文与 English。
 
-[文档与安装指南](https://bigtongue5566.github.io/ordivant/zh-CN/) · [版本下载](https://github.com/bigtongue5566/ordivant/releases) · [问题反馈](https://github.com/bigtongue5566/ordivant/issues) · [MIT 许可](LICENSE)
+[文档与安装指南](https://ordivant-ai.github.io/zh-CN/) · [版本下载](https://github.com/ordivant-ai/ordivant/releases) · [问题反馈](https://github.com/ordivant-ai/ordivant/issues) · [MIT 许可](LICENSE)
 
-[![CI](https://github.com/bigtongue5566/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/bigtongue5566/ordivant/actions/workflows/ci.yml)
-[![Docs](https://github.com/bigtongue5566/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/bigtongue5566/ordivant/actions/workflows/pages.yml)
+[![CI](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml)
+[![Docs](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml)
 
 ## 功能
 
@@ -28,7 +28,7 @@ Work 可直接读取已配置的 GitHub、GitLab 或 Gitea；Code 是可选产�
 需要 **Git、支持 Linux 容器的 Docker、Compose v2 和 PowerShell 7**。Windows 可使用 Docker Desktop；Linux/macOS 安装 `pwsh` 后使用相同 helper。应用依赖均在容器内安装，主机不需要 Python 或 Node。
 
 ```powershell
-git clone https://github.com/bigtongue5566/ordivant.git
+git clone https://github.com/ordivant-ai/ordivant.git
 cd ordivant
 pwsh -File ./scripts/containers.ps1 -ProjectName ordivant-local -Seed -WithRuntime -WithSandbox
 ```
@@ -89,4 +89,4 @@ npm run preview --prefix docs
 
 CI 不需要付费模型密钥。付费 Live 验收需明确 opt-in，并使用隔离 QA 和自己指定的 credential 文件。本机历史模型／Docker／浏览器验收摘要见[验收记录](docs/zh-CN/validation.md)；私有 `.data/` 与原始 QA 数据不会随仓库发布。
 
-欢迎提交 issue 与 PR；请先阅读 [CONTRIBUTING](CONTRIBUTING.md)。漏洞请通过[私密安全通告](https://github.com/bigtongue5566/ordivant/security/advisories/new)回报。Ordivant 源代码采用 [MIT](LICENSE) 许可；第三方软件包与可选服务保留各自许可，详见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)。
+欢迎提交 issue 与 PR；请先阅读 [CONTRIBUTING](CONTRIBUTING.md)。漏洞请通过[私密安全通告](https://github.com/ordivant-ai/ordivant/security/advisories/new)回报。Ordivant 源代码采用 [MIT](LICENSE) 许可；第三方软件包与可选服务保留各自许可，详见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)。

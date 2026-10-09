@@ -1,4 +1,10 @@
+<span id="排除常見問題"></span>
+<span id="排除常见问题"></span>
+
 # Troubleshooting
+
+<span id="啟動與登入"></span>
+<span id="启动与登录"></span>
 
 ## Startup and sign-in
 
@@ -11,6 +17,9 @@
 | The initial administrator setup page does not appear | This Identity volume was already initialized, or the selected Compose project is different. | Check `-ProjectName` and `-Development`. There is no default account; use the existing administrator or recovery flow. Do not delete the volume to try a password. |
 | Sign-in succeeds but no Project or Space is visible | The human session exists, but the product resource scope was not granted. | Ask an Identity administrator to assign the correct product role and explicit resource scope. An SSO email domain does not grant data access automatically. |
 
+<span id="seed、runtime-與-run"></span>
+<span id="seed、runtime-与-run"></span>
+
 ## Seed, Runtime, and Runs
 
 | Symptom | Cause or check | Resolution |
@@ -21,6 +30,9 @@
 | The execution result is marked DEMO | A valid model connection has not been configured for the organization or Agent. | An administrator configures the provider endpoint, key, and model in Work, then sets the Agent to inherit or override it. DEMO does not mean a paid model was used. |
 | The upstream tool result is unclear after Stop | Stop revokes Run write authority, but an external service may already have applied a side effect. | Check the actual result in that upstream service before deciding whether to create a new Run. The system does not automatically replay an uncertain external operation. |
 
+<span id="knowledge、code-與-sso"></span>
+<span id="knowledge、code-与-sso"></span>
+
 ## Knowledge, Code, and SSO
 
 | Symptom | Cause or check | Resolution |
@@ -30,6 +42,9 @@
 | Code is readable, but repositories or PRs cannot be created | The Gitea profile is stopped or the Code API is not connected to Gitea. | Start the same development Compose project with `-WithGitea`, wait for the health check, and retry in Code. Do not put the Gitea service credential in a browser. |
 | A PR has a status but it is unclear whether tests ran | `agent_reported` is a submitted status receipt, not a CI runner record. | Check the receipt source. Only a verifiable Gitea webhook or external test-system record proves its corresponding event; do not describe a reported status as a CI result. |
 | OIDC callback or sign-in loops fail | The IdP Redirect URI differs from the Callback URL shown by the administration UI, or the canonical HTTPS origin/cookie configuration is wrong. | Check the complete callback URL, Issuer, allowed domains, and trusted public origin. Test with one member before changing sign-in policy. See [enterprise sign-in](../enterprise-sso.md) for setup. |
+
+<span id="資料與服務目錄"></span>
+<span id="数据与服务目录"></span>
 
 ## Data and service directories
 

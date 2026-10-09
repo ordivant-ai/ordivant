@@ -5,9 +5,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urljoin, urlsplit
 import sys
+import os
 
 ROOT = Path(__file__).resolve().parents[1] / 'docs/.vitepress/dist'
-BASE = '/ordivant/'
+BASE = os.environ.get('DOCS_BASE', '/')
 
 
 class Page(HTMLParser):

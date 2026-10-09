@@ -1,3 +1,6 @@
+<span id="開發容器-hot-reload-驗收"></span>
+<span id="开发容器-hot-reload-验收"></span>
+
 # Development container hot-reload acceptance
 
 This acceptance script checks the running development Compose project `ordivant-dev` and verifies that all three Uvicorn APIs (Work, Knowledge, and Code), the Pi Runtime TypeScript compiler/Node `--watch`, and React Vite actually reload through read-only host-source bind mounts.

@@ -1,3 +1,6 @@
+<span id="ordivant-專案實作計畫"></span>
+<span id="ordivant-项目实作计划"></span>
+
 # Ordivant implementation plan
 
 Source: the user's planning chat, re-read after the user's scope change on 2026-10-06. Product: **Ordivant Suite**, with Work / Knowledge / Code in one monorepo and independent deployment boundaries. Code uses Gitea open-source as an optional service; Work operates with existing enterprise VCS and does not require Code. Stack: uv/Python, React, Pi Durable (Work only), PostgreSQL.
@@ -5,6 +8,8 @@ Source: the user's planning chat, re-read after the user's scope change on 2026-
 Status snapshot (2026-10-08): native accounts, organization/Agent model settings and enterprise SSO remain complete for the local Suite. This revision delivers the Work Run console, immutable Agent/workflow templates, durable interval workflows, bounded external MCP tools and per-run Docker sandboxes. Identity/Work/Knowledge/Code have 28/41/10/20 passing tests; Runtime has 25 and sandbox has 3. Actual acceptance includes 53 full container checks, 20 authorized gpt-6.1-sol checks, 16 receipt/credential checks, 9 terminal cleanup checks, 8 PostgreSQL concurrency checks, 67 Docker isolation checks plus 2 crash-recovery checks, and 65 desktop/mobile browser checks. Development `5173` and local production mode `8088` are ready, with 40 preservation/readiness checks and healthy databases/Gitea. Isolated execution and earlier SSO QA containers were removed with named volumes retained. The user creates their own first administrator; main accounts, SSO and existing model/provider settings were preserved. `docs/execution-contracts.md` governs this revision; `docs/sso-contracts.md` continues to govern enterprise identity. See their validation records and `docs/validation.md` for evidence and remaining customer-specific gates.
 
 The original acceptance criteria below remain the Work module gates. The current product scope, endpoint contracts and integrated suite acceptance are defined in `docs/suite-contracts.md`, which takes precedence for the expanded product work.
+
+<span id="delivery-v01-suite-local-pilot"></span>
 
 ## Delivery: v0.1 Suite local pilot
 
@@ -86,7 +91,7 @@ Interaction thesis: fast view transitions, restrained drawer/modal entrances, an
 
 ## Public release handoff (2026-10-08)
 
-The public repository is `bigtongue5566/ordivant`, licensed under MIT. The VitePress documentation site includes installation, product guides, operations, troubleshooting and API contracts. Public CI checks the five Python projects, Runtime, four frontend modes and synthetic REST/MCP integration; Pages builds and validates local links. Paid acceptance requires explicit operator configuration and isolated QA; no private provider or automatic main-environment credential lookup ships as a default.
+The public repository is `ordivant-ai/ordivant`, licensed under MIT. The VitePress documentation site includes installation, product guides, operations, troubleshooting and API contracts. Public CI checks the five Python projects, Runtime, four frontend modes and synthetic REST/MCP integration; Pages builds and validates local links. Paid acceptance requires explicit operator configuration and isolated QA; no private provider or automatic main-environment credential lookup ships as a default.
 
 The release source was exported from the Git index into a clean directory and started with a new Compose project. All 12 services became healthy, and actual Knowledge/Work/Gitea/MCP/Pi DEMO, independent review, peer isolation and restart persistence passed. Gitleaks scanned the source export without detecting secrets. Historical ignored QA reports are not distributed. Remaining enterprise gates below are intentionally open; they do not block the declared v0.1 scope.
 
@@ -106,3 +111,11 @@ Do not mark these gates complete merely because an interface or placeholder exis
 The application and public documentation support Traditional Chinese (`zh-TW`), Simplified Chinese (`zh-CN`) and English (`en`). The browser preference is shared across products and tabs. User-authored content and API identifiers are preserved. Open forms retain drafts, and existing validation errors update with the locale.
 
 Acceptance: 1,247 messages, seven locale behavior checks, four frontend builds, 121 isolated application browser checks, 46 documentation browser checks, and 109 generated HTML pages with no broken local links. Reports stay in ignored `.data/validation/`; no paid model calls are needed. See [language and translation](i18n.md).
+
+## Internationalization correction and organization transfer (2026-10-09) {#internationalization-correction-2026-10-09}
+
+The first documentation acceptance covered navigation and selected articles. It missed English body text in container guides, contracts, and validation records. The correction translates every corresponding article and checks paragraphs and tables before building. All languages use common section identifiers and retain legacy bookmarks, so language switching preserves the current section.
+
+The correction passed checks of 108 documentation sources, eight missing-translation regressions, and 388 actual documentation browser checks. The application also localizes shared brand copy, offline status, and Agent runtime descriptions. All 1,250 catalog messages, four frontend builds, and 127 isolated application browser checks passed. This acceptance made no paid model calls.
+
+Source code has moved to `ordivant-ai/ordivant`. The documentation repository, `ordivant-ai/ordivant-ai.github.io`, uses native GitHub Pages workflows to build an exact public source revision and publish it to <https://ordivant-ai.github.io/>. See [language and translation](i18n.md) for publishing and revision verification.

@@ -1,6 +1,12 @@
+<span id="compose-容器驗收"></span>
+<span id="compose-容器验收"></span>
+
 # Compose Container Acceptance
 
 `scripts/container_acceptance.py` checks a Compose project already started by `scripts/containers.ps1`. It does not run `up` or `down`, or delete volumes. Development acceptance briefly stops the Knowledge and Code APIs in that project to verify that Work's connection to an existing VCS does not depend on either peer. It restarts them in a `finally` block, then restarts all three APIs and confirms that their data remains readable.
+
+<span id="啟動-development"></span>
+<span id="启动-development"></span>
 
 ## Start development mode
 
@@ -26,6 +32,9 @@ Development checks verify that all three APIs use PostgreSQL and development mod
 
 All three APIs are restarted afterward. The script confirms that Work's accepted task, Knowledge's published version, and Code's PR binding remain available. If Runtime was not started with `-WithRuntime`, the report explicitly marks it as skipped. Start Runtime with that option to include the full runtime gate.
 
+<span id="驗收-production"></span>
+<span id="验收-production"></span>
+
 ## Check production mode
 
 ```powershell
@@ -44,6 +53,9 @@ uv run --project backend python scripts/container_acceptance.py --project-name o
 ```
 
 `--full-flow` checks only an already running production project; it does not run Compose `up` or `down`. It retains production health, `local-session` 403, and scoped seed reads, then runs the existing `suite_integration.py` REST/MCP/real Gitea flow through the Web proxy. It stops the Knowledge and Code APIs to verify Work REST, MCP, and existing VCS workflows without those peers. Pi Durable acceptance runs inside `work-api` in the same project: the script copies only the credential-free `scripts/integration.py` to `/tmp/ordivant-validation/` in that container. Python in the container reads bootstrap data from `/data/bootstrap.json` and connects to `http://work-api:8000` and `http://runtime:8090`; no API or runtime host port needs to be published. Finally, peer APIs are restored, all three APIs are restarted, and the script verifies that the Work task is `done`, the Knowledge document has reached at least v3, and the Code PR binding and seed data remain readable. Gitea and Pi runtime services must already be running in the project.
+
+<span id="報告與恢復"></span>
+<span id="报告与恢复"></span>
 
 ## Reports and recovery
 

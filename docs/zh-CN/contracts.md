@@ -1,74 +1,74 @@
-# Shared REST/runtime contract (v0.1)
+# 共用 REST／Runtime 契约（v0.1） {#shared-rest-runtime-contract-v0-1}
 
-The user-selected Run console, automatic workflows, immutable Agent templates, external MCP connections and isolated execution workspaces are defined in [execution contracts](execution-contracts.md). This extension preserves all existing authorization, lease, independent review and secret-handling rules.
+用户选定的 Run 运行控制台、自动工作流程、不可变 Agent 范本、外部 MCP 连接与隔离运行工作区，定义于[运行契约](execution-contracts.md)。此扩充保留既有的授权、租约、独立审查与机密处理规则。
 
-UTF-8 JSON, UTC ISO-8601 timestamps, ids are strings. List endpoints return arrays. Resource endpoints return the object directly. Validation errors use FastAPI shape; domain errors: `{ "detail": { "code": "...", "message": "..." } }`. HTTP 401 unauthenticated, 403 forbidden, 404 unknown/inaccessible, 409 conflict, 422 invalid input. Mutating agent requests support `Idempotency-Key`. The same key + route + actor + same body replays the first response; changed body conflicts.
+JSON 使用 UTF-8，时间戳记采 UTC ISO-8601，ID 为字符串。清单端点回传数组，资源端点直接回传对象。验证错误采 FastAPI 格式；领域错误为 `{ "detail": { "code": "...", "message": "..." } }`。HTTP 401 表示未验证，403 表示禁止访问，404 表示未知或无法访问，409 表示冲突，422 表示输入无效。Agent 的变更请求支持 `Idempotency-Key`。相同密钥、路由、操作者及本文会重播首次回应；本文变更时回报冲突。
 
-## Auth
+## 身分验证 {#auth}
 
-- `GET /api/health` -> `{status:"ok", database:"sqlite"|"postgresql", mode:"development"|"production"}`.
-- Human login uses the independent Identity service's HttpOnly cookie plus Origin/CSRF checks; see [authentication contracts](auth-contracts.md). Both configured modes disable `POST /api/auth/local-session`.
-- REST/MCP agents use `Authorization: Bearer <token>`. `principal`: `{id,name,kind:"human"|"agent"|"runtime",role:"admin"|"manager"|"worker"|"reviewer",organization_id,project_ids:string[]}`. Browser users do not enter agent tokens.
-- `GET /api/me` -> principal. POST `/api/agents` returns agent object plus `token` one time. Demo bootstrap credentials may be in ignored `.data/bootstrap.json`; do not log token contents.
+- `GET /api/health` -> `{status:"ok", database:"sqlite"|"postgresql", mode:"development"|"production"}`。
+- 人类用户通过独立 Identity 服务的 HttpOnly Cookie 登录，并接受 Origin／CSRF 检查；详见[验证契约](auth-contracts.md)。两种已设置模式都会停用 `POST /api/auth/local-session`。
+- REST／MCP Agent 使用 `Authorization: Bearer <token>`。`principal`：`{id,name,kind:"human"|"agent"|"runtime",role:"admin"|"manager"|"worker"|"reviewer",organization_id,project_ids:string[]}`。浏览器用户不输入 Agent token。
+- `GET /api/me` -> principal。`POST /api/agents` 会一次性回传 Agent 对象及 `token`。Demo bootstrap 凭证可能存于被忽略的 `.data/bootstrap.json`；不可记录 token 内容。
 
-## Types
+## 类型 {#types}
 
-`Project`: `{id,key,name,description,organization_id,team_id,budget_usd,created_at}`.
+`Project`：`{id,key,name,description,organization_id,team_id,budget_usd,created_at}`。
 
-`Agent`: `{id,principal_id,name,role:"worker"|"reviewer",team_id,capabilities:string[],project_ids:string[],status:"available"|"busy"|"offline"|"disabled",runtime:"external"|"pi",model:string|null,model_config:ModelSelection|null,effective_model_config:ModelSelection|null,created_at}`. `principal_id` is read-only and maps message/audit actor ids to the agent's display name; task assignments use `id`. [Model contracts](model-contracts.md) define organization connections, encrypted credentials, defaults and Agent overrides.
+`Agent`：`{id,principal_id,name,role:"worker"|"reviewer",team_id,capabilities:string[],project_ids:string[],status:"available"|"busy"|"offline"|"disabled",runtime:"external"|"pi",model:string|null,model_config:ModelSelection|null,effective_model_config:ModelSelection|null,created_at}`。`principal_id` 为唯读，用来将消息／稽核操作者 ID 对应至 Agent 显示名称；任务指派使用 `id`。[模型契约](model-contracts.md)定义组织连接、加密凭证、默认值及 Agent 覆写。
 
-Credential issuance is a documented idempotency exception: repeating an agent-creation request returns the same agent with a fresh one-time token, so raw bearer tokens never enter the response cache. Ordinary mutations replay their original response. Idempotency routes include actual resource ids, not path templates, and replay rechecks current project access.
+凭证签发是明文记载的幂等例外：重送创建 Agent 的请求会回传同一个 Agent，并签发新的单次 token，因此原始 bearer token 不会进入回应缓存。一般变更会重播原始回应。幂等路由包含实际资源 ID，而非路径范本；重播时会重新检查目前的项目访问权。
 
-`Task`: `{id,key,project_id,title,description,goal,inputs,scope,constraints,acceptance_criteria:string[],priority:"urgent"|"high"|"medium"|"low",status,assignee_id:string|null,reviewer_id:string|null,parent_task_id:string|null,dependency_ids:string[],labels:string[],blocked_reason:string|null,progress:number,handoff:string|null,budget_usd:number,created_at,updated_at}`. `inputs`, `scope`, `constraints` are text strings.
+`Task`：`{id,key,project_id,title,description,goal,inputs,scope,constraints,acceptance_criteria:string[],priority:"urgent"|"high"|"medium"|"low",status,assignee_id:string|null,reviewer_id:string|null,parent_task_id:string|null,dependency_ids:string[],labels:string[],blocked_reason:string|null,progress:number,handoff:string|null,budget_usd:number,created_at,updated_at}`。`inputs`、`scope`、`constraints` 是文本字符串。
 
-`Execution`: `{id,task_id,agent_id,status:"running"|"submitted"|"accepted"|"rejected"|"expired"|"released",lease_expires_at,started_at,finished_at:string|null,progress:number,summary:string|null,cost_usd:number,cost_source:"self_reported"|"measured"}`. Fencing `lease_token` appears only in claim/renew responses, never in normal listings.
+`Execution`：`{id,task_id,agent_id,status:"running"|"submitted"|"accepted"|"rejected"|"expired"|"released",lease_expires_at,started_at,finished_at:string|null,progress:number,summary:string|null,cost_usd:number,cost_source:"self_reported"|"measured"}`。防护用 `lease_token` 只会出现在 claim／renew 回应，不会出现在一般清单。
 
-`Artifact`: `{id,task_id,execution_id,kind:"document"|"url"|"test_report"|"file"|"summary",title,uri:string|null,content:string|null,created_at}`.
+`Artifact`：`{id,task_id,execution_id,kind:"document"|"url"|"test_report"|"file"|"summary",title,uri:string|null,content:string|null,created_at}`。
 
-`Message`: `{id,project_id,task_id:string|null,sender_id,recipient_id:string|null,kind:"question"|"reply"|"help_request"|"decision"|"handoff",body,reply_to_id:string|null,status:"delivered"|"accepted"|"completed",created_at}`.
+`Message`：`{id,project_id,task_id:string|null,sender_id,recipient_id:string|null,kind:"question"|"reply"|"help_request"|"decision"|"handoff",body,reply_to_id:string|null,status:"delivered"|"accepted"|"completed",created_at}`。
 
-`AuditEvent`: `{id,project_id:string|null,actor_id,action,entity_type,entity_id,data:object,created_at}`. Secrets/fencing tokens must never occur in audit data.
+`AuditEvent`：`{id,project_id:string|null,actor_id,action,entity_type,entity_id,data:object,created_at}`。稽核数据绝不可包含机密或防护用 token。
 
-`TaskContext`: `{task,executions:Execution[],artifacts:Artifact[],messages:Message[],events:AuditEvent[],dependencies:Task[]}`.
+`TaskContext`：`{task,executions:Execution[],artifacts:Artifact[],messages:Message[],events:AuditEvent[],dependencies:Task[]}`。
 
-## REST
+## REST {#rest}
 
-- `GET/POST /api/projects`; create `{key,name,description?,team_id?,budget_usd?}`.
-- `GET /api/projects/{id}`; `GET /api/projects/{id}/context` -> `{project,tasks,agents,decisions}`.
-- `GET /api/projects/{id}/vcs/pulls/{provider}/{number}?repository=owner/repo` -> `{provider,repository,number,title,state,web_url,head_sha,head,base,checks,checks_available,source:"provider_api"}`. Work reads configured existing GitHub/GitLab/Gitea directly; Code is not required. First enforce project scope, then server-side repository allowlist. No upstream credentials returned. Missing configuration is 503; unavailable checks are explicit, never a passing result. This read cannot accept a task or merge a PR.
-- `GET /api/tasks?project_id=&status=&q=&ready_only=true`; `POST /api/tasks` takes all editable task fields above; defaults ready/medium. Actor scope enforced.
-- `GET /api/tasks/{id}`; `PATCH /api/tasks/{id}` editable spec/dependencies/assignment/budget fields; lifecycle states only via guarded operations, except manager cancellation or backlog->ready. Agents cannot patch executing fields without lease.
-- `GET /api/tasks/{id}/context`; `GET /api/tasks/{id}/executions`.
-- `POST /api/tasks/{id}/claim` body `{lease_seconds?:300}` -> `{task,execution,lease_token}`. Agent identity inferred from token; humans can include `agent_id` to claim on that scoped agent's behalf. Runtime identities must never impersonate an arbitrary user here.
-- `POST /api/tasks/{id}/renew` -> body `{execution_id,lease_token,lease_seconds?:300}` -> same claim shape.
-- `POST /api/tasks/{id}/progress` body `{execution_id,lease_token,progress,summary?,cost_usd?}` -> task.
-- `POST /api/tasks/{id}/block` body `{execution_id,lease_token,reason,handoff?}` -> task; closes execution and releases lease.
-- `POST /api/tasks/{id}/release` body `{execution_id,lease_token,handoff}` -> task ready, execution released. Manager can `POST /api/tasks/{id}/unblock` `{}`.
-- `POST /api/tasks/{id}/submit` body `{execution_id,lease_token,summary,artifacts:[{kind,title,uri?,content?}],cost_usd?:0}` -> TaskContext. Requires at least one evidence artifact. Sets in_review.
-- `POST /api/tasks/{id}/review` body `{decision:"accept"|"reject",comment}` -> TaskContext. Reviewer/manager/admin only; cannot be submitting actor, obey designated reviewer if set, rejecting sets ready and preserves history/evidence.
-- `POST /api/tasks/{id}/delegate` body `{agent_id,title,goal,description?,inputs?,scope?,constraints?,acceptance_criteria:string[],priority?,budget_usd?:0}` -> child Task; actor must be scoped manager or active owner of parent; child assigned to agent; delegation cannot grant access. Limit nesting depth to 3.
-- `GET/POST /api/agents`; create `{name,role,team_id?,capabilities,project_ids,runtime?,model?,model_config?}`. `PATCH /api/agents/{id}` admin/manager may disable, edit capability/model. An explicit null `model_config` clears an override and restores inheritance.
-- `GET /api/messages?project_id=&task_id=&inbox=true` inbox recipient is current actor; manager can inspect authorized project thread. `POST /api/messages` body `{project_id,task_id?,recipient_id?,kind,body,reply_to_id?}` -> Message. Recipient and sender must share authorized project. Reply validated in same task/project and auto completes parent question.
-- `POST /api/messages/{id}/ack` body `{status:"accepted"|"completed"}` recipient only (manager can act with audit).
-- `GET /api/events?project_id=&task_id=` -> newest-first audit array, max 200.
-- `GET /api/overview?project_id=` -> `{counts:{total,ready,in_progress,blocked,in_review,done},agents:{total,available,busy},cost_usd,budget_usd,activity:AuditEvent[]}`.
+- `GET/POST /api/projects`；创建本文为 `{key,name,description?,team_id?,budget_usd?}`。
+- `GET /api/projects/{id}`；`GET /api/projects/{id}/context` -> `{project,tasks,agents,decisions}`。
+- `GET /api/projects/{id}/vcs/pulls/{provider}/{number}?repository=owner/repo` -> `{provider,repository,number,title,state,web_url,head_sha,head,base,checks,checks_available,source:"provider_api"}`。Work 会直接读取已设置的 GitHub／GitLab／Gitea；不需要 Code。先检查项目范围，再套用服务器端 repository 白名单。不回传上游凭证。设置缺漏时回传 503；检查项目无法取得时会明确标示，绝不回报为通过。此唯读操作不能接受任务或合并 PR。
+- `GET /api/tasks?project_id=&status=&q=&ready_only=true`；`POST /api/tasks` 接受上方所有可编辑的任务字段；默认为 ready／medium。会强制检查操作者范围。
+- `GET /api/tasks/{id}`；`PATCH /api/tasks/{id}` 可编辑规格／相依性／指派／预算字段；生命周期状态只能通过受保护的操作变更，管理者取消或将 backlog 改为 ready 除外。Agent 没有租约时不能修改运行中字段。
+- `GET /api/tasks/{id}/context`；`GET /api/tasks/{id}/executions`。
+- `POST /api/tasks/{id}/claim` 本文 `{lease_seconds?:300}` -> `{task,execution,lease_token}`。Agent 身分由 token 推断；人类操作者可提供 `agent_id`，代表该范围内的 Agent 申领任务。Runtime 身分绝不可在此冒充任意用户。
+- `POST /api/tasks/{id}/renew` -> 本文 `{execution_id,lease_token,lease_seconds?:300}` -> 同一种 claim 回应结构。
+- `POST /api/tasks/{id}/progress` 本文 `{execution_id,lease_token,progress,summary?,cost_usd?}` -> task。
+- `POST /api/tasks/{id}/block` 本文 `{execution_id,lease_token,reason,handoff?}` -> task；关闭 execution 并释放租约。
+- `POST /api/tasks/{id}/release` 本文 `{execution_id,lease_token,handoff}` -> task 回到 ready，execution 为 released。管理者可调用 `POST /api/tasks/{id}/unblock` `{}`。
+- `POST /api/tasks/{id}/submit` 本文 `{execution_id,lease_token,summary,artifacts:[{kind,title,uri?,content?}],cost_usd?:0}` -> TaskContext。至少需要一项证据 artifact，并将状态设为 in_review。
+- `POST /api/tasks/{id}/review` 本文 `{decision:"accept"|"reject",comment}` -> TaskContext。仅 reviewer／manager／admin 可运行；提交者不能审查自己的结果，且若已指定审查者则必须遵守。拒绝时将任务设为 ready，并保留历程与证据。
+- `POST /api/tasks/{id}/delegate` 本文 `{agent_id,title,goal,description?,inputs?,scope?,constraints?,acceptance_criteria:string[],priority?,budget_usd?:0}` -> 子 Task；操作者必须是范围内的管理者或父任务的作用中负责人；子任务指派给指定 Agent；委派不能授予访问权。嵌套深度上限为 3。
+- `GET/POST /api/agents`；创建本文 `{name,role,team_id?,capabilities,project_ids,runtime?,model?,model_config?}`。`PATCH /api/agents/{id}` 仅 admin／manager 可停用或编辑能力／模型。明确传入 `model_config: null` 会清除覆写并恢复继承。
+- `GET /api/messages?project_id=&task_id=&inbox=true` 的收件匣收件者为目前操作者；manager 可查看其获准项目中的讨论串。`POST /api/messages` 本文 `{project_id,task_id?,recipient_id?,kind,body,reply_to_id?}` -> Message。收件者与寄件者必须共用已授权项目。回复必须属于同一任务／项目，并自动完成父问题。
+- `POST /api/messages/{id}/ack` 本文 `{status:"accepted"|"completed"}` 仅收件者可运行（manager 可操作，但会留下稽核记录）。
+- `GET /api/events?project_id=&task_id=` -> 由新到旧排列的稽核数组，上限 200 笔。
+- `GET /api/overview?project_id=` -> `{counts:{total,ready,in_progress,blocked,in_review,done},agents:{total,available,busy},cost_usd,budget_usd,activity:AuditEvent[]}`。
 
-## Outbox/runtime
+## 待处理队列／Runtime {#outbox-runtime}
 
-POST `/api/tasks/{id}/dispatch` body `{agent_id}` manager/admin or active parent owner -> `{id,project_id,task_id,agent_id,type:"run_task",payload:object,status:"pending",created_at}`. Agent must be pi runtime, authorized for project, task ready, dependencies done. Unique outstanding dispatch per task.
+`POST /api/tasks/{id}/dispatch` 本文 `{agent_id}`；manager／admin 或父任务作用中负责人可调用，回传 `{id,project_id,task_id,agent_id,type:"run_task",payload:object,status:"pending",created_at}`。Agent 必须是 pi Runtime、已获准访问项目、任务为 ready 且相依任务已完成。每个任务只能有一笔待处理 dispatch。
 
-Runtime credential is distinct from agent credentials. `POST /api/runtime/outbox/claim` `{worker_id,limit?:5}` -> outbox array (fields also include `delivery_token`, `attempts`; exclusive timed ownership). `POST /api/runtime/outbox/{id}/ack` `{worker_id,delivery_token,status:"delivered"|"failed",error?:string}`. Delivery tokens fence stale acknowledgements. Claim only runtime/admin, ack only owner. A runtime scopes all outbound platform tools using per-agent credentials, NOT runtime privileges.
+Runtime 凭证与 Agent 凭证不同。`POST /api/runtime/outbox/claim` `{worker_id,limit?:5}` -> outbox 数组（字段也包含 `delivery_token`、`attempts`；以限时方式独占持有）。`POST /api/runtime/outbox/{id}/ack` `{worker_id,delivery_token,status:"delivered"|"failed",error?:string}`。Delivery token 可阻挡过期的确认。只有 Runtime／admin 可 claim，只有拥有者可 ack。Runtime 对外调用平台工具时，须使用各 Agent 凭证限定范围，不能使用 Runtime 权限。
 
-Runtime local HTTP API on 8090: `GET /health` -> engine/mode and availability; `POST /runs` body `{request_id,task_id,agent_id,prompt,model?}` -> `{request_id,conversation_id,submission_id,status}`; `GET /runs/{request_id}` -> persisted status/answer; `POST /runs/{request_id}/resume`; `POST /runs/{request_id}/abort`. Bind loopback, require configurable `ORDIVANT_RUNTIME_TOKEN` outside development.
+Runtime 本机 HTTP API 使用 8090：`GET /health` -> engine／mode 与可用状态；`POST /runs` 本文 `{request_id,task_id,agent_id,prompt,model?}` -> `{request_id,conversation_id,submission_id,status}`；`GET /runs/{request_id}` -> 已持久化的状态／答案；`POST /runs/{request_id}/resume`；`POST /runs/{request_id}/abort`。绑定 loopback；development 以外必须设置 `ORDIVANT_RUNTIME_TOKEN`。
 
-Runtime dispatcher polls Python outbox and uses id=event id as Pi requestId. A fenced, uncached server handoff provides the assigned Agent credential and the configured Provider key in memory. It supports newly created Agents, renews both delivery and execution leases and revokes the delivery credential on acknowledgement. Configured dispatches use live Responses calls; unconfigured dispatches use the documented demo fallback. No model failure fallback is permitted. `demo` uses a deterministic provider with the actual Pi Harness/storage. Selection snapshots, receipt and secret handling are defined in [model contracts](model-contracts.md).
+Runtime dispatcher 会轮询 Python outbox，并以 event ID 作为 Pi requestId。受防护且不经缓存的服务器交接会在内存中提供获指派 Agent 的凭证及已设置 Provider 的 key。支持新创建的 Agent，会同时续期 delivery 与 execution 租约，并在确认时撤销 delivery credential。已设置的 dispatch 使用即时 Responses 调用；未设置者使用文档所述的 demo fallback。模型调用失败时绝不可改用 fallback。`demo` 使用确定性 Provider，但仍使用实际 Pi Harness／storage。[模型契约](model-contracts.md)定义选取快照、收据及机密处理方式。
 
-## MCP
+## MCP {#mcp}
 
-Official Python SDK FastMCP stdio process: `uv run --project backend python -m ordivant.mcp_server`; env `ORDIVANT_API_URL=http://127.0.0.1:8000`, `ORDIVANT_API_TOKEN=<scoped agent token>`. Thin async httpx bridge to REST ensures shared authorization/idempotency/lease checks. Tools: `get_project_context`, `create_task`, `update_task`, `find_ready_tasks`, `claim_task`, `renew_lease`, `report_progress`, `get_task_context`, `block_task`, `release_task`, `submit_result`, `review_result`, `find_agents`, `request_help`, `send_message`, `read_inbox`, `delegate_task`. Expose context resources and task/review prompts. Mutation tools accept an optional `request_id`, passed as Idempotency-Key. No caller-controlled actor identity.
+官方 Python SDK FastMCP stdio 进程：`uv run --project backend python -m ordivant.mcp_server`；环境变量 `ORDIVANT_API_URL=http://127.0.0.1:8000`、`ORDIVANT_API_TOKEN=<scoped agent token>`。精简的异步 httpx bridge 调用 REST，以共用授权／幂等／租约检查。工具：`get_project_context`、`create_task`、`update_task`、`find_ready_tasks`、`claim_task`、`renew_lease`、`report_progress`、`get_task_context`、`block_task`、`release_task`、`submit_result`、`review_result`、`find_agents`、`request_help`、`send_message`、`read_inbox`、`delegate_task`。提供 context resources 与 task／review prompts。变更工具可接受选填的 `request_id`，并传为 `Idempotency-Key`。调用端不能指定操作者身分。
 
-Also expose `get_vcs_pull_request(project_id,provider,repository,number)`. Work-only `ORDIVANT_VCS_CONFIG` points at ignored JSON: `{ "projects": { "WORK_PROJECT_ID": { "github": { "api_url": "https://api.github.com", "token": "OPTIONAL_PROVIDER_TOKEN", "repositories": ["owner/repository"] } } } }`. GitLab uses its `/api/v4` API base, Gitea `/api/v1`. Private enterprise instances use a configured HTTPS base and least-privilege read token. HTTP defaults to loopback only; operators can explicitly list trusted private service hosts in `ORDIVANT_VCS_HTTP_HOSTS`. Compose permits exactly `gitea` for the isolated local container network. Request bodies cannot provide an API URL or alter this policy. Configuration is per project and exact repository; possession of a global service token never grants all Work actors access to every repository.
+另提供 `get_vcs_pull_request(project_id,provider,repository,number)`。仅 Work 使用的 `ORDIVANT_VCS_CONFIG` 指向被忽略的 JSON：`{ "projects": { "WORK_PROJECT_ID": { "github": { "api_url": "https://api.github.com", "token": "OPTIONAL_PROVIDER_TOKEN", "repositories": ["owner/repository"] } } } }`。GitLab 使用其 `/api/v4` API base，Gitea 使用 `/api/v1`。私人企业运行个体使用已设置的 HTTPS base 与最低权限唯读 token。HTTP 默认只允许 loopback；营运者可通过 `ORDIVANT_VCS_HTTP_HOSTS` 明确列出受信任的私人服务主机。Compose 在隔离的本机容器网络中只允许 `gitea`。请求本文不能提供 API URL 或更改此政策。设置依项目与精确 repository 为单位；持有全域服务 token 不会让所有 Work 操作者取得所有 repository 的访问权。
 
-## Local seed
+## 本机 Seed {#local-seed}
 
-Explicit `uv run --project backend python -m ordivant.seed` creates one demonstration org, engineering+operations teams, manager human, worker agents `planner`, `builder`, `analyst`, and reviewer `reviewer`; scoped second project proves isolation. Main project key ORD. Seed includes a small realistic project with tasks spanning ready/in_progress/blocked/in_review/done, dependency, messages and evidence. Repeat seeding is idempotent. `.data/bootstrap.json` -> `{manager_token,runtime_token,agents:{planner:{id,token},builder:{id,token},analyst:{id,token},reviewer:{id,token}},project_id,isolated_project_id}`; .data path anchored to repository root. These are generated development credentials, never shipped tracked or printed.
+明确运行 `uv run --project backend python -m ordivant.seed` 会创建一个示范 org、engineering 与 operations 团队、一位 manager 人类用户、worker Agent `planner`、`builder`、`analyst`，以及 reviewer `reviewer`；第二个受范围限制的项目用来证明隔离有效。主要项目 key 为 ORD。Seed 会创建包含 ready／in_progress／blocked／in_review／done 任务、相依性、消息与证据的小型拟真项目。重复 Seed 具幂等性。`.data/bootstrap.json` -> `{manager_token,runtime_token,agents:{planner:{id,token},builder:{id,token},analyst:{id,token},reviewer:{id,token}},project_id,isolated_project_id}`；`.data` 路径以 repository 根目录为基准。这些是产生的开发凭证，不得纳入版控或打印。

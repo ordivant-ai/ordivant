@@ -1,15 +1,15 @@
 # Ordivant
 
-**繁體中文** · [简体中文](README.zh-CN.md) · [English](README.en.md)
+**繁體中文** · [簡體中文](README.zh-CN.md) · [English](README.en.md)
 
 **開源、自行部署的 Agent 協作平台。** 將任務、知識、程式碼與執行證據串成可獨立審查的工作流程。
 
-Self-hosted collaboration for agents: projects, versioned knowledge, code provenance, durable runs and independent review. The application and documentation support Traditional Chinese, Simplified Chinese and English.
+提供可自行託管的 Agent 協作平台：支援專案、版本化知識、程式碼來源追溯、持久執行與獨立審查。應用程式和文件支援繁體中文、簡體中文及英文。
 
-[文件與安裝指南](https://bigtongue5566.github.io/ordivant/) · [版本下載](https://github.com/bigtongue5566/ordivant/releases) · [問題回報](https://github.com/bigtongue5566/ordivant/issues) · [MIT 授權](LICENSE)
+[文件與安裝指南](https://ordivant-ai.github.io/) · [版本下載](https://github.com/ordivant-ai/ordivant/releases) · [問題回報](https://github.com/ordivant-ai/ordivant/issues) · [MIT 授權](LICENSE)
 
-[![CI](https://github.com/bigtongue5566/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/bigtongue5566/ordivant/actions/workflows/ci.yml)
-[![Docs](https://github.com/bigtongue5566/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/bigtongue5566/ordivant/actions/workflows/pages.yml)
+[![CI](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml)
+[![Docs](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml)
 
 ## 你可以用它做什麼
 
@@ -28,7 +28,7 @@ Work 可直接讀取已設定的 GitHub／GitLab／Gitea，Code 是選配。各�
 需要 **Git、Docker（Linux containers）＋ Compose v2、PowerShell 7**。Windows 可用 Docker Desktop；Linux/macOS 安裝 `pwsh` 後使用相同 helper。全部應用依賴在容器內安裝，主機不需要 Python 或 Node。
 
 ```powershell
-git clone https://github.com/bigtongue5566/ordivant.git
+git clone https://github.com/ordivant-ai/ordivant.git
 cd ordivant
 pwsh -File ./scripts/containers.ps1 -ProjectName ordivant-local -Seed -WithRuntime -WithSandbox
 ```
@@ -89,4 +89,4 @@ npm run preview --prefix docs
 
 CI 不需任何付費模型金鑰。付費 Live 驗收為明確 opt-in，使用隔離 QA 與自己指定的 credential 檔。歷史的本機真實模型／Docker／瀏覽器驗收摘要在[驗收紀錄](docs/validation.md)，私有 `.data/` 與原始 QA 資料不隨倉庫發布。
 
-歡迎提交 issue 與 PR；先看 [CONTRIBUTING](CONTRIBUTING.md)。漏洞請用[私人回報](https://github.com/bigtongue5566/ordivant/security/advisories/new)。Ordivant 原始碼採 [MIT](LICENSE)；第三方套件及可選服務保留各自授權，見 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)。
+歡迎提交 issue 與 PR；先看 [CONTRIBUTING](CONTRIBUTING.md)。漏洞請用[私人回報](https://github.com/ordivant-ai/ordivant/security/advisories/new)。Ordivant 原始碼採 [MIT](LICENSE)；第三方套件及可選服務保留各自授權，見 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)。

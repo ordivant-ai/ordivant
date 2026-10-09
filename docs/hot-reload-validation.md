@@ -1,4 +1,7 @@
-# 開發容器 Hot Reload 驗收
+<span id="開發容器-hot-reload-驗收"></span>
+<span id="开发容器-hot-reload-验收"></span>
+
+# 開發容器 Hot Reload 驗收 {#development-container-hot-reload-acceptance}
 
 此驗收器檢查已啟動的 development Compose project `ordivant-dev`，確認 Work、Knowledge、Code 三個 Uvicorn API、Pi runtime 的 TypeScript compiler/Node `--watch`，以及 React Vite 都透過唯讀 host source bind mount 實際重載。
 

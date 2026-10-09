@@ -1,44 +1,44 @@
-# Container workflow
+# 容器開發與部署 {#container-workflow}
 
-`scripts/containers.ps1` builds and runs the selected products through Docker Compose. The host needs Docker Engine/Desktop with Docker Compose; it does not need `uv`, Python, Node.js, or npm.
+`scripts/containers.ps1` 會透過 Docker Compose 建置並執行選定的產品。主機需要 Docker Engine／Desktop 與 Docker Compose，不需要安裝 `uv`、Python、Node.js 或 npm。
 
-## Development
+## 開發環境 {#development}
 
-Start the full development suite, explicitly create local demo data, and enable the optional Gitea and Pi runtime services:
+以下命令會啟動完整開發套件，明確建立本機示範資料，並啟用選配的 Gitea 與 Pi runtime 服務：
 
 ```powershell
 .\scripts\containers.ps1 -Development -Seed -WithGitea -WithRuntime
 ```
 
-The helper builds the selected development targets, waits for the APIs and web service, seeds only the selected APIs when `-Seed` is supplied, bootstraps the local Gitea service account when `-WithGitea` is supplied, and starts the runtime only after Work has a bootstrap file. Configured Work dispatches use their live model connection; unconfigured dispatches keep a visibly marked deterministic demo fallback. See [model settings](model-usage.md).
+輔助腳本會建置選定產品的開發映像，等待 API 與網頁服務就緒；只有提供 `-Seed` 時才初始化選定 API 的資料，提供 `-WithGitea` 時才初始化本機 Gitea 服務帳號。Work 已有初始化檔後，才會啟動 runtime。已設定模型的 Work 派發會使用實際模型連線；尚未設定的派發會使用有明確示範標示、結果固定的備援模式。詳見[模型設定](model-usage.md)。
 
-Development mode mounts product source into the containers and provides the same complete account login as production. Identity API `8030` and its independent PostgreSQL are included for every selected product. Default host ports are Work API `8000`, Knowledge API `8010`, Code API `8020`, web `5173`, runtime `8090`, and Gitea `3002`. Override Compose port variables in the shell when a port is already in use.
+開發模式會將產品原始碼掛載到容器中，並提供與正式環境相同的完整帳號登入。無論選擇哪一個產品，都會包含 Identity API `8030` 與其獨立 PostgreSQL。預設主機連接埠為 Work API `8000`、Knowledge API `8010`、Code API `8020`、網頁 `5173`、runtime `8090`，以及 Gitea `3002`。若連接埠已被使用，可在 shell 中覆寫 Compose 的連接埠變數。
 
-To run one product's standalone frontend and API without starting its peers:
+若只要執行單一產品的獨立前端與 API，而不啟動其他產品：
 
 ```powershell
 .\scripts\containers.ps1 -Development -Products knowledge -Seed
 .\scripts\containers.ps1 -Development -Products code -Seed -WithGitea
 ```
 
-One selected product sets `ORDIVANT_PRODUCT_MODE` to that product and directs the web API upstream to its API container. Supported selections are one product, all three products, or a pair that includes Work. A Knowledge+Code-only pair is rejected because suite routing needs Work as the `/api` upstream. Supported multi-product selections use suite mode and route `/api` to `work-api`.
+選擇單一產品時，腳本會將 `ORDIVANT_PRODUCT_MODE` 設為該產品，並將網頁的 API 上游指向對應 API 容器。支援單一產品、全部三個產品，以及包含 Work 的兩產品組合。只有 Knowledge＋Code 的組合會被拒絕，因為套件路由需要 Work 作為 `/api` 的上游。支援的多產品組合會使用套件模式，並將 `/api` 導向 `work-api`。
 
-## Production Targets
+## 正式環境映像 {#production-targets}
 
-On first startup the web page asks the user to create the initial administrator with their own password. There is no default human account; `-Seed` creates only business DEMO fixtures and agent credentials. Development and production have separate Identity volumes and project-specific cookie names. See [human login](human-login.md) for invitations, permissions, password recovery and session revocation. All configured products refuse the old local-session endpoint in both modes.
+首次啟動時，網頁會要求使用者自行設定密碼並建立初始管理員。平台沒有預設的人類帳號；`-Seed` 只會建立業務示範資料與 Agent 憑證。開發與正式環境使用不同的 Identity 資料卷，以及各自 Compose 專案的 Cookie 名稱。邀請、權限、密碼復原與撤銷工作階段的方式，請參閱[帳號與登入](human-login.md)。所有已設定的產品都會在兩種模式中拒絕舊的本機工作階段端點。
 
-The helper derives exact `ORDIVANT_AUTH_ORIGINS` from the selected web host port unless explicitly supplied. For a remote HTTPS deployment, configure the public origin and `ORDIVANT_AUTH_COOKIE_SECURE=true`. Insecure cookies are accepted only with literal HTTP loopback origins. Identity service secrets and database connection files stay in each project's ignored secret directory.
+除非明確提供設定，腳本會依選定的網頁主機連接埠推導精確的 `ORDIVANT_AUTH_ORIGINS`。遠端 HTTPS 部署需設定公開來源，以及 `ORDIVANT_AUTH_COOKIE_SECURE=true`。只有明確使用 HTTP 回送位址的來源可使用非安全 Cookie。Identity 服務秘密與資料庫連線檔保存在各專案已被 Git 忽略的秘密資料夾中。
 
-Omit `-Development` to build and run the production Docker targets. Local-session authentication remains disabled:
+不加 `-Development`，即可建置並執行正式環境 Docker 映像。本機工作階段驗證仍保持停用：
 
 ```powershell
 .\scripts\containers.ps1 -Action up
 .\scripts\containers.ps1 -Action up -Products knowledge
 ```
 
-The full selection uses suite frontend mode and Work as the `/api` upstream. A single selected Knowledge or Code product builds that product's standalone frontend. The default production web port is `8088`. Default development and production Compose project names both include a hash of the repository's absolute path, so another checkout gets a separate project and secret directory. Use `-ProjectName` to select a stable, explicitly named instance.
+選擇完整套件時，會使用套件前端模式，並以 Work 作為 `/api` 上游。單獨選擇 Knowledge 或 Code 時，會建置該產品的獨立前端。正式環境預設網頁連接埠為 `8088`。開發與正式環境的預設 Compose 專案名稱都包含儲存庫絕對路徑的雜湊，因此另一份 checkout 會取得獨立的專案與秘密資料夾。可使用 `-ProjectName` 指定固定的執行個體名稱。
 
-To keep development and production up at the same time, give them separate Compose project names and nonconflicting host ports. This example runs development Gitea on `3003` and production Gitea on its default `3002`:
+若要同時執行開發與正式環境，請使用不同的 Compose 專案名稱及不衝突的主機連接埠。以下範例讓開發環境 Gitea 使用 `3003`，正式環境 Gitea 使用預設的 `3002`：
 
 ```powershell
 $env:ORDIVANT_DEV_WEB_PORT = '5173'
@@ -49,11 +49,11 @@ Remove-Item Env:ORDIVANT_GITEA_PORT
 .\scripts\containers.ps1 -ProjectName ordivant-prod-local -WithGitea
 ```
 
-The two invocations use separate project-scoped volumes and `.data/container-secrets/<ProjectName>/` directories. The production command does not seed demo data.
+這兩次執行會使用各 Compose 專案獨立的資料卷，以及 `.data/container-secrets/<ProjectName>/` 資料夾。正式環境的命令不會建立示範資料。
 
-## Actions And Data
+## 操作與資料保存 {#actions-and-data}
 
-`-Action` accepts `up` (default), `down`, `status`, and `logs`. Use the same `-Development` and `-ProjectName` values to address the same project. For example:
+`-Action` 支援 `up`（預設）、`down`、`status` 與 `logs`。操作同一專案時，請使用相同的 `-Development` 與 `-ProjectName` 值。例如：
 
 ```powershell
 .\scripts\containers.ps1 -Development -Action status
@@ -61,40 +61,40 @@ The two invocations use separate project-scoped volumes and `.data/container-sec
 .\scripts\containers.ps1 -Development -Action down
 ```
 
-`down` stops only the selected Compose project and preserves its named database, product, runtime, and Gitea volumes. It never uses `down -v` and does not remove secrets or data.
+`down` 只會停止選定的 Compose 專案，並保留其具名資料庫、產品、runtime 與 Gitea 資料卷。腳本不會使用 `down -v`，也不會刪除秘密或資料。
 
-`-Seed` is explicit and runs each selected product's seed module inside its API container. Seed data and generated bearer tokens are local DEMO data; they do not configure enterprise SSO. If `-WithRuntime` is used without `-Seed`, the helper requires an existing Work `/data/bootstrap.json` in that Compose project's persistent volume and fails without creating one.
+必須明確提供 `-Seed` 才會在各選定產品的 API 容器內執行資料初始化模組。初始化資料及產生的 Bearer token 都是本機示範資料，不會設定企業 SSO。若使用 `-WithRuntime` 卻沒有提供 `-Seed`，腳本會要求該 Compose 專案的永久資料卷中已存在 Work `/data/bootstrap.json`；檔案不存在時會失敗，不會自行建立。
 
-`-WithRuntime` requires `work` in `-Products`. `-WithGitea` starts the `gitea` profile and publishes Gitea on loopback port `3002` by default. Its generated `ordivant-local` service account uses a random password that is neither stored nor printed; a scoped service token and webhook secret are stored locally for Code. Existing credentials are verified and retained on repeat runs. If stored credentials cannot be verified, the helper stops and does not rotate them silently.
+使用 `-WithRuntime` 時，`-Products` 必須包含 `work`。`-WithGitea` 會啟動 `gitea` profile，預設將 Gitea 公開於回送連接埠 `3002`。自動產生的 `ordivant-local` 服務帳號使用隨機密碼，該密碼不會被儲存或輸出；具有限定權限的服務 token 與 webhook 秘密會保存在本機供 Code 使用。重複執行時，腳本會驗證並保留既有憑證。若無法驗證已儲存的憑證，腳本會停止，不會悄悄更換憑證。
 
-`-WithSandbox` additionally requires Work and `-WithRuntime`. It adds `compose.sandbox.yaml`, builds the fixed sandbox job image, and starts an internal trusted executor before runtime. Only `sandbox-api` holds the Docker daemon socket; job/runtime/web do not. Jobs are non-root, read-only, networkless, resource-limited and use an isolated bounded tmpfs workspace per run. A generated `sandbox_service_token` stays in the project secret directory. See [execution usage](execution-usage.md) for controls, templates, workflow schedules, endpoint host policies and the optional owned `-ExecutionQaFixture` on 8092. Sandbox workspace contents are ephemeral and are not included in data volume backups.
+`-WithSandbox` 另外要求 Work 與 `-WithRuntime`。它會加入 `compose.sandbox.yaml`、建置固定的沙箱工作映像，並在 runtime 之前啟動內部受信任的執行器。只有 `sandbox-api` 持有 Docker daemon socket；工作容器、runtime 與網頁都不持有。沙箱工作以非 root 身分執行，採唯讀、禁止網路及資源限制設定，每次執行使用獨立且容量受限的 tmpfs 工作空間。產生的 `sandbox_service_token` 保存在專案秘密資料夾。執行控制、範本、工作流程排程、端點主機政策，以及選配的 8092 專屬 `-ExecutionQaFixture`，請參閱[執行功能操作指南](execution-usage.md)。沙箱工作空間內容是暫存資料，不包含在資料卷備份中。
 
-Each Compose project stores generated service credentials under `.data/container-secrets/<ProjectName>/`. The directory contains 64-hex database passwords, PostgreSQL URL files, the internal Identity service token, the development proxy token, and `gitea.json` (initially `{}`). Database volumes, including Identity, are also namespaced by Compose project. The files are ignored by Git; keep them local, do not print or publish them, and back them up securely if the matching database volumes must remain usable. Human passwords are never generated by the helper.
+每個 Compose 專案會將產生的服務憑證保存在 `.data/container-secrets/<ProjectName>/`。資料夾包含 64 位十六進位資料庫密碼、PostgreSQL URL 檔案、內部 Identity 服務 token、開發代理 token，以及 `gitea.json`（初始內容為 `{}`）。包含 Identity 在內的資料庫資料卷也依 Compose 專案區分。這些檔案已被 Git 忽略；請保留於本機，不要輸出或發布。若要持續使用對應資料庫資料卷，請安全地備份這些檔案。腳本不會產生人類使用者的密碼。
 
-Production builds use `ORDIVANT_MODE=production`; local-session authentication is unavailable. Explicit `-Seed` still writes demonstration principals and generated local bearer credentials, so use it only when demo data is intended.
+正式環境建置使用 `ORDIVANT_MODE=production`，不提供本機工作階段驗證。明確使用 `-Seed` 仍會寫入示範身分與本機 Bearer 憑證，因此只有需要示範資料時才應使用。
 
-If a Docker Compose operation fails, the helper includes its last 15 output lines after redacting known project secrets, long hex credentials, password-bearing lines, and URL userinfo. It does not print the complete Docker command or secret-file contents.
+Docker Compose 操作失敗時，腳本會附上最後 15 行輸出，並遮蔽已知專案秘密、長十六進位憑證、含密碼的行及 URL 中的使用者資訊。它不會輸出完整 Docker 命令或秘密檔案內容。
 
-## Gitea URLs
+## Gitea 網址 {#gitea-urls}
 
-Code connects to `http://gitea:3000` inside the Compose network. Browser and clone URLs use Gitea's configured `ROOT_URL`; `PUBLIC_URL_DETECTION=never` keeps an internal API request from changing those links to `gitea:3000`. Set `ORDIVANT_GITEA_PUBLIC_URL` to the intended public Gitea URL for another host. The default remains the loopback URL at `ORDIVANT_GITEA_PORT`. See the [official Gitea server configuration](https://docs.gitea.com/administration/config-cheat-sheet/#server-server).
+Code 在 Compose 網路中連線至 `http://gitea:3000`。瀏覽器與 clone 網址使用 Gitea 設定的 `ROOT_URL`；`PUBLIC_URL_DETECTION=never` 可避免內部 API 請求將這些連結改為 `gitea:3000`。部署到其他主機時，請將 `ORDIVANT_GITEA_PUBLIC_URL` 設為預定公開的 Gitea 網址。預設仍使用 `ORDIVANT_GITEA_PORT` 的回送網址。詳見 [Gitea 官方伺服器設定](https://docs.gitea.com/administration/config-cheat-sheet/#server-server)。
 
-Work uses its own project-scoped `/data/vcs.json` for existing VCS access. Its Compose configuration explicitly permits the private HTTP host `gitea`; other HTTP hosts require the operator's `ORDIVANT_VCS_HTTP_HOSTS` allowlist. Callers cannot supply a server URL through a task or tool request.
+Work 使用各專案自己的 `/data/vcs.json` 存取既有 VCS。其 Compose 設定明確允許私人 HTTP 主機 `gitea`；其他 HTTP 主機必須加入操作者設定的 `ORDIVANT_VCS_HTTP_HOSTS` 允許清單。呼叫者不能透過任務或工具請求指定伺服器網址。
 
-## Enterprise Identity Broker
+## 企業身分代理 {#enterprise-identity-broker}
 
-The shared Identity service supports direct OIDC without an extra container. Configure the provider in Account & Security; each Compose project keeps its own encrypted settings and identity records. Keep `identity_data/sso.key` with the Identity database backup. The administrator chooses the canonical `ORDIVANT_SSO_PUBLIC_ORIGIN` from the exact trusted auth origins.
+共用 Identity 服務支援直接 OIDC 連線，不需額外容器。請在「帳號與安全」中設定身分服務；每個 Compose 專案保有自己的加密設定與身分紀錄。備份 Identity 資料庫時，也必須保留 `identity_data/sso.key`。管理員需從精確信任的驗證來源中選擇正式的 `ORDIVANT_SSO_PUBLIC_ORIGIN`。
 
-For SAML or LDAP/AD federation, add the optional Keycloak 26.8.0 broker and its independent PostgreSQL:
+如需 SAML 或 LDAP／AD 身分聯邦，可加入選配的 Keycloak 26.8.0 代理與其獨立 PostgreSQL：
 
 ```powershell
 .\scripts\containers.ps1 -Development -WithIdentityBroker
 .\scripts\containers.ps1 -Development -Action status -WithIdentityBroker
 ```
 
-The broker binds to loopback `8093`; override `ORDIVANT_BROKER_PORT` and `ORDIVANT_BROKER_PUBLIC_URL` before startup when needed. It has no default human administrator. Bootstrap its administrator through the interactive WSL tmux steps in [enterprise SSO](enterprise-sso.md). `-WithIdentityBroker` configures explicit internal backchannel routing; external IdPs use verified HTTPS. Private enterprise CA bundles can be mounted and selected with `ORDIVANT_SSO_CA_BUNDLE`.
+代理綁定回送連接埠 `8093`；需要調整時，請在啟動前覆寫 `ORDIVANT_BROKER_PORT` 與 `ORDIVANT_BROKER_PUBLIC_URL`。代理沒有預設的人類管理員。請依[企業 SSO](enterprise-sso.md)的互動式 WSL tmux 步驟初始化管理員。`-WithIdentityBroker` 會設定明確的內部反向通道路由；外部 IdP 使用經驗證的 HTTPS。企業私人 CA 憑證組合可掛載至容器，並透過 `ORDIVANT_SSO_CA_BUNDLE` 指定。
 
-The isolated protocol fixture is an explicit QA workflow and never initializes a human account in the main environment:
+隔離的協定測試環境須明確啟動，且不會在主要環境中初始化人類帳號：
 
 ```powershell
 .\scripts\sso-containers.ps1 -Action up
@@ -103,19 +103,19 @@ uv --cache-dir .cache/uv run --project products/identity/backend --no-sync pytho
 .\scripts\sso-containers.ps1 -Action down
 ```
 
-It uses project `ordivant-sso-qa`, application `8092`, broker `8093`, separate volumes/secrets and two synthetic realms. It requires host `uv` for fixture generation. An existing service on those ports must first be stopped using its own project helper. `-Action reimport` replaces only the generated QA realms with the broker stopped; it is not used for real organizational identities. Reports contain checks and resource identifiers, not credentials. See [SSO acceptance](sso-validation.md).
+此環境使用專案 `ordivant-sso-qa`、應用連接埠 `8092`、代理連接埠 `8093`、獨立資料卷與秘密，以及兩個合成 realm。產生測試資料時需要主機安裝 `uv`。若這些連接埠已有服務，必須先透過該服務所屬的專案輔助腳本停止。`-Action reimport` 只會在代理停止時替換產生的 QA realm，不用於實際組織身分。報告只包含檢查結果與資源識別字，不包含憑證。詳見 [SSO 驗收](sso-validation.md)。
 
-## MCP Without Host Python
+## 無需主機 Python 的 MCP {#mcp-without-host-python}
 
-Each API image includes its own stdio MCP server. Configure the MCP client to execute `docker` with the matching project's Compose file and scoped token environment variable. No host Python environment or Pi runtime is required. For example, the following command forwards a token already configured in the client process environment; its value does not appear in command arguments:
+每個 API 映像都包含自己的 stdio MCP 伺服器。設定 MCP 用戶端時，使用對應專案的 Compose 檔案與限定權限的 token 環境變數來執行 `docker`。主機不需要 Python 環境或 Pi runtime。例如，以下命令會轉送已在用戶端程序環境中設定的 token，其值不會出現在命令參數中：
 
 ```powershell
 $env:ORDIVANT_SECRETS_DIR = Join-Path (Get-Location) '.data/container-secrets/ordivant-dev'
 docker compose -p ordivant-dev -f compose.yaml -f compose.dev.yaml exec -T -e ORDIVANT_KNOWLEDGE_API_TOKEN knowledge-api python -m ordivant_knowledge.mcp_server
 ```
 
-Use the actual project name and absolute Compose paths in an external MCP client's configuration. Work uses `ORDIVANT_API_TOKEN` and `python -m ordivant.mcp_server`; Code uses `ORDIVANT_CODE_API_TOKEN` and `python -m ordivant_code.mcp_server`. Issue each agent its product-scoped credential; do not use a Gitea service token as an Ordivant bearer token. The standalone Knowledge acceptance exercises the official MCP SDK and server entirely inside its own API container.
+外部 MCP 用戶端的設定需使用實際專案名稱與 Compose 檔案絕對路徑。Work 使用 `ORDIVANT_API_TOKEN` 與 `python -m ordivant.mcp_server`；Code 使用 `ORDIVANT_CODE_API_TOKEN` 與 `python -m ordivant_code.mcp_server`。每個 Agent 應取得其產品限定權限的憑證；不要將 Gitea 服務 token 當成 Ordivant Bearer token。Knowledge 獨立容器驗收會完全在自己的 API 容器中使用官方 MCP SDK 與伺服器。
 
-The reproducible container checks are documented in [Suite validation](container-validation.md), [standalone Knowledge validation](standalone-container-validation.md), [standalone Code validation](code-standalone-validation.md), and [hot reload validation](hot-reload-validation.md). The completed local results are recorded in [the validation ledger](validation.md).
+可重現的容器檢查方式，請參閱[套件容器驗收](container-validation.md)、[Knowledge 獨立容器驗收](standalone-container-validation.md)、[Code 獨立容器驗收](code-standalone-validation.md)與[熱重載驗收](hot-reload-validation.md)。已完成的本機結果記錄於[驗收紀錄](validation.md)。
 
-The delivery keeps the local development suite on `5173` with Gitea on `3002`, and the production-target QA suite on `8088` with Gitea on `3003`. The temporary standalone Knowledge/Code QA containers were stopped after acceptance; their data volumes, secrets and reports were retained. Neither suite is deployed remotely.
+交付時，本機開發套件使用 `5173`，其 Gitea 使用 `3002`；正式環境映像的 QA 套件使用 `8088`，其 Gitea 使用 `3003`。暫時啟動的 Knowledge／Code 獨立 QA 容器已在驗收後停止，資料卷、秘密與報告仍予保留。這兩套環境都沒有部署至遠端。

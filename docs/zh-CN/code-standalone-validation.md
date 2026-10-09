@@ -1,8 +1,14 @@
-# Code 独立容器验收
+<span id="code-獨立容器驗收"></span>
+<span id="code-独立容器验收"></span>
+
+# Code 独立容器验收 {#code-standalone-container-acceptance}
 
 此验收确认 Ordivant Code 可用 production Compose 设置独立启动，Work、Knowledge 与 Pi runtime 均不属于此 QA project。验收器只检查已启动的 Compose project；不会创建、停止或删除容器与数据 volume。
 
-## 启动与运行
+<span id="啟動與執行"></span>
+<span id="启动与运行"></span>
+
+## 启动与运行 {#start-and-run}
 
 在 repository 根目录以 PowerShell 运行：
 
@@ -15,7 +21,10 @@ uv run --project products/code/backend --no-sync python scripts/code_standalone_
 
 不加 `-WithGitea`，让服务以明确未设置 Gitea 的状态启动。验收结束后保留 QA containers 供查核；若需管理它们，`scripts/containers.ps1` 必须使用同一个 `-ProjectName`。
 
-## 验收内容
+<span id="驗收內容"></span>
+<span id="验收内容"></span>
+
+## 验收内容 {#what-is-checked}
 
 验收器要求该 Compose project 恰有五个 running services：`code-api`、`code-db`、`web`、`identity-api` 与 `identity-db`。登录服务须健康，且首次设置尚未由测试初始化。它会检查 web root 加载的是只含 Code workspace 的 production bundle，并透过 `/api/health` 确认产品为 Code、数据库为 PostgreSQL、mode 为 production，且 `gitea_configured` 为 `false`。
 

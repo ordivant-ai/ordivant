@@ -1,8 +1,13 @@
-# 路线图与功能边界
+<span id="路線圖與功能邊界"></span>
+<span id="路线图与功能边界"></span>
 
-本页列出 v0.1 的能力与后续候选，没有承诺日期。需求及实作可透过 [GitHub Issues](https://github.com/bigtongue5566/ordivant/issues) 讨论。
+# 路线图与功能边界 {#roadmap-and-feature-boundaries}
 
-## v0.1 已交付
+本页列出 v0.1 的能力与后续候选，没有承诺日期。需求及实作可透过 [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues) 讨论。
+
+<span id="v0-1-已交付"></span>
+
+## v0.1 已交付 {#delivered-in-v0-1}
 
 - Work 任务协作、独立 review、scope／lease／幂等、Run 事件与 controls。
 - Agent／流程不可变模板、DAG 依赖、手动与分钟间隔调度。
@@ -11,7 +16,10 @@
 - 选配 Code/Gitea，既有 Git provider 的受限读取 adapter。
 - 原生人员登录、企业 OIDC、可选 Keycloak SAML／LDAP broker。
 
-## 优先候选
+<span id="優先候選"></span>
+<span id="优先候选"></span>
+
+## 优先候选 {#candidates-for-future-work}
 
 | 方向 | 目前边界 |
 | --- | --- |

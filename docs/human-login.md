@@ -1,4 +1,7 @@
-# 帳號與登入
+<span id="帳號與登入"></span>
+<span id="账号与登录"></span>
+
+# 帳號與登入 {#accounts-and-sign-in}
 
 Work、Knowledge、Code 共用這一套環境的帳號。首次啟動時開啟工作區，會顯示「建立管理員帳號」：輸入姓名、電子郵件與至少 12 個字元的密碼，再次確認後送出。系統只允許建立一位初始管理員，沒有預設帳號或密碼。請直接在網頁輸入，不要把密碼傳給 agent。
 
@@ -6,7 +9,10 @@ Work、Knowledge、Code 共用這一套環境的帳號。首次啟動時開啟�
 
 之後使用「電子郵件」與「密碼」登入。重新整理頁面、切換三個產品會維持登入；登出會立即撤銷伺服器上的工作階段。閒置超過 30 分鐘或登入超過 12 小時，需要重新登入。
 
-## 帳號與安全性
+<span id="帳號與安全性"></span>
+<span id="账号与安全性"></span>
+
+## 帳號與安全性 {#accounts-and-security}
 
 側欄使用者名稱旁的「帳號與安全性」可：
 
@@ -20,7 +26,10 @@ Work、Knowledge、Code 共用這一套環境的帳號。首次啟動時開啟�
 
 忘記密碼時選「使用復原碼」，輸入電子郵件、一組未使用的復原碼與新密碼。平台會撤銷所有舊登入、消耗該碼並提供新復原碼；沒有復原碼就無法透過這條流程重設。
 
-## 環境與部署
+<span id="環境與部署"></span>
+<span id="环境与部署"></span>
+
+## 環境與部署 {#environments-and-deployment}
 
 開發入口 `http://127.0.0.1:5173/work`，本地正式模式入口 `http://127.0.0.1:8088/work`。兩套環境各自保存帳號及業務資料，需要各自建立管理員。`-Seed` 只加入明確標示的業務示範資料，不會建立人的密碼帳號。
 
@@ -30,7 +39,10 @@ Docker helper 自動建立 Identity API、獨立 PostgreSQL 與內部服務憑�
 
 Identity volumes、業務 volumes 與 `.data/container-secrets/<ProjectName>/` 必須一起保留及備份。停止容器不會刪除資料；企業設定還需要 Identity data volume 中的 `sso.key` 才能解密還原。
 
-## 企業 SSO
+<span id="企業-sso"></span>
+<span id="企业-sso"></span>
+
+## 企業 SSO {#enterprise-sso}
 
 管理員在「帳號與安全性 → 企業 SSO」設定企業 OIDC 服務。支援 Entra ID、Google Workspace、Okta、Auth0、Keycloak 與通用 OIDC；SAML、LDAP／AD 可經可選 Keycloak broker 接入。設定流程、群組授權及容器操作見 [企業登入與身分管理](enterprise-sso.md)。
 

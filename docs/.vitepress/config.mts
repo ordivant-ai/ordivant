@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url'
 
 const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(docsRoot, '..')
-const repository = 'https://github.com/bigtongue5566/ordivant'
-const base = process.env.DOCS_BASE ?? '/ordivant/'
+const repository = 'https://github.com/ordivant-ai/ordivant'
+const base = process.env.DOCS_BASE ?? '/'
 
 const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => {
   const isEnglish = language === 'en'
@@ -23,6 +23,7 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     outline: 'On this page', previous: 'Previous page', next: 'Next page', updated: 'Last updated',
     languageMenu: 'Change language', menu: 'Open navigation menu', appearance: 'Appearance', lightMode: 'Switch to light theme',
     darkMode: 'Switch to dark theme', returnTop: 'Return to top', skipContent: 'Skip to content',
+    missing: 'Page not found', missingDescription: 'This page is unavailable. Return to the documentation home page.', home: 'Return home',
     edit: 'Edit this page on GitHub', footer: 'MIT licensed · Self-hosted · English interface',
   } : isSimplified ? {
     start: '开始使用', deploy: '部署', architecture: '架构与 API',
@@ -36,6 +37,7 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     outline: '本页内容', previous: '上一页', next: '下一页', updated: '最后更新',
     languageMenu: '切换语言', menu: '打开导航菜单', appearance: '外观', lightMode: '切换到浅色主题',
     darkMode: '切换到深色主题', returnTop: '返回顶部', skipContent: '跳到正文',
+    missing: '找不到页面', missingDescription: '此页面不存在，请返回文档首页。', home: '返回首页',
     edit: '在 GitHub 改进此页', footer: 'MIT 许可 · 自行部署 · 简体中文界面',
   } : {
     start: '開始使用', deploy: '部署', architecture: '架構與 API',
@@ -49,6 +51,7 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     outline: '本頁內容', previous: '上一頁', next: '下一頁', updated: '最後更新',
     languageMenu: '切換語言', menu: '開啟導覽選單', appearance: '外觀', lightMode: '切換為淺色主題',
     darkMode: '切換為深色主題', returnTop: '回到頁首', skipContent: '跳至正文',
+    missing: '找不到頁面', missingDescription: '此頁面不存在，請返回文件首頁。', home: '返回首頁',
     edit: '在 GitHub 改善這一頁', footer: '以 MIT 授權釋出 · 自行部署 · 繁體中文介面',
   }
   const route = (path: string) => `${prefix === '/' ? '' : prefix}${path}`
@@ -92,6 +95,7 @@ const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => 
     ],
     socialLinks: [{ icon: 'github', link: repository }],
     outline: { label: text.outline, level: [2, 3] },
+    notFound: { title: text.missing, quote: text.missingDescription, linkText: text.home, linkLabel: text.home },
     docFooter: { prev: text.previous, next: text.next },
     lastUpdated: { text: text.updated },
     langMenuLabel: text.languageMenu,
@@ -133,9 +137,32 @@ export default defineConfig({
     'zh-CN': { label: '简体中文', lang: 'zh-Hans', title: 'Ordivant', description: '开源、自行部署的 Agent 协作平台。', themeConfig: localeTheme('/zh-CN', 'zh-Hans') },
   },
   head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}logo.svg` }]],
-  sitemap: { hostname: 'https://bigtongue5566.github.io/ordivant/' },
+  sitemap: { hostname: 'https://ordivant-ai.github.io/' },
   markdown: {
     config(md) {
+      const copyLabel = (env: any) => {
+        const source = env.path ?? env.filePath ?? ''
+        const relative = path.relative(docsRoot, source).split(path.sep).join('/')
+        return relative.startsWith('en/') ? 'Copy code' : relative.startsWith('zh-CN/') ? '复制代码' : '複製程式碼'
+      }
+      const fence = md.renderer.rules.fence!
+      md.renderer.rules.fence = (tokens, index, options, env, renderer) => {
+        const label = copyLabel(env)
+        return fence(tokens, index, options, env, renderer).replace(/<button title="[^"]*" class="copy">/g, `<button title="${label}" aria-label="${label}" class="copy">`)
+      }
+      md.core.ruler.push('localized-section-labels', (state) => {
+        const source = state.env.path ?? state.env.filePath ?? ''
+        const relative = path.relative(docsRoot, source).split(path.sep).join('/')
+        const label = relative.startsWith('en/') ? 'Link to section' : relative.startsWith('zh-CN/') ? '链接到章节' : '連至章節'
+        const visit = (tokens: any[]) => tokens.forEach(token => {
+          if (token.type === 'link_open' && token.attrGet('class') === 'header-anchor') {
+            const previous = token.attrGet('aria-label') ?? ''
+            token.attrSet('aria-label', previous.replace(/^Permalink to/, label))
+          }
+          if (token.children) visit(token.children)
+        })
+        visit(state.tokens)
+      })
       // Source links stay useful both in GitHub Markdown and in the published site.
       md.core.ruler.after('inline', 'repository-source-links', (state) => {
         const source = state.env.path ?? state.env.filePath

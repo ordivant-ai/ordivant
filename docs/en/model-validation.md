@@ -1,6 +1,12 @@
+<span id="真實模型與設定驗收"></span>
+<span id="真实模型与设置验收"></span>
+
 # Live model and settings acceptance
 
 Date: 2026-10-07, Asia/Taipei. Three luna-workers implemented model settings, Pi Runtime, and the frontend respectively. The PM owned shared contracts, trusted local import, container integration, and HTTP, mouse, and live-model acceptance.
+
+<span id="實際完成範圍"></span>
+<span id="实际完成范围"></span>
 
 ## Scope actually completed
 
@@ -38,6 +44,9 @@ The model returned `SYNTHETIC_RESULT=42`, read its task through a scoped platfor
 
 An earlier acceptance in `.data/validation/live-work-2be61825/` predates the cache-statistics correction and reports only uncached input in its input field; use the final report instead. Earlier historical records were not rewritten or discarded.
 
+<span id="重現"></span>
+<span id="重现"></span>
+
 ## Reproduce
 
 Routine code checks do not call external models:
@@ -74,6 +83,9 @@ uv run --project backend --no-sync python scripts/live_model_record_checks.py PA
 Operator import affects only an explicitly selected isolated QA environment whose ownership matches. It passes credentials through Docker exec stdin, not process arguments; the HTTP API still requires an Identity administrator. These summaries are historical evidence from before the public release; the raw `.data/validation/` reports and private connections are not included in a clone.
 
 The existing Runtime acceptance in `scripts/integration.py` explicitly limits itself to an unconfigured DEMO Agent so that a live run is not mislabeled as demo. Use the separate live scripts when a model is configured.
+
+<span id="驗收限制"></span>
+<span id="验收限制"></span>
 
 ## Acceptance limitations
 

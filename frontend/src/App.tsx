@@ -1020,7 +1020,7 @@ function WorkWorkspace() {
       dataIndex: 'name',
       key: 'name',
       render: (_: unknown, agent) => (
-        <div className="agent-identity"><Avatar size={30} className="agent-avatar">{agent.name.slice(0, 1).toUpperCase()}</Avatar><div><strong>{agent.name}</strong><div className="subline">{t(agent.role === 'reviewer' ? '審核者' : '執行者')} · {agent.runtime === 'pi' ? 'Pi runtime' : 'External runtime'}</div></div></div>
+        <div className="agent-identity"><Avatar size={30} className="agent-avatar">{agent.name.slice(0, 1).toUpperCase()}</Avatar><div><strong>{agent.name}</strong><div className="subline">{t(agent.role === 'reviewer' ? '審核者' : '執行者')} · {t(agent.runtime === 'pi' ? 'Pi 執行環境' : '外部執行環境')}</div></div></div>
       ),
     },
     { title: t('能力'), dataIndex: 'capabilities', key: 'capabilities', render: (items: string[]) => <span>{items?.length ? items.join(' · ') : t('未設定')}</span> },

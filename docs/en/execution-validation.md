@@ -1,8 +1,14 @@
+<span id="執行功能驗收"></span>
+<span id="运行功能验收"></span>
+
 # Execution Feature Acceptance
 
 Date: 2026-10-08 (Asia/Taipei). The Run console, Agent templates and workflows, and MCP tools and sandboxes have been delivered locally. Acceptance includes an authorized live model turn, containers, restarts, concurrency, and mouse-driven browser operation.
 
 Scope and authorization: [execution contracts](execution-contracts.md). Usage: [user guide](execution-usage.md). Acceptance used an isolated `ordivant-execution-qa` PostgreSQL environment at `127.0.0.1:8092` and a previously authorized synthetic QA account.
+
+<span id="已取得的證據"></span>
+<span id="已取得的证据"></span>
 
 ## Evidence collected
 
@@ -27,6 +33,9 @@ Scope and authorization: [execution contracts](execution-contracts.md). Usage: [
 | Isolated QA teardown | 8 checks passed | Owned containers, network, and jobs were removed, named volumes were retained, and Work/Identity in both main environments still returned 200 |
 
 DEMO and synthetic-service checks remain labeled as such; only the live-model row includes actual provider requests. The final live receipt reported `gpt-6.1-sol` as both the requested and returned model, with 40,000 input tokens (16,128 cached), 744 output tokens, and 40,744 total tokens. It recorded one each of MCP wait/add, platform progress, and sandbox write, plus two executions. The provider's actual routing and invoice have not been verified; `cost_usd=null`, so the UI displays an unknown cost.
+
+<span id="可重現的證據位置"></span>
+<span id="可重现的证据位置"></span>
 
 ## Reproducible evidence
 

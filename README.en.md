@@ -6,10 +6,10 @@
 
 Self-hosted collaboration for agents: projects, versioned knowledge, code provenance, durable runs, and independent review. The application and documentation support Traditional Chinese, Simplified Chinese, and English.
 
-[Documentation and setup](https://bigtongue5566.github.io/ordivant/en/) · [Releases](https://github.com/bigtongue5566/ordivant/releases) · [Issues](https://github.com/bigtongue5566/ordivant/issues) · [MIT license](LICENSE)
+[Documentation and setup](https://ordivant-ai.github.io/en/) · [Releases](https://github.com/ordivant-ai/ordivant/releases) · [Issues](https://github.com/ordivant-ai/ordivant/issues) · [MIT license](LICENSE)
 
-[![CI](https://github.com/bigtongue5566/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/bigtongue5566/ordivant/actions/workflows/ci.yml)
-[![Docs](https://github.com/bigtongue5566/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/bigtongue5566/ordivant/actions/workflows/pages.yml)
+[![CI](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml)
+[![Docs](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml)
 
 ## What it does
 
@@ -28,7 +28,7 @@ Work can read configured GitHub, GitLab, or Gitea instances directly; Code is op
 You need **Git, Docker with Linux containers, Compose v2, and PowerShell 7**. On Windows, use Docker Desktop. On Linux/macOS, install `pwsh` and use the same helper. Application dependencies are installed in containers; Python and Node are not required on the host.
 
 ```powershell
-git clone https://github.com/bigtongue5566/ordivant.git
+git clone https://github.com/ordivant-ai/ordivant.git
 cd ordivant
 pwsh -File ./scripts/containers.ps1 -ProjectName ordivant-local -Seed -WithRuntime -WithSandbox
 ```
@@ -89,4 +89,4 @@ npm run preview --prefix docs
 
 CI does not require a paid model key. Paid live acceptance is explicit opt-in and uses isolated QA plus a credential file you specify. Historical local model/Docker/browser acceptance summaries are in [validation records](docs/en/validation.md); private `.data/` and raw QA data are not published with the repository.
 
-Issues and pull requests are welcome; start with [CONTRIBUTING](CONTRIBUTING.md). Report vulnerabilities through [private security advisories](https://github.com/bigtongue5566/ordivant/security/advisories/new). Ordivant source is licensed under [MIT](LICENSE). Third-party packages and optional services retain their own licenses; see [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).
+Issues and pull requests are welcome; start with [CONTRIBUTING](CONTRIBUTING.md). Report vulnerabilities through [private security advisories](https://github.com/ordivant-ai/ordivant/security/advisories/new). Ordivant source is licensed under [MIT](LICENSE). Third-party packages and optional services retain their own licenses; see [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).

@@ -1,4 +1,6 @@
-# Ordivant 功能缺口研究
+<span id="ordivant-功能缺口研究"></span>
+
+# Ordivant 功能缺口研究 {#ordivant-feature-gap-research}
 
 更新：2026-10-08（Asia/Taipei）。原研究于 2026-10-07 由 PM 与三位 luna-worker 盘点程序、契约及验收纪录，参考官方协定与产品文档。用户已选定 **F03 Run 控制台、F04 自动流程／Agent 模板、F05 工具连接／沙箱**，已完成实作与本机集成验收；本页同步区分第一版能力与仍待开发的范围。
 
@@ -6,13 +8,19 @@
 
 排序先假设「一家企业私有部署，团队共同使用」。如果改为同一套服务承载多家客户，租户隔离与每个租户的 Identity／IdP 设置必须提前。
 
-## 现有能力与判读方式
+<span id="現有能力與判讀方式"></span>
+<span id="现有能力与判读方式"></span>
+
+## 现有能力与判读方式 {#existing-capabilities-and-status-definitions}
 
 「部分」表示相关基础已存在，候选是补足缺少的范围。「未实作」指候选能力未见对应的完整 service／API／UI。「尚未验证」表示已有设置或运维说明，但没有该项端到端交付证据。
 
 已存在的功能包括：共用 Identity、原生账号与 OIDC、Keycloak SAML broker、邀请／JIT、项目／Space 授权、登录时群组同步、工作阶段撤销；Work 的任务／运行分离、依赖、原子 claim、lease fencing、委派、求助、消息、幂等、outbox 与独立成果验收；Knowledge 的不可变版本、文字搜索与精确引用；Code 的真实 Gitea repo／branch／commit／PR／status 操作。这些不是本轮要重做的功能。
 
-## 优先候选
+<span id="優先候選"></span>
+<span id="优先候选"></span>
+
+## 优先候选 {#priority-candidates}
 
 P0 是下一轮内核操作能力；P1 是企业日常使用与导入功能；P2 是依使用量、集成对象或采购要求扩展。排序是 PM 判断，尚未提供工期估算。
 
@@ -36,61 +44,82 @@ P0 是下一轮内核操作能力；P1 是企业日常使用与导入功能；P2
 | F16 | P2；需要云端 Agent 接入时提前 MCP | 远程 MCP gateway 与 A2A | 各产品本机 stdio MCP、受限 bearer REST bridge | Streamable HTTP MCP、远程 token/scope 管理与工具目录；之后以 A2A Agent Card／Task lifecycle 接入独立 Agent。设计参照 [MCP authorization](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization) 与 [A2A specification](https://a2a-protocol.org/latest/specification/)。 |
 | F17 | P2；多客户 SaaS 时为 P0 | 团队管理与完整多租户 | 组织／团队字段、项目授权；Identity 环境绑定单一组织／IdP | 部门与团队管理、团队授权；多组织 membership、租户切换、各自的 IdP／模型／配额／audit、跨租户隔离验收。企业各自独立部署时可较晚做多租户。 |
 
-## 本轮第一版与后续候选
+<span id="本輪第一版與後續候選"></span>
+<span id="本轮第一版与后续候选"></span>
 
-### F03：运行控制台
+## 本轮第一版与后续候选 {#this-release-and-later-candidates}
+
+<span id="f03-執行控制台"></span>
+<span id="f03-运行控制台"></span>
+
+### F03：运行控制台 {#f03-run-console}
 
 本轮提供运行列表、详细页、模型／token／工具事件与错误、停止，以及有明确资格条件的暂停／恢复／重跑。所有操作由 Python 验证当前用户与项目权限；浏览器不持有 runtime 服务 token。精确契约见 [execution-contracts.md](execution-contracts.md)。
 
 本轮验收涵盖 pending 停止、实际暂停／恢复、过期 lease／项目拒绝、重启与回应遗失重试。新的一次重做有新 execution 与来源链接；同一次 resume 保留幂等界线。完整死信与操作人员处理界面仍为后续项。
 
-### F01：可持久化的运行前审批
+<span id="f01-可持久化的執行前審批"></span>
+<span id="f01-可持久化的运行前审批"></span>
+
+### F01：可持久化的运行前审批 {#f01-durable-pre-execution-approvals}
 
 第一版定义 ApprovalRequest、批准者、原因、工具／资源／参数摘要及 hash、有效期限。核准只授权对应动作，内容改变后需重新判定。政策位于 Python，共用 REST／MCP；Pi 只负责运行暂停／恢复。
 
 验收要涵盖：未批准时无副作用、越权／自批拒绝、逾时／取消、核准后参数遭修改、重放与重启、批准后相同副作用只运行一次。现有成果 review 保持自己的业务规则。持久 interrupt 的相关行为可参考 [LangGraph 官方文档](https://docs.langchain.com/oss/python/langgraph/interrupts)。
 
-### F02：先有可运行的上限，再有金额治理
+<span id="f02-先有可執行的上限-再有金額治理"></span>
+<span id="f02-先有可运行的上限-再有金额治理"></span>
+
+### F02：先有可运行的上限，再有金额治理 {#f02-enforce-limits-before-cost-governance}
 
 第一版可先落实总 token／turn／工具调用／运行时间与并发配额，并显示达限原因。要宣称 USD hard budget，还需要已知且版本化的定价、请求前预留、完成后结算／释放，以及多个 execution 同时抢用剩余预算的原子控制。
 
 验收要涵盖：预算不足时不发新模型请求、并发不能共同超用可预留额度、未知 usage／价格的显式政策、失败与取消后结算、cache 费率、重复 receipt 的去重。已发送请求的费用可能仍会由上游结算；不能承诺事后 abort 会退费。供应商的发票／实际帐单对帐属另一个交付项目。
 
-## 企业采购或正式运维时的附加项
+<span id="企業採購或正式維運時的附加項"></span>
+<span id="企业采购或正式运维时的附加项"></span>
+
+## 企业采购或正式运维时的附加项 {#additional-enterprise-procurement-and-operations-candidates}
 
 | 候选 | 现况 | 建议启动条件与最小交付 |
 |---|---|---|
 | 本机管理员 MFA／Passkey | 企业 MFA 可交给 IdP；本机账号没有 TOTP／WebAuthn | 若管理员复原账号也必须第二因素，提供 enrollment／验证／复原政策及安全审计。 |
 | 审核导出、SIEM 与保留政策 | 有数据库 audit 与受限读取，缺导出／保留／防窜改机制 | 先做可分页 JSON／CSV、可配置保留、可靠的事件导出；有防窜改要求时再加签章／hash chain／WORM 保存与验证。 |
-| Vault／KMS／Secret Manager | Client secret／模型 key 已本地加密；Compose secrets 由文件挂载 | 当密钥管理要集中或跨节点时，增加外部 secret backend、凭证轮替与复原流程。 |
+| Vault／KMS／Secret Manager | 客户端密钥／模型密钥已在本地加密；Compose 机密通过挂载文件提供 | 当密钥管理要集中或跨节点时，增加外部机密后端、凭证轮替与复原流程。 |
 | 自动备份、还原演练、监控与 HA | 有 health、具名 volumes、重启持久化及手动备份说明；完整 restore／HA 未验收 | 正式运行前制定 RPO／RTO，验证数据库、key、Pi 与 Git／附件一致还原；加入告警／metrics，需求升高后再处理 worker partition／HA。Pi storage 维持单一拥有者。 |
 
-## 分期与依赖
+<span id="分期與依賴"></span>
+<span id="分期与依赖"></span>
 
-1. **本轮运行基础**：F03／F04／F05 与 F13 配置模板，共用既有 Identity、Work service、outbox 与 Pi。完成证据集中于 execution-validation.md。
-2. **第一批企业流程深化**：F01 审批、F02 金额／配额、基本通知、自有 forge 与 CI（F09／F10），或知识导入与检索（F07／F08）。先支持一个确定的 Git／文档来源并端到端验收，再扩充 vendor。
+## 分期与依赖 {#phases-and-dependencies}
+
+1. **本轮运行基础**：F03／F04／F05 与 F13 配置模板，共用既有 Identity、Work 服务、outbox 与 Pi。完成证据集中于 `execution-validation.md`。
+2. **第一批企业流程深化**：F01 审批、F02 金额／配额、基本通知、自有代码托管平台与 CI（F09／F10），或知识导入与检索（F07／F08）。先支持一个确定的 Git／文档来源并端到端验收，再扩充供应商。
 3. **持续企业导入**：F11／F12、人员与 token 生命周期、品质评估、SIEM／备份运维，再依需求加入团队／多租户、远程 MCP／A2A、MFA／Vault。
 
 文件导入与来源权限要先于大量 RAG 索引；审批、scope 与运行隔离要纳入 shell／部署／merge 类工具；CI 结果需绑定实际 commit／execution。跨产品搜索与工具连接透过 API／事件集成，每个产品维持自己的业务授权及数据库。这些是具体实作的设计前提，尚未改写现有契约。
 
-## 代码证据
+<span id="程式碼證據"></span>
+<span id="代码证据"></span>
+
+## 代码证据 {#code-evidence}
 
 | 盘点 | 来源 |
 |---|---|
-| 成果 review 与取消／人工操作 | [Work service](../../backend/src/ordivant/service.py):542、828、865；[Work UI](../../frontend/src/App.tsx):1144、1336；[runtime server](../../runtime/src/server.ts):95 |
-| 指令模板与自动派发 | [Agent schemas](../../backend/src/ordivant/schemas.py):145；[Work service](../../backend/src/ordivant/service.py):1111、1159；[dispatcher](../../runtime/src/dispatcher.ts):25、169 |
-| 既有有限重试与工具注册 | [Work service](../../backend/src/ordivant/service.py):1226；[dispatcher](../../runtime/src/dispatcher.ts):285；[engine](../../runtime/src/engine.ts):455；[platform tools](../../runtime/src/platform-tools.ts):160；[runtime Dockerfile](../../runtime/Dockerfile):28 |
-| 金额预算与固定模型协定 | [Work service](../../backend/src/ordivant/service.py):1346；[engine](../../runtime/src/engine.ts):423；[configured provider](../../runtime/src/configured-provider.ts):42 |
-| 尚未有 runtime 人工等待状态；receipt 金额未知 | [runtime types](../../runtime/src/types.ts) 的 `RunStatus`／`RunReceipt`；[模型契约](model-contracts.md) |
-| 预算与自陈成本 UI | [App.tsx](../../frontend/src/App.tsx):1149、1214；[frontend types](../../frontend/src/types.ts):106 |
-| 通知／mentions／due date 与附件 | [App.tsx](../../frontend/src/App.tsx):427、951、1216；[Work schemas](../../backend/src/ordivant/schemas.py):91、185；[contracts](contracts.md):20 |
-| Knowledge 导入／搜索／直接发布 | [Knowledge schemas](../../products/knowledge/backend/src/ordivant_knowledge/schemas.py):25；[Knowledge API](../../products/knowledge/backend/src/ordivant_knowledge/api.py):227、382；[Knowledge UI](../../frontend/src/products/knowledge/KnowledgeApp.tsx):144、469、528 |
-| Code Gitea；Work 多 forge 唯读 | [Code main](../../products/code/backend/src/ordivant_code/main.py):177；[Work VCS](../../backend/src/ordivant/vcs.py):15、50；[Work API](../../backend/src/ordivant/api.py):405 |
-| CI status／webhook 的目前范围 | [Code service](../../products/code/backend/src/ordivant_code/service.py):714；[Code UI](../../frontend/src/products/code/CodeApp.tsx):523、538；[suite-contracts](suite-contracts.md):63 |
-| 单组织 Identity／IdP | [SSO contracts](sso-contracts.md):15；[Auth contracts](auth-contracts.md):50；[组织模型](../../backend/src/ordivant/models.py):11 |
-| SCIM／MFA／现有禁用与撤销 | [SSO contracts](sso-contracts.md):64；[企业登录](enterprise-sso.md):78、80；[project plan](project-plan.md) 的后续企业 gates |
-| Agent token 生命周期 | [Token 模型](../../backend/src/ordivant/models.py):37；[security](../../backend/src/ordivant/security.py):31；[contracts](contracts.md):18、58 |
-| Audit 范围与密钥管理 | [SSO contracts](sso-contracts.md):15、73；[SSO API](../../products/identity/backend/src/ordivant_identity/sso.py):1266；[Identity models](../../products/identity/backend/src/ordivant_identity/models.py):143；[Compose secrets](../../compose.yaml):209 |
-| 已验收与尚未验收的正式运维 | [SSO validation](sso-validation.md):48；[validation ledger](validation.md)；[project plan](project-plan.md) 的后续企业 gates |
+| 成果 review 与取消／人工操作 | [Work 服务](../../backend/src/ordivant/service.py):542、828、865；[Work UI](../../frontend/src/App.tsx):1144、1336；[runtime 服务器](../../runtime/src/server.ts):95 |
+| 指令模板与自动派发 | [Agent 结构定义](../../backend/src/ordivant/schemas.py):145；[Work 服务](../../backend/src/ordivant/service.py):1111、1159；[派送器](../../runtime/src/dispatcher.ts):25、169 |
+| 既有有限重试与工具注册 | [Work 服务](../../backend/src/ordivant/service.py):1226；[派送器](../../runtime/src/dispatcher.ts):285；[执行引擎](../../runtime/src/engine.ts):455；[平台工具](../../runtime/src/platform-tools.ts):160；[runtime `Dockerfile`](../../runtime/Dockerfile):28 |
+| 金额预算与固定模型协定 | [Work 服务](../../backend/src/ordivant/service.py):1346；[执行引擎](../../runtime/src/engine.ts):423；[已配置的 Provider](../../runtime/src/configured-provider.ts):42 |
+| 尚未有 runtime 人工等待状态；receipt 金额未知 | [runtime 类型](../../runtime/src/types.ts) 的 `RunStatus`／`RunReceipt`；[模型契约](model-contracts.md) |
+| 预算与自陈成本 UI | [`App.tsx`](../../frontend/src/App.tsx):1149、1214；[前端类型](../../frontend/src/types.ts):106 |
+| 通知／mentions／due date 与附件 | [`App.tsx`](../../frontend/src/App.tsx):427、951、1216；[Work 结构定义](../../backend/src/ordivant/schemas.py):91、185；[契约](contracts.md):20 |
+| Knowledge 导入／搜索／直接发布 | [Knowledge 结构定义](../../products/knowledge/backend/src/ordivant_knowledge/schemas.py):25；[Knowledge API](../../products/knowledge/backend/src/ordivant_knowledge/api.py):227、382；[Knowledge UI](../../frontend/src/products/knowledge/KnowledgeApp.tsx):144、469、528 |
+| Code Gitea；Work 多 forge 唯读 | [Code 主程序](../../products/code/backend/src/ordivant_code/main.py):177；[Work 版控](../../backend/src/ordivant/vcs.py):15、50；[Work API](../../backend/src/ordivant/api.py):405 |
+| CI status／webhook 的目前范围 | [Code 服务](../../products/code/backend/src/ordivant_code/service.py):714；[Code UI](../../frontend/src/products/code/CodeApp.tsx):523、538；[Suite 契约](suite-contracts.md):63 |
+| 单组织 Identity／IdP | [SSO 契约](sso-contracts.md):15；[Auth 契约](auth-contracts.md):50；[组织模型](../../backend/src/ordivant/models.py):11 |
+| SCIM／MFA／现有禁用与撤销 | [SSO 契约](sso-contracts.md):64；[企业登录](enterprise-sso.md):78、80；[项目计划](project-plan.md) 的后续企业验收门槛 |
+| Agent token 生命周期 | [Token 模型](../../backend/src/ordivant/models.py):37；[安全性](../../backend/src/ordivant/security.py):31；[契约](contracts.md):18、58 |
+| Audit 范围与密钥管理 | [SSO 契约](sso-contracts.md):15、73；[SSO API](../../products/identity/backend/src/ordivant_identity/sso.py):1266；[Identity 模型](../../products/identity/backend/src/ordivant_identity/models.py):143；[Compose 机密](../../compose.yaml):209 |
+| 已验收与尚未验收的正式运维 | [SSO 验收](sso-validation.md):48；[验收清单](validation.md)；[项目计划](project-plan.md) 的后续企业验收门槛 |
 
 上表行号与旧范围是 2026-10-07 的盘点位置，实作后可能位移；F03／F04／F05／F13 的目前证据以 execution-contracts.md 与 execution-validation.md 为准。官方数据只用来评估候选功能，不能作为 Ordivant 已具备该功能的证据。

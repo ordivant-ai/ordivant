@@ -1,19 +1,19 @@
-# Product Independence Smoke
+# 獨立產品冒煙檢查 {#product-independence-smoke}
 
-`scripts/product_smoke.py` checks that Knowledge and Code can each seed and run as a standalone product. It starts one product at a time on a random loopback port, using that product's own `.venv` Python and a fresh `.data/validation/standalone-*` data directory. It does not start Work, the Pi runtime, or peer services.
+`scripts/product_smoke.py` 會確認 Knowledge 和 Code 都能各自初始化資料並作為獨立產品執行。指令碼每次啟動一項產品，使用隨機 loopback port、該產品自己的 `.venv` Python，以及全新的 `.data/validation/standalone-*` 資料目錄。它不會啟動 Work、Pi runtime 或其他產品的服務。
 
-Run both products sequentially with:
+依序檢查兩項產品：
 
 ```powershell
 products/code/backend/.venv/Scripts/python.exe scripts/product_smoke.py --product all
 ```
 
-The script uses only Python's standard library in the orchestrator. Each product's official MCP Python SDK runs from that product's environment. Use `--product knowledge` or `--product code` to check one product.
+協調程式只使用 Python 標準函式庫。每項產品的官方 MCP Python SDK 都從該產品自己的環境執行。使用 `--product knowledge` 或 `--product code` 可單獨檢查其中一項產品。
 
-The Knowledge check creates a document as the seeded writer, retrieves immutable version 1 and verifies its exact body plus the matching SHA-256 returned by creation and version read, then searches for it and checks the exact version citation. It also lists MCP tools and calls `get_document_context` through the SDK.
+Knowledge 檢查會以 seed 建立的 writer 身分新增文件，讀取不可變的 version 1，並確認文件本文，以及建立文件和讀取版本時回傳的 SHA-256 完全相符；接著搜尋該文件並檢查引用指向正確版本。此檢查也會列出 MCP 工具，並透過 SDK 呼叫 `get_document_context`。
 
-The Code check reads the seeded `code-demo` project as manager, verifies health reports `gitea_configured: false`, and confirms repository creation returns `503 gitea_not_configured`. It also lists MCP tools and calls `list_code_projects` through the SDK. Inherited `ORDIVANT_CODE_GITEA_*` and `ORDIVANT_CODE_WEBHOOK_SECRET` settings are removed from the Code child environment for this test.
+Code 檢查會以 manager 身分讀取 seed 建立的 `code-demo` 專案，確認 health 回報 `gitea_configured: false`，並確認建立 repository 時回傳 `503 gitea_not_configured`。此檢查也會列出 MCP 工具，並透過 SDK 呼叫 `list_code_projects`。測試時，會從 Code 子程式環境中移除繼承的 `ORDIVANT_CODE_GITEA_*` 和 `ORDIVANT_CODE_WEBHOOK_SECRET` 設定。
 
-The smoke command prints token-free JSON evidence with product status, port, data directory, API checks, and MCP round trips. It stops only processes it started. It leaves the unique validation data directories in place; these contain local bootstrap credentials, so keep them untracked and do not publish them.
+冒煙檢查命令會輸出不含 token 的 JSON 證據，其中有產品狀態、port、資料目錄、API 檢查及 MCP 往返結果。它只會停止自己啟動的程式。唯一的驗證資料目錄會保留下來；其中含有本機 bootstrap 憑證，因此應保持未追蹤狀態，且不可公開釋出。
 
-Verified on 2026-10-06: Knowledge and Code passed their independent runs, including API and MCP checks. The `all` option runs the same checks sequentially in a single invocation.
+2026-10-06 驗證結果：Knowledge 和 Code 的獨立執行均通過，包括 API 和 MCP 檢查。`all` 選項會在同一次執行中依序進行相同檢查。

@@ -64,6 +64,8 @@ async function main() {
       for(let index=0;index<count;index++) {await navigation.nth(index).click();await page.locator('.page-heading h2').waitFor();
         const title=await page.locator('.page-heading h2').innerText();check(language.locale+'_work_section_'+index,Boolean(title.trim()) && (language.locale!=='en' || !/[\u3400-\u9fff]/u.test(title)));
         if(language.locale==='en') check('en_work_columns_'+index,!/[\u3400-\u9fff]/u.test((await page.locator('thead').allInnerTexts()).join(' ')));
+        const runtimes=await page.locator('.agent-identity .subline').allInnerTexts();
+        if(runtimes.length) check(language.locale+'_agent_runtime_copy',runtimes.every(text=>text.includes(label(language.locale,'Pi 執行環境')) || text.includes(label(language.locale,'外部執行環境'))));
       }
       await navigation.first().click();
       const search=page.getByLabel(label(language.locale,'搜尋任務'),{exact:true});await search.fill('QA 原文保持 unchanged');
@@ -79,6 +81,7 @@ async function main() {
       for(const product of ['knowledge','code']) {
         await page.goto(BASE+'/'+product);await page.locator('.side-rail .workspace-identity').waitFor();
         check(language.locale+'_'+product+'_shared_locale',await page.locator('html').getAttribute('lang')===language.lang);
+        check(language.locale+'_'+product+'_brand_copy',(await page.locator('.side-brand').innerText()).includes(label(language.locale,'Agent 協作管理')));
         const nav=page.locator('.rail-nav .nav-item');for(let index=0;index<await nav.count();index++){await nav.nth(index).click();const title=await page.locator('.page-heading h2').innerText();check(language.locale+'_'+product+'_section_'+index,Boolean(title.trim()) && (language.locale!=='en'||!/[\u3400-\u9fff]/u.test(title)));}
         const createKey=product==='knowledge'?'建立 Space':'建立 Code project';
         await page.getByRole('button',{name:exact(label(language.locale,createKey))}).click();

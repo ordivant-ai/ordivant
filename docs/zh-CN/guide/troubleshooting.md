@@ -1,6 +1,12 @@
-# 排除常见问题
+<span id="排除常見問題"></span>
+<span id="排除常见问题"></span>
 
-## 启动与登录
+# 排除常见问题 {#troubleshooting}
+
+<span id="啟動與登入"></span>
+<span id="启动与登录"></span>
+
+## 启动与登录 {#startup-and-sign-in}
 
 | 现象 | 原因或检查方式 | 处理方式 |
 |---|---|---|
@@ -11,7 +17,10 @@
 | 没看到创建管理员的初始设置 | 此 Identity volume 已初始化，或目前指向另一个 Compose project | 核对 `-ProjectName` 和 `-Development` 模式。没有预设账号；请使用既有管理员或复原流程，不要删除 volume 来试密码。 |
 | 登录成功但看不到 Project／Space | 人类 session 已创建，但该产品资源范围尚未授予 | 请 Identity 管理员分配正确产品角色及明确资源 scope。SSO 网域不会自动授予数据访问权。 |
 
-## Seed、Runtime 与 Run
+<span id="seed、runtime-與-run"></span>
+<span id="seed、runtime-与-run"></span>
+
+## Seed、Runtime 与 Run {#seed-runtime-and-runs}
 
 | 现象 | 原因或检查方式 | 处理方式 |
 |---|---|---|
@@ -21,7 +30,10 @@
 | 运行结果标示 DEMO | 尚未为组织或 Agent 配置有效的模型连接 | 由管理员在 Work 设置供应商 endpoint/key 和 model，再设置 Agent 继承或个别覆写。DEMO 不代表已使用付费模型。 |
 | Stop 后上游工具结果不明 | Stop 会撤销 Run 写入权；外部服务可能已运行副作用 | 先到该上游服务核对实际结果，再决定是否创建新 Run。系统不会自动重播不确定的外部操作。 |
 
-## Knowledge、Code 与 SSO
+<span id="knowledge、code-與-sso"></span>
+<span id="knowledge、code-与-sso"></span>
+
+## Knowledge、Code 与 SSO {#knowledge-code-and-sso}
 
 | 现象 | 原因或检查方式 | 处理方式 |
 |---|---|---|
@@ -31,7 +43,10 @@
 | PR 有 status 但无法确认测试曾运行 | `agent_reported` 是提交状态收据，不是 CI runner 运行记录 | 检查收据来源；只有实际可验证的 Gitea webhook 或外部测试系统才代表其对应事件，不要把回报写成 CI 结果。 |
 | OIDC callback 或登录循环失败 | IdP Redirect URI 与管理界面显示的 Callback URL 不完全一致，或 canonical HTTPS origin／cookie 设置不符 | 核对完整 callback URL、Issuer、允许网域及可信 public origin；先用一位成员验证再改登录政策。设置步骤见[企业登录说明](../enterprise-sso.md)。 |
 
-## 数据与服务目录
+<span id="資料與服務目錄"></span>
+<span id="数据与服务目录"></span>
+
+## 数据与服务目录 {#data-and-service-directories}
 
 - 如果换了 clone 路径后数据看起来消失，helper 的预设 Compose project 名称可能不同。启动时固定使用 `-ProjectName`，并用同一名称管理 status/logs/down。
 - `-Action down` 保留数据；再次运行 `docker compose down -v` 会移除 volumes，造成数据遗失。不要将 volume 清除当成一般排障步骤。

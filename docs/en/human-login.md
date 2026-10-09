@@ -1,3 +1,6 @@
+<span id="帳號與登入"></span>
+<span id="账号与登录"></span>
+
 # Accounts and sign-in
 
 Work, Knowledge, and Code share accounts within the same environment. On first startup, open the workspace and select “Create administrator account.” Enter your name, email, and a password of at least 12 characters, then confirm. The system permits only one initial administrator; there is no default account or password. Enter the password directly in the web page. Do not send it to an Agent.
@@ -5,6 +8,9 @@ Work, Knowledge, and Code share accounts within the same environment. On first s
 After creation, you are signed in and shown ten one-time recovery codes. They are hidden by default and shown only after account creation or a password change. Store them somewhere secure. Every password change or recovery invalidates all previous recovery codes.
 
 Afterward, sign in with “Email” and “Password.” Your session persists when you reload the page or switch between the three products. Signing out immediately revokes the server-side session. You must sign in again after 30 minutes of inactivity or 12 hours from sign-in.
+
+<span id="帳號與安全性"></span>
+<span id="账号与安全性"></span>
 
 ## Accounts and security
 
@@ -20,6 +26,9 @@ Members can access only the Work Projects, Knowledge Spaces, and Code Projects e
 
 If you forget your password, select “Use a recovery code” and enter your email, one unused recovery code, and a new password. The platform revokes all previous sign-ins, consumes that code, and provides new recovery codes. Without a recovery code, this recovery flow cannot reset the password.
 
+<span id="環境與部署"></span>
+<span id="环境与部署"></span>
+
 ## Environments and deployment
 
 The development entry point is `http://127.0.0.1:5173/work`; local production mode uses `http://127.0.0.1:8088/work`. The two environments store separate accounts and business data, and each needs its own administrator. `-Seed` adds only clearly labeled business demo data; it does not create a human password account.
@@ -29,6 +38,9 @@ The Docker helper creates the Identity API, a separate PostgreSQL database, and 
 External deployments require HTTPS, `ORDIVANT_AUTH_COOKIE_SECURE=true`, and an explicit `ORDIVANT_AUTH_ORIGINS`. The local exception permits HTTP only for literal localhost, `127.0.0.1`, or `::1` origins. Sign-in and human business authorization are denied if configuration is incomplete or Identity is offline. If a product database has multiple organizations, configure `ORDIVANT_WORK_IDENTITY_ORG_ID`, `ORDIVANT_KNOWLEDGE_IDENTITY_ORG_ID`, and `ORDIVANT_CODE_IDENTITY_ORG_ID` in Compose/the launcher; each is passed to that product's own `ORDIVANT_IDENTITY_ORG_ID`. Do not mix projects from different organizations into one sign-in scope.
 
 Preserve and back up Identity volumes, business volumes, and `.data/container-secrets/<ProjectName>/` together. Stopping containers does not delete data. Enterprise settings also require `sso.key` from the Identity data volume for decryption during restoration.
+
+<span id="企業-sso"></span>
+<span id="企业-sso"></span>
 
 ## Enterprise SSO
 

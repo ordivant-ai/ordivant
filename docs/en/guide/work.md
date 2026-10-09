@@ -2,12 +2,18 @@
 
 Work organizes projects, tasks, Agent execution, messages, result evidence, and independent review. A Task is business work; a Run or Execution is one actual attempt. Execution completion does not automatically complete the Task: an authorized reviewer other than the submitter must accept the result.
 
+<span id="建立專案與任務"></span>
+<span id="创建项目与任务"></span>
+
 ## Create projects and tasks
 
 1. An Identity administrator creates a Project in Work and grants members access to it. Members see only their authorized scope.
 2. In the Project's “Tasks” view, create a Task and enter its goal, description, inputs, scope, constraints, acceptance criteria, and priority.
 3. Choose an execution Agent with the required capabilities and access to this Project, then assign a different reviewer. Add prerequisite Tasks as dependencies when needed. Cycles are rejected. A dependent Task can start only after its prerequisites pass independent review.
 4. Save and search the task list or filter it by status. Editing the task specification does not replace saved execution or review history.
+
+<span id="執行並提交證據"></span>
+<span id="运行并提交证据"></span>
 
 ## Execute and submit evidence
 
@@ -17,6 +23,9 @@ After the work is complete, the executor submits a summary and one or more resul
 
 The reviewer checks the summary and evidence in the Task details, then accepts or returns it with a comment. Acceptance completes the Task. Returning it makes it executable again and preserves prior evidence. A submitter cannot accept their own result. When a Task is rejected or retried, its new Execution does not overwrite the previous history.
 
+<span id="協作與引用"></span>
+<span id="协作与引用"></span>
+
 ## Collaboration and citations
 
 Use messages in the Task context to ask another member or Agent a question, reply, hand off work, or record a decision. A Project manager or the Agent responsible for a parent Task can delegate a child Task; delegation does not grant the delegate access to other Projects.
@@ -25,11 +34,16 @@ When work depends on a Knowledge document, put its **exact-version citation URI*
 
 Work can also read pull-request and check states from configured existing GitHub, GitLab, or Gitea providers. This is scoped read access and evidence inspection; it does not merge pull requests or replace independent review. See the [Code guide](code.md) for repositories and pull requests managed through Gitea in Code.
 
+<span id="run-控制"></span>
+
 ## Run controls
 
 The “Run execution” view shows each attempt's status, events, and safe receipts. Administrators and Project managers can request pause, resume, stop, and retry. Pause takes effect at the next tool boundary; Runtime keeps the lease while it waits. Stop immediately revokes that Execution's write authority. Retry creates a new Run and does not reuse the previous Execution.
 
 See the [execution guide](../execution-usage.md) for Run states, waiting and stop semantics, sandbox configuration, and tools. External side effects from tools are not automatically replayed on retry; verify uncertain outcomes with the upstream service first.
+
+<span id="權限概覽"></span>
+<span id="权限概览"></span>
 
 ## Permissions overview
 

@@ -45,7 +45,7 @@ export function ProductShell({
   return (
     <div className={`app-shell product-shell product-${product}`}>
       <aside className="side-rail">
-        <div className="side-brand"><span className="brand-mark">O</span><div><strong>Ordivant</strong><span>Agent operations</span></div></div>
+        <div className="side-brand"><span className="brand-mark">O</span><div><strong>Ordivant</strong><span>{t('Agent 協作管理')}</span></div></div>
         <ProductSwitcher active={product} />
         <div className="rail-label">{sectionLabel}</div>
         <nav className="rail-nav" aria-label={t('{{product}} 導覽', { product: productLabel })}>
@@ -59,7 +59,7 @@ export function ProductShell({
       <main className="main-pane">
         <header className="topbar product-topbar">
           <div className="topbar-project"><span className="project-caption">{productLabel}</span>{headerExtra}</div>
-          <div className="topbar-right"><Text className={`product-mode${serviceStatus === 'error' ? ' product-mode-error' : ''}`}>{serviceStatus === 'error' ? 'OFFLINE' : mode === 'development' ? 'DEV' : mode === 'production' ? 'PROD' : 'API'}</Text></div>
+          <div className="topbar-right"><Text className={`product-mode${serviceStatus === 'error' ? ' product-mode-error' : ''}`}>{serviceStatus === 'error' ? t('離線') : mode === 'development' ? 'DEV' : mode === 'production' ? 'PROD' : 'API'}</Text></div>
         </header>
         <div className="workspace-content product-content">
           <div className="page-heading"><div>{eyebrow && <Text className="eyebrow">{eyebrow}</Text>}<Title level={2}>{title}</Title></div>{actions}</div>

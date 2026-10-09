@@ -1,6 +1,12 @@
+<span id="knowledge-獨立容器驗收"></span>
+<span id="knowledge-独立容器验收"></span>
+
 # Knowledge Standalone Container Acceptance
 
 `scripts/standalone_container_acceptance.py` performs black-box acceptance of a Knowledge-only production Compose project started by `scripts/containers.ps1`. It does not run `up` or `down`, stop other services, or delete volumes. Its only lifecycle operation is to restart the specified project's `knowledge-api`, then wait for the API through the Web proxy.
+
+<span id="啟動與驗收"></span>
+<span id="启动与验收"></span>
 
 ## Start and acceptance
 

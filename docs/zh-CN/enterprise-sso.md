@@ -1,8 +1,14 @@
-# 企业登录与身分管理
+<span id="企業登入與身分管理"></span>
+<span id="企业登录与身分管理"></span>
+
+# 企业登录与身分管理 {#enterprise-sign-in-and-identity-management}
 
 Ordivant Work、Knowledge、Code 共用一个 Identity 服务。管理员可以接上企业既有的 OIDC 身分服务，并控制成员布建、产品／项目权限、登录政策及工作阶段。企业密码与 MFA 验证由身分服务处理，Ordivant 不接收企业密码。
 
-## 管理员设置
+<span id="管理員設定"></span>
+<span id="管理员设置"></span>
+
+## 管理员设置 {#administrator-setup}
 
 1. 在要使用的环境创建自己的第一位管理员并登录。开发与正式环境的账号、SSO 设置及数据库各自独立。
 2. 打开「账号与安全性 → 企业 SSO」。选择身分服务模板，再填入组织专属 Issuer URL、Client ID、Client Secret。
@@ -12,12 +18,15 @@ Ordivant Work、Knowledge、Code 共用一个 Identity 服务。管理员可以�
 
 Client Secret 留白会保留既有值；改变 Issuer 或 Client ID 必须明确填入新值。保存后界面清空 Secret，API 只回传是否已设置。公开设置网址以管理员设置的 canonical origin 为准；从 localhost／127.0.0.1 的其他别名开始登录时，界面先切到该网址。
 
-## 常见身分服务
+<span id="常見身分服務"></span>
+<span id="常见身分服务"></span>
+
+## 常见身分服务 {#common-identity-providers}
 
 | 身分服务 | Issuer／应用设置 | 注意事项 |
 |---|---|---|
 | Microsoft Entra ID | `https://login.microsoftonline.com/TENANT_ID/v2.0`；Web 平台、组织专属 tenant | 使用明确租户；依实际 token claims 选 email 或 preferred_username。Entra 未提供 email_verified 时，仅在确认租户与网域政策后关闭此验证。群组 claims 必须由管理员配置；group overage 不会被当成群组授权。 |
-| Google Workspace | `https://accounts.google.com`；Web application OAuth client | 限制允许网域；IdP 的 hd 提示不取代后端网域检查。Google 不预设提供产品所需 groups，请使用明确预设权限或手动授权。 |
+| Google Workspace | `https://accounts.google.com`；Web 应用 OAuth 客户端 | 限制允许网域；IdP 的 hd 提示不取代后端网域检查。Google 不预设提供产品所需 groups，请使用明确预设权限或手动授权。 |
 | Okta | 组织自己的 OIDC authorization server issuer | 设置 groups claim 发到 ID token；名称须与权限对应完全一致。 |
 | Auth0 | `https://YOUR_TENANT.REGION.auth0.com/` 或设置的 custom domain | OIDC ID token 的标准 claims；需要群组时由 Action 加入自订 claim，并在 Ordivant 填入相同 claim 名称。 |
 | Keycloak | `https://IDP_HOST/realms/REALM` | confidential client、PKCE S256、将 groups mapper 加入 ID token；可代理 SAML 或 LDAP／AD。 |
@@ -27,7 +36,10 @@ Client Secret 留白会保留既有值；改变 Issuer 或 Client ID 必须明�
 
 官方设置参考：[Entra OIDC](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc)、[Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect)、[Okta OIDC](https://developer.okta.com/docs/guides/implement-grant-type/authcode/main/)、[Auth0 Regular Web Apps](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow)、[Keycloak 管理指南](https://www.keycloak.org/docs/latest/server_admin/index.html)。
 
-## 成员与权限
+<span id="成員與權限"></span>
+<span id="成员与权限"></span>
+
+## 成员与权限 {#members-and-permissions}
 
 - **仅受邀成员**：先由管理员创建 member 邀请。企业身分的电子邮件通过验证并符合允许网域后，可以直接使用 SSO 接受邀请，沿用邀请中指定的产品与资源权限。企业登录不会自动创建管理员。
 - **JIT 自动布建**：首次登录创建一般成员，套用明确的预设与群组权限。没有设置权限的成员无法访问产品数据；同网域不代表全组织可见。
@@ -37,7 +49,10 @@ Client Secret 留白会保留既有值；改变 Issuer 或 Client ID 必须明�
 
 登录成功只创建平台工作阶段，不直接授予 agent 或版控服务的 credential。Agent REST／MCP 仍使用项目受限的独立身分。
 
-## SAML、LDAP 与 Active Directory
+<span id="saml、ldap-與-active-directory"></span>
+<span id="saml、ldap-与-active-directory"></span>
+
+## SAML、LDAP 与 Active Directory {#saml-ldap-and-active-directory}
 
 Ordivant 采 OIDC 接入协定。SAML-only 或 LDAP／AD 企业系统可以使用可选 Keycloak 身分代理：在 Keycloak 创建 SAML Identity Provider 或 LDAP User Federation，将它对外提供的 OIDC realm 接到 Ordivant。Work／Knowledge／Code 不必各自保存 LDAP 密码或实作不同登录协定。
 
@@ -71,7 +86,10 @@ docker compose -p ordivant-local -f compose.yaml -f compose.identity-broker.yaml
 
 密码只在提示中输入，不放进聊天、指令、环境变量或文件。以暂时管理员登录 broker 后创建正式管理员，再移除暂时管理员。WSL 需激活 Docker Desktop integration。[Keycloak 官方初始化说明](https://www.keycloak.org/server/bootstrap-admin-recovery)
 
-## 工作阶段、安全与审核
+<span id="工作階段、安全與稽核"></span>
+<span id="工作阶段、安全与审核"></span>
+
+## 工作阶段、安全与审核 {#sessions-security-and-audit}
 
 平台保留 HttpOnly、SameSite 与 Origin／CSRF 保护。OIDC 使用单次 state、browser binding、nonce、PKCE S256 与签章／issuer／audience 验证。Client Secret 加密存放；authorization code、ID token、access token 不进入业务数据库、API 回应或登录日志。
 
@@ -81,7 +99,10 @@ Ordivant 注销会撤销三个模块共用的工作阶段；企业其他应用�
 
 「身分审核」记录登录、布建、设置与权限变更、链接／解除链接及注销事件。只有管理员可以查看，不含密码、cookie、client secret 或 provider token。
 
-## 运维与备份
+<span id="維運與備份"></span>
+<span id="运维与备份"></span>
+
+## 运维与备份 {#operations-and-backups}
 
 保留 Identity PostgreSQL、`identity_data`（包含 `sso.key`）、Compose service secrets。使用 broker 时还要保留 `identity_broker_postgres`。数据库与加密密钥须一起备份；只有数据库无法还原已加密的 client secret。
 

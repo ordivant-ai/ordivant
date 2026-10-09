@@ -1,6 +1,12 @@
+<span id="維運與備份"></span>
+<span id="运维与备份"></span>
+
 # Operations and backups
 
 The lifecycle of local and container services is managed by `scripts/containers.ps1`. Use a stable `-ProjectName` from the first run; the helper uses it to isolate the Compose project, named volumes, and `.data/container-secrets/<ProjectName>`. When starting from another clone, specify the same name to find the existing data.
+
+<span id="服務狀態與更新"></span>
+<span id="服务状态与更新"></span>
 
 ## Service status and updates
 
@@ -13,6 +19,9 @@ pwsh -NoProfile -File .\scripts\containers.ps1 -Development -ProjectName ordivan
 Always call the helper with the same development/production mode and project name. When using `logs`, include any optional profile flags for the services you want to inspect. `down` includes optional profiles and stops that Compose project. It preserves volumes and secret files; it is not a backup. Removing the Compose project volumes permanently deletes that project's data.
 
 The development Web service binds to loopback port `5173` by default, and Gitea uses `3002`. Set `ORDIVANT_DEV_WEB_PORT` and `ORDIVANT_GITEA_PORT`, respectively, to avoid host port conflicts. The development helper also binds API ports to loopback by default. Production Web uses `8088`; configure an HTTPS reverse proxy, canonical origin, and secure cookies before exposing it.
+
+<span id="需要備份的資料"></span>
+<span id="需要备份的数据"></span>
 
 ## Data to back up
 
@@ -38,6 +47,9 @@ docker volume ls --filter "label=com.docker.compose.project=ordivant-dev"
 
 Include every listed product, Identity, and enabled-profile volume in the backup. Use the command output as the authoritative list; do not guess from the example names.
 
+<span id="一致性與還原"></span>
+<span id="一致性与还原"></span>
+
 ## Consistency and restoration
 
 1. Confirm that the backup target is the correct Compose project name. Stop the environment with `-Action down` so files and PostgreSQL volumes are consistent; this does not delete data.
@@ -46,6 +58,9 @@ Include every listed product, Identity, and enabled-profile volume in the backup
 4. To restore, first recover the Compose volumes under their original names and the original secrets, then start the original products/profiles with the same project name. Do not mix encryption keys and databases from different environments.
 
 For a single-product or partial-product deployment, back up every volume created by that mode along with the shared Identity volumes. Knowledge citations and Code PR provenance do not replace backups of the referenced product data; preserve the source product and actual Gitea data as well.
+
+<span id="執行與排程"></span>
+<span id="运行与调度"></span>
 
 ## Execution and scheduling
 

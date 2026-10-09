@@ -1,6 +1,12 @@
+<span id="企業-sso-驗收"></span>
+<span id="企业-sso-验收"></span>
+
 # Enterprise SSO Acceptance
 
 Date: 2026-10-07 (Asia/Taipei). Scope: the local shared Ordivant Identity service, standard OIDC, and the optional Keycloak SAML identity broker. One Identity environment uses one organization identity service; Work, Knowledge, and Code retain separate databases and authorization boundaries.
+
+<span id="已通過的協定與安全驗收"></span>
+<span id="已通过的协定与安全验收"></span>
 
 ## Protocol and security checks passed
 
@@ -22,6 +28,9 @@ The 27 storage checks verify PostgreSQL persistence; that the encrypted Client S
 
 The browser used synthetic accounts to complete both direct OIDC sign-in and upstream SAML sign-in. SAML members entered Work, Knowledge, and Code with the same platform session. The account drawer identified enterprise sign-in and did not offer local password or recovery-code actions. After changing the enterprise sign-in button label, signing out without reloading the page caused the login screen to immediately show the new label and SSO-only policy. Administrator password recovery remained available; general members had no entry point for creating Projects or Spaces, while task and document entry points within their authorized scope remained. Gitea was not configured in the Code QA environment; the UI showed that state and disabled repository writes. This identity acceptance does not claim Git write acceptance.
 
+<span id="可重現的隔離環境"></span>
+<span id="可重现的隔离环境"></span>
+
 ## Reproducible isolated environment
 
 ```powershell
@@ -40,6 +49,9 @@ Chromium sends the Secure flow cookie that Keycloak 26.8 sets over HTTP loopback
 Between fixture correction and rerunning acceptance, the PM verified the fixed QA container project label before clearing the synthetic environment's SSO request counter. The 20 starts per 15 minutes limit in the main environment and products was not changed. Normal reruns must wait for the previous rate-limit window to expire; repeated full-suite requests must not be mistaken for a single ordinary sign-in failure.
 
 The SAML fixture keeps `validateSignature` and `wantAssertionsSigned`, using `saml.assertion.signature` and `saml.server.signature` to enable upstream assertion/response signatures. Acceptance checks live client flags, AuthnRequest policy, metadata Entity ID/SSO endpoint, and that the metadata certificate matches the upstream public signing key. The broker loads its verification key from metadata; signature validation was not disabled to pass the test.
+
+<span id="實際服務的配置邊界"></span>
+<span id="实际服务的配置边界"></span>
 
 ## Configuration boundaries for real services
 

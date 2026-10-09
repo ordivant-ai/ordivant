@@ -1,3 +1,5 @@
+<span id="ordivant-功能缺口研究"></span>
+
 # Ordivant Feature-Gap Research
 
 Updated: 2026-10-08 (Asia/Taipei). The PM and three luna workers reviewed the code, contracts, and acceptance records on 2026-10-07, using official protocol and product documentation as references. The user selected **F03 Run console, F04 workflows and Agent templates, and F05 tool connections and sandboxes**; implementation and local integration acceptance are complete. This page distinguishes the first-release capabilities from work that remains.
@@ -6,11 +8,17 @@ See [execution features](execution-usage.md) and [acceptance](execution-validati
 
 Priorities assume a private deployment used by one enterprise team. If one service is to host multiple customers, tenant isolation and per-tenant Identity/IdP configuration must move earlier.
 
+<span id="現有能力與判讀方式"></span>
+<span id="现有能力与判读方式"></span>
+
 ## Existing capabilities and status definitions
 
 "Partial" means the related foundation exists and the candidate fills a gap. "Not implemented" means there is no complete corresponding service/API/UI. "Not verified" means configuration or operating instructions exist, but there is no end-to-end delivery evidence for that capability.
 
 Existing capabilities include shared Identity, native accounts and OIDC, a Keycloak SAML broker, invitations/JIT, project/Space authorization, group synchronization at sign-in, and session revocation; Work task/execution separation, dependencies, atomic claims, lease fencing, delegation, help requests, messages, idempotency, outbox, and independent result acceptance; immutable Knowledge versions, text search, and precise citations; and real Gitea repository/branch/commit/PR/status operations in Code. This release does not rebuild those capabilities.
+
+<span id="優先候選"></span>
+<span id="优先候选"></span>
 
 ## Priority candidates
 
@@ -36,7 +44,13 @@ P0 covers core operational capabilities for the next iteration; P1 covers enterp
 | F16 | P2; advance MCP when cloud Agents must connect | Remote MCP gateway and A2A | Local stdio MCP bridges for each product and a restricted bearer REST bridge | Streamable HTTP MCP, remote token/scope management, and a tool catalog; later, connect independent Agents through A2A Agent Cards and task lifecycle. See [MCP authorization](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization) and the [A2A specification](https://a2a-protocol.org/latest/specification/). |
 | F17 | P2; P0 for multi-customer SaaS | Team management and full multi-tenancy | Organization/team fields and project authorization; one organization/IdP per Identity environment | Department/team management and authorization; multi-organization membership, tenant switching, per-tenant IdP/model/quotas/audit, and cross-tenant isolation acceptance. Multi-tenancy can come later when enterprises run separate deployments. |
 
+<span id="本輪第一版與後續候選"></span>
+<span id="本轮第一版与后续候选"></span>
+
 ## This release and later candidates
+
+<span id="f03-執行控制台"></span>
+<span id="f03-运行控制台"></span>
 
 ### F03: Run console
 
@@ -44,17 +58,26 @@ This release provides a Run list and detail view, model/token/tool events and er
 
 Acceptance covers stopping a pending run, pause/resume, expired-lease/project rejection, restart, and retry after a lost response. A retry creates a new execution linked to its source; resuming the same run preserves its idempotency boundary. Full dead-letter handling and operator workflows remain future work.
 
+<span id="f01-可持久化的執行前審批"></span>
+<span id="f01-可持久化的运行前审批"></span>
+
 ### F01: Durable pre-execution approvals
 
 The first version should define an ApprovalRequest, approver, reason, tool/resource/parameter summary and hash, and expiry. Approval authorizes only the corresponding action; changed inputs require a new decision. Policy belongs in Python and is shared by REST/MCP; Pi only pauses and resumes execution.
 
 Acceptance must cover no side effect before approval; rejection of unauthorized or self-approval; expiry/cancellation; input changes after approval; replay and restart; and exactly-once execution of the approved side effect. Existing result review keeps its own business rules. See the official [LangGraph interrupts documentation](https://docs.langchain.com/oss/python/langgraph/interrupts) for durable interrupt behavior.
 
+<span id="f02-先有可執行的上限-再有金額治理"></span>
+<span id="f02-先有可运行的上限-再有金额治理"></span>
+
 ### F02: Enforce limits before cost governance
 
 The first version can enforce total token, turn, tool-call, execution-time, and concurrency limits, and show why a limit was reached. A USD hard budget also requires known versioned prices, pre-request reservation, settlement/release after completion, and atomic control when several executions compete for the remaining budget.
 
 Acceptance must cover no new model request when the budget is insufficient; concurrency that cannot exceed the reservable amount; explicit handling of unknown usage/prices; settlement after failure or cancellation; cache rates; and deduplication of repeated receipts. An upstream provider may still bill a request that was already sent; an abort cannot promise a refund. Reconciling provider invoices/actual bills is a separate deliverable.
+
+<span id="企業採購或正式維運時的附加項"></span>
+<span id="企业采购或正式运维时的附加项"></span>
 
 ## Additional enterprise procurement and operations candidates
 
@@ -65,6 +88,9 @@ Acceptance must cover no new model request when the budget is insufficient; conc
 | Vault/KMS/Secret Manager | Client secrets/model keys are encrypted locally; Compose secrets are mounted from files | Add an external secret backend, key rotation, and recovery when key management must be centralized or shared across nodes. |
 | Automated backup, restore exercises, monitoring, and HA | Health checks, named volumes, restart persistence, and manual backup instructions exist; full restore/HA is unverified | Define RPO/RTO before production; verify that databases, keys, Pi, and Git/attachments restore consistently; add alerts/metrics, then address worker partitioning/HA if required. Pi storage must retain a single owner. |
 
+<span id="分期與依賴"></span>
+<span id="分期与依赖"></span>
+
 ## Phases and dependencies
 
 1. **Execution foundation in this release:** F03/F04/F05 and F13 configuration templates reuse the existing Identity, Work service, outbox, and Pi. Evidence is collected in `execution-validation.md`.
@@ -72,6 +98,9 @@ Acceptance must cover no new model request when the budget is insufficient; conc
 3. **Ongoing enterprise onboarding:** F11/F12, identity and token lifecycle, quality evaluation, SIEM/backup operations, then teams/multi-tenancy, remote MCP/A2A, MFA, or Vault as needed.
 
 Document import and source permissions should precede broad RAG indexing. Approvals, scopes, and execution isolation must cover shell/deployment/merge tools. CI results must bind to the actual commit/execution. Cross-product search and tool connections integrate through APIs/events, while each product retains its business authorization and database. These are design premises for future implementation; they do not change current contracts.
+
+<span id="程式碼證據"></span>
+<span id="代码证据"></span>
 
 ## Code evidence
 

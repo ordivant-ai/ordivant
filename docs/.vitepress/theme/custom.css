@@ -31,3 +31,6 @@
 @media (max-width: 959px) { .VPHome .VPHero .image { display: none; } }
 @media (max-width: 640px) { .VPHome .VPHero { padding: 44px 24px; } .VPHome .VPHero .tagline { font-size: 16px; line-height: 1.65; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+html:lang(zh-Hant) { --vp-code-copy-copied-text-content: "已複製"; }
+html:lang(zh-Hans) { --vp-code-copy-copied-text-content: "已复制"; }

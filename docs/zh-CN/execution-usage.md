@@ -1,10 +1,16 @@
-# 运行、模板、自动流程与工具环境
+<span id="執行、範本、自動流程與工具環境"></span>
+<span id="运行、模板、自动流程与工具环境"></span>
+
+# 运行、模板、自动流程与工具环境 {#runs-templates-workflows-and-tool-environments}
 
 本轮功能位于 **Work**。Knowledge／Code 仍可独立使用，不需要启动沙箱。完整 API 与权限在 [运行契约](execution-contracts.md)。
 
 第一次使用时，先登录 Work，由管理员在「模型连接」设置 API endpoint、密钥与预设模型；再创建需要的工具连接／沙箱与 Agent，最后手动派工或启动工作流程。已存在的组织模型设置可直接沿用。没有设置有效模型时，运行明确标示为 DEMO。
 
-## 启动
+<span id="啟動"></span>
+<span id="启动"></span>
+
+## 启动 {#start}
 
 既有本机环境已经有 Work runtime bootstrap 时：
 
@@ -18,7 +24,10 @@
 
 新建的示范环境加 `-Seed`；它会创建标示为 DEMO 的业务数据，管理员账号仍由用户在网页自行创建。若需要 Code 的本机版控，加 `-WithGitea`。两种模式各有自己的数据与账号。沙箱 API 不发布主机连接端口，只接受内部 runtime 调用。
 
-## Run 运行控制台
+<span id="run-執行控制台"></span>
+<span id="run-运行控制台"></span>
+
+## Run 运行控制台 {#run-console}
 
 1. 选择项目，在任务中派发 Pi Agent。派工后会立刻出现 queued Run。
 2. 打开「Run 运行」，查看任务、Agent、execution、状态及模型快照；选取 Run 可查看事件、工具结果及实际 token receipt。
@@ -30,13 +39,19 @@
 
 Run 的 done 代表模型运行与提交完成；任务仍要由独立审查者接受才是 done。DEMO 不调用付费模型；Live receipt 显示实际回传的模型与用量。未取得的 token 或美元费用显示未知。
 
-## Agent 模板
+<span id="agent-範本"></span>
+<span id="agent-模板"></span>
+
+## Agent 模板 {#agent-templates}
 
 在「自动化 → Agent 模板」创建角色、能力、指令、模型、工具白名单、沙箱与运行限制。每次修改都发布新的不可变版本。添加或编辑 Agent 时选择确切版本，也能调整个别设置；设置保存后的下一次派工才生效。
 
 旧版模板及已派工 Run 的快照保持可追溯。模板不授予新的项目权限；Agent 必须原本就被授予工具与沙箱所在项目。模型连接仍由组织管理员维护，模板不存放 API key。
 
-## 自动工作流程
+<span id="自動工作流程"></span>
+<span id="自动工作流程"></span>
+
+## 自动工作流程 {#automated-workflows}
 
 在「自动化 → 工作流程」创建步骤与前置依赖。每一步指定 Pi Agent，或指定必须具备的能力；可指定独立 reviewer。步骤可以平行，但依赖必须形成无环的图。
 
@@ -44,7 +59,9 @@ Run 的 done 代表模型运行与提交完成；任务仍要由独立审查者�
 
 定时启动使用分钟间隔与最多启动次数；runtime 必须持续运行。同一调度的进行中流程会阻止重叠启动，不补发停机期间所有漏掉的周期。取消流程会停止尚未完成的任务与 Run；已验收成果保留。新版工作流程不会更改已经启动的版本。
 
-## 外部 MCP 工具
+<span id="外部-mcp-工具"></span>
+
+## 外部 MCP 工具 {#external-mcp-tools}
 
 部署操作者先允许受信任的 MCP 服务主机，再由 Work 管理员在「工具与沙箱」添加项目连接。第一版使用 MCP Streamable HTTP；不接受任意主机 stdio 命令。
 
@@ -59,7 +76,9 @@ $env:ORDIVANT_TOOL_ALLOWED_HOSTS = 'mcp.company.example'
 
 目前提供 bearer 认证；各厂商的交互式 MCP OAuth、stdio launcher 和远程 A2A 不包含在本轮。
 
-## 沙箱
+<span id="沙箱"></span>
+
+## 沙箱 {#sandboxes}
 
 管理员添加项目沙箱设置，限制 command 时间、内存、CPU、process 数、输出 bytes 与 workspace 空间。将设置套用至 Agent。派工时固定设置快照，runtime 会提供读写文件、列出文件、运行 argv command 的沙箱工具。
 
@@ -71,7 +90,9 @@ $env:ORDIVANT_TOOL_ALLOWED_HOSTS = 'mcp.company.example'
 
 只有独立受信任的 `sandbox-api` 服务持有 Docker daemon socket；Work、runtime、浏览器与 job 均不持有。该服务的内网与服务凭证由部署操作者控制。Docker 隔离使用共用 kernel；要求 VM 边界的企业应另接 VM／microVM 运行器。
 
-## 隔离验收 {#隔離驗收}
+<span id="隔離驗收"></span>
+
+## 隔离验收 {#isolated-acceptance}
 
 ```powershell
 # 埠 8092 僅供合成 QA；不啟動原企業 SSO fixture。

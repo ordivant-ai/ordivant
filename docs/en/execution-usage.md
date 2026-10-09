@@ -1,8 +1,14 @@
+<span id="執行、範本、自動流程與工具環境"></span>
+<span id="运行、模板、自动流程与工具环境"></span>
+
 # Runs, Templates, Workflows, and Tool Environments
 
 These features are part of **Work**. Knowledge and Code remain independently usable and do not require a sandbox. See the [execution contracts](execution-contracts.md) for the API and authorization rules.
 
 To get started, sign in to Work. An administrator configures the API endpoint, key, and default model under **Model connections**. Then create any required tool connections or sandbox profiles and Agents, and manually dispatch a task or start a workflow. Existing organization model settings can be reused. Runs are explicitly marked DEMO when no valid model is configured.
+
+<span id="啟動"></span>
+<span id="启动"></span>
 
 ## Start
 
@@ -18,6 +24,9 @@ If the existing local environment already has a Work runtime bootstrap:
 
 For a new demo environment, add `-Seed`. It creates business data marked DEMO; the user still creates the administrator account in the browser. Add `-WithGitea` for Code's local forge. Development and production each keep their own data and accounts. The sandbox API does not publish a host port and accepts requests only from the internal runtime network.
 
+<span id="run-執行控制台"></span>
+<span id="run-运行控制台"></span>
+
 ## Run console
 
 1. Select a project and dispatch a Pi Agent from a task. A queued Run appears immediately.
@@ -30,11 +39,17 @@ Stop immediately fences the business execution's write access, then terminates t
 
 Run status `done` means model execution and submission have completed; the task is done only after an independent reviewer accepts it. DEMO does not call a paid model. A live receipt reports the model and usage actually returned. Unknown token usage or USD cost remains unknown.
 
+<span id="agent-範本"></span>
+<span id="agent-模板"></span>
+
 ## Agent templates
 
 Under **Automation → Agent templates**, define the role, capabilities, instructions, model, tool allowlist, sandbox, and execution limits. Each change publishes a new immutable version. When creating or editing an Agent, select an exact version and optionally override individual settings. Changes take effect on its next dispatch.
 
 Previous template versions and dispatched Run snapshots remain traceable. Templates do not grant project access: the Agent must already be authorized for the project containing the tool connection and sandbox. Organization administrators continue to manage model connections; templates never store API keys.
+
+<span id="自動工作流程"></span>
+<span id="自动工作流程"></span>
 
 ## Automated workflows
 
@@ -43,6 +58,8 @@ Under **Automation → Workflows**, define steps and their dependencies. Each st
 Provide text input for the whole workflow when starting it manually. The system creates a task for each step, and the runtime scheduler dispatches eligible work. A step waits if no suitable Agent is available or a dependency is still awaiting review. Once a reviewer accepts the prerequisite result, dependent steps start automatically. The workflow completes only after every step passes independent acceptance.
 
 Scheduled starts use a minute interval and a maximum run count; the runtime must remain running. An active workflow prevents an overlapping start on the same schedule. Missed intervals during downtime are not replayed. Cancelling a workflow stops unfinished tasks and Runs while preserving accepted results. Publishing a new workflow version does not change instances already started.
+
+<span id="外部-mcp-工具"></span>
 
 ## External MCP tools
 
@@ -59,6 +76,8 @@ Connection credentials are encrypted and never returned to the form; leaving the
 
 Bearer authentication is supported. Vendor-specific interactive MCP OAuth, stdio launchers, and remote A2A are outside this release.
 
+<span id="沙箱"></span>
+
 ## Sandboxes
 
 An administrator creates a project sandbox profile with limits for command time, memory, CPU, process count, output bytes, and workspace size, then assigns it to an Agent. Dispatch stores an immutable profile snapshot. Runtime exposes sandbox tools to read and write files, list files, and execute argv commands.
@@ -70,6 +89,8 @@ Failed commands retain their non-zero exit code, and timeouts or truncated outpu
 If the cleanup API does not confirm deletion, the console shows the sandbox as `failed` with an unconfirmed-cleanup error. If a temporary workspace becomes unreachable after restart, its status is `lost`. Model results and cleanup status are recorded separately. The operator must inspect or restart their executor to complete orphan cleanup; an unconfirmed deletion is never reported as successful, and model side effects are never replayed automatically.
 
 Only the separately trusted `sandbox-api` service holds the Docker daemon socket. Work, Runtime, the browser, and sandbox jobs do not. The deployment operator controls the executor's internal network and service credentials. Docker isolation shares the host kernel; organizations requiring a VM boundary should connect a VM or microVM executor.
+
+<span id="隔離驗收"></span>
 
 ## Isolated acceptance
 

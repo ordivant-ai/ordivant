@@ -1,4 +1,10 @@
+<span id="架構與-api-索引"></span>
+<span id="架构与-api-索引"></span>
+
 # Architecture and API reference
+
+<span id="業務契約"></span>
+<span id="业务契约"></span>
 
 ## Business contracts
 
@@ -11,6 +17,9 @@
 | [SSO contracts](./sso-contracts.md) | OIDC, security validation, enterprise groups, and the IdP broker |
 | [Model contracts](./model-contracts.md) | Providers, Agent model selection, encryption, and usage receipts |
 
+<span id="rest-文件"></span>
+<span id="rest-文档"></span>
+
 ## REST documentation
 
 After starting native development, FastAPI's `/docs` and `/openapi.json` provide the live schema. By default, Work, Knowledge, Code, and Identity use ports 8000, 8010, 8020, and 8030, respectively. In production, Nginx exposes the business API prefixes; do not publish internal API ports just to inspect the schema.
@@ -21,6 +30,9 @@ The Work, Knowledge, and Code MCP stdio bridges call their respective REST APIs 
 
 Runtime connections to external tools use MCP Streamable HTTP. This is separate from the stdio bridges that each product exposes to clients. See the [external tools guide](./execution-usage.md#external-mcp-tools).
 
+<span id="原始碼與開發"></span>
+<span id="源代码与开发"></span>
+
 ## Source and development
 
-[GitHub source](https://github.com/bigtongue5566/ordivant), the [contribution guide](../../CONTRIBUTING.md), [product deployment boundaries](./product-independence.md), and [validation records](./validation.md). Links to source code in the documentation open GitHub. The documentation site contains no server data, keys, or acceptance databases.
+[GitHub source](https://github.com/ordivant-ai/ordivant), the [contribution guide](../../CONTRIBUTING.md), [product deployment boundaries](./product-independence.md), and [validation records](./validation.md). Links to source code in the documentation open GitHub. The documentation site contains no server data, keys, or acceptance databases.

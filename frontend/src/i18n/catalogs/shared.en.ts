@@ -6,6 +6,7 @@ export default {
   '管理員': 'Administrator', '管理者': 'Manager', '編輯者': 'Writer', '讀者': 'Reader', '成員': 'Member', '外部': 'External',
   '介面語言': 'Interface language',
   'Ordivant 產品': 'Ordivant products',
+  'Agent 協作管理': 'Agent operations',
   '{{product}} 導覽': '{{product}} navigation',
   '{{product}} API 已連線': '{{product}} API connected',
   '{{product}} API 無法連線': '{{product}} API unavailable',

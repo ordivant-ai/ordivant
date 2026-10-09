@@ -1,6 +1,11 @@
+<span id="路線圖與功能邊界"></span>
+<span id="路线图与功能边界"></span>
+
 # Roadmap and feature boundaries
 
-This page describes v0.1 capabilities and future candidates; it does not promise delivery dates. Discuss requirements and implementation through [GitHub Issues](https://github.com/bigtongue5566/ordivant/issues).
+This page describes v0.1 capabilities and future candidates; it does not promise delivery dates. Discuss requirements and implementation through [GitHub Issues](https://github.com/ordivant-ai/ordivant/issues).
+
+<span id="v0-1-已交付"></span>
 
 ## Delivered in v0.1
 
@@ -10,6 +15,9 @@ This page describes v0.1 capabilities and future candidates; it does not promise
 - Knowledge document versions, text search, decisions, and precise citations.
 - Optional Code/Gitea and a restricted read adapter for existing Git providers.
 - Native human sign-in, enterprise OIDC, and an optional Keycloak SAML / LDAP broker.
+
+<span id="優先候選"></span>
+<span id="优先候选"></span>
 
 ## Candidates for future work
 

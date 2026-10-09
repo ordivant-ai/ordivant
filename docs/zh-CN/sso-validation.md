@@ -1,17 +1,23 @@
-# 企业 SSO 验收
+<span id="企業-sso-驗收"></span>
+<span id="企业-sso-验收"></span>
+
+# 企业 SSO 验收 {#enterprise-sso-acceptance}
 
 日期：2026-10-07（Asia/Taipei）。范围是本机 Ordivant 共用 Identity、标准 OIDC 与可选 Keycloak SAML 身分代理。一个 Identity 环境使用一组组织身分服务；Work、Knowledge、Code 各自保有数据库与授权边界。
 
-## 已通过的协定与安全验收
+<span id="已通過的協定與安全驗收"></span>
+<span id="已通过的协定与安全验收"></span>
+
+## 已通过的协定与安全验收 {#protocol-and-security-checks-passed}
 
 | 验收 | 证据 | 结果 |
 |---|---|---|
-| Identity 安全与既有账号兼容性 | `products/identity/backend/tests`、lock check、compileall | 28 tests passed；包含签章、issuer/audience/nonce/state、PKCE、Google 精确 issuer alias、受邀/JIT、明确 subject link、SSO-only、撤销/replay、可信 proxy 与既有数据迁移 |
-| Work／Knowledge／Code 业务回归 | 各产品既有 pytest | 31／10／20 tests passed |
-| 真实 Keycloak OIDC 与 SAML | `.data/validation/sso-32eb71e9/report.json` | 136 checks passed；不是模拟 provider 回应 |
-| 加密保存、日志与重启 | `.data/validation/sso-84b63356/storage-report.json` | 27 checks passed；实际重启 QA Identity 与 Keycloak 容器 |
-| 前端类型与独立建置 | `npm run typecheck`、`build:suite`／`build:work`／`build:knowledge`／`build:code` | 全部 exit 0；包含三产品管理员创建入口与一般成员空状态修订 |
-| 实际浏览器 OIDC／SAML 登录 | `.data/validation/sso-browser/report.json`、同目录截屏 | Passed；企业登录、跨产品工作阶段、390px 鼠标菜单、设置保存后立即生效、SSO-only 管理员复原、企业成员密码操作隐藏及三产品 scope 创建权限 |
+| Identity 安全与既有账号兼容性 | `products/identity/backend/tests`、lock 检查、`compileall` | 28 项测试通过；包含签章、issuer/audience/nonce/state、PKCE、Google 精确 issuer alias、受邀/JIT、明确 subject link、SSO-only、撤销/replay、可信 proxy 与既有数据迁移 |
+| Work／Knowledge／Code 业务回归 | 各产品既有 pytest | 31／10／20 项测试通过 |
+| 真实 Keycloak OIDC 与 SAML | `.data/validation/sso-32eb71e9/report.json` | 136 项检查通过；不是模拟 provider 回应 |
+| 加密保存、日志与重启 | `.data/validation/sso-84b63356/storage-report.json` | 27 项检查通过；实际重启 QA Identity 与 Keycloak 容器 |
+| 前端类型与独立建置 | `npm run typecheck`、`build:suite`／`build:work`／`build:knowledge`／`build:code` | 全部以 exit 0 结束；包含三产品管理员创建入口与一般成员空状态修订 |
+| 实际浏览器 OIDC／SAML 登录 | `.data/validation/sso-browser/report.json`、同目录截屏 | 通过；企业登录、跨产品工作阶段、390px 鼠标菜单、设置保存后立即生效、SSO-only 管理员复原、企业成员密码操作隐藏及三产品 scope 创建权限 |
 | 主环境升级与保留初始化 | `.data/validation/sso-browser/main-environments.json` | 开发 `5173` 与本机正式模式 `8088` 的三个产品 health 及 Identity status 都为 200；仍由用户创建第一位管理员 |
 
 136 项 HTTP 验收包含 confidential client 与 PKCE S256、真实 authorization/code exchange、JIT 和受邀成员、三产品精确资源授权、群组移除后的旧 session 撤销与 403、既有管理员的明确 subject 链接、未受邀成员拒绝、SAML 上游登录与 signed assertion/response、SSO-only 拒绝一般成员密码登录且保留管理员复原、禁用成员、Keycloak 真正发送的 signed backchannel logout、伪造 state 拒绝、API/audit 密钥遮罩，以及平台 cookie 和服务器 session 注销。
@@ -22,7 +28,10 @@ Identity 中的 Code 权限使用公开 project ID。Code `/me` 的 membership S
 
 浏览器使用合成账号，实际完成直接 OIDC 与上游 SAML 登录。SAML 成员沿用同一平台 session 进入 Work、Knowledge、Code；账号抽屉标示企业登录且不提供本机密码／复原码操作。更新企业登录按钮名称后，没有重新加载页面便注销，登录画面立即使用新名称及 SSO-only 政策。管理员密码复原仍可登录；一般成员没有创建 Project／Space 的入口，而授权 scope 内的任务／文档入口保留。Code 的 QA 环境没有 Gitea，界面明确显示未设置并禁用 repository 写入，不把这个认证验收当作 Git 写入验收。
 
-## 可重现的隔离环境
+<span id="可重現的隔離環境"></span>
+<span id="可重现的隔离环境"></span>
+
+## 可重现的隔离环境 {#reproducible-isolated-environment}
 
 ```powershell
 .\scripts\sso-containers.ps1 -Action up
@@ -41,7 +50,10 @@ Keycloak 26.8 在 HTTP loopback 发送的 Secure flow cookie，Chromium 可以�
 
 SAML fixture 保持 `validateSignature`、`wantAssertionsSigned`，使用 `saml.assertion.signature` 与 `saml.server.signature` 激活上游 assertion/response 签章。Acceptance 核对 live client flags、AuthnRequest policy、metadata Entity ID/SSO endpoint，并确认 metadata 凭证对应上游公开 signing key。Broker 从 metadata 加载验证密钥，没有关闭验证来通过测试。
 
-## 实际服务的配置边界
+<span id="實際服務的配置邊界"></span>
+<span id="实际服务的配置边界"></span>
+
+## 实际服务的配置边界 {#configuration-boundaries-for-real-services}
 
 Entra ID、Google Workspace、Okta、Auth0、Keycloak 与通用 OIDC 已提供界面模板及 provider-specific claim 提示。协定兼容性由真实 Keycloak 验证，特定企业 tenant 仍须使用该组织的 Issuer、Client ID、Secret、claims 与 MFA 政策完成验收。Google issuer alias 另有实际签章 fixture；不是已连到用户的 Google Workspace。
 

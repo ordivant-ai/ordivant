@@ -74,7 +74,7 @@ CI 使用 `demo` Runtime 模式，不呼叫付費模型。除非測試明確要�
 
 請使用 PR 範本說明行為變更、影響邊界、風險、執行過的檢查與文件狀態。移除或遮蔽日誌中的 secret、個人資料與私人服務位址；不要提交 `.data/`、`.env*`、`.venv/`、`node_modules/`、build 產物或本機 bootstrap 憑證。
 
-安全漏洞請透過 [GitHub 私下安全回報](https://github.com/bigtongue5566/ordivant/security/advisories/new)，不要建立公開 Issue、PR 或貼上可利用細節。若私下回報功能尚未啟用，請聯絡 repo 維護者以設定安全聯絡方式。
+安全漏洞請透過 [GitHub 私下安全回報](https://github.com/ordivant-ai/ordivant/security/advisories/new)，不要建立公開 Issue、PR 或貼上可利用細節。若私下回報功能尚未啟用，請聯絡 repo 維護者以設定安全聯絡方式。
 
 ## 介面與文件翻譯
 

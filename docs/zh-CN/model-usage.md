@@ -1,8 +1,14 @@
-# 模型连接与 Agent 设置
+<span id="模型連線與-agent-設定"></span>
+<span id="模型连接与-agent-设置"></span>
+
+# 模型连接与 Agent 设置 {#model-connections-and-agent-settings}
 
 模型设置属于 Work；Knowledge、Code 不需要模型连接就能使用自己的 API／MCP。开发与部署环境各有独立数据库，设置不会跨环境同步。
 
-## 管理员设置全域连接
+<span id="管理員設定全域連線"></span>
+<span id="管理员设置全域连接"></span>
+
+## 管理员设置全域连接 {#configure-a-global-connection-as-an-administrator}
 
 1. 登录 Work，从侧栏打开「模型连接」。只有组织管理员可以管理连接。
 2. 添加 Provider，填入名称、识别码、API base URL 和 API key。兼容 Responses API 的网址以 `/v1` 结尾，程序会调用其 `/responses`。
@@ -11,7 +17,10 @@
 
 密钥只写入 Work 服务器的加密设置。重新打开设置会显示「已设置」，不回传原始密钥；留空再保存会保留原有密钥。只改模型或 reasoning effort 不需要换 key。改 API base URL 时必须明确提供该端点使用的 key。版本冲突会要求重新加载，避免覆盖另一位管理员的变更。
 
-## 创建或编辑 Agent
+<span id="建立或編輯-agent"></span>
+<span id="创建或编辑-agent"></span>
+
+## 创建或编辑 Agent {#create-or-edit-an-agent}
 
 在「Agent 名录」添加 Agent，将 Runtime 选成 `Pi Durable`。模型设置可以选：
 
@@ -24,7 +33,10 @@
 
 `External` Agent 由外部程序透过 REST／MCP 工作，平台不代替它调用模型；这种 Agent 的模型名称只是外部运行者的描述。
 
-## Provider 设置范例
+<span id="provider-設定範例"></span>
+<span id="provider-设置范例"></span>
+
+## Provider 设置范例 {#provider-configuration-example}
 
 填入你的模型供应商提供的 HTTPS base URL（例如 `https://api.example.com/v1`，此为占位范例，不能直接调用），以及该供应商实际支持的 Model ID、reasoning effort 和 context/output 限制。平台没有附赠模型服务或 API key。
 
@@ -32,7 +44,10 @@
 
 开发与正式环境的连接需要各自设置；切换模型可沿用同一 Provider 已保存的 key。
 
-## 运行与证据
+<span id="執行與證據"></span>
+<span id="运行与证据"></span>
+
+## 运行与证据 {#execution-and-evidence}
 
 创建任务、指定有项目权限的 Pi Agent 后派工。已设置连接的派工使用真实模型；未设置连接时使用清楚标示的 DEMO。模型或 API 失败会留下失败状态，不能回退成示范成功。
 

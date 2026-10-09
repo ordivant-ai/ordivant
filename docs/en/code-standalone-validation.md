@@ -1,6 +1,12 @@
+<span id="code-獨立容器驗收"></span>
+<span id="code-独立容器验收"></span>
+
 # Code Standalone Container Acceptance
 
 This acceptance verifies that Ordivant Code starts independently with the production Compose configuration. Work, Knowledge, and the Pi runtime are not part of this QA project. The checker inspects an already running Compose project; it does not create, stop, or delete containers or data volumes.
+
+<span id="啟動與執行"></span>
+<span id="启动与运行"></span>
 
 ## Start and run
 
@@ -14,6 +20,9 @@ uv run --project products/code/backend --no-sync python scripts/code_standalone_
 ```
 
 Omit `-WithGitea` so the services start with Gitea explicitly unconfigured. QA containers remain available for inspection after acceptance. To manage them, pass the same `-ProjectName` to `scripts/containers.ps1`.
+
+<span id="驗收內容"></span>
+<span id="验收内容"></span>
 
 ## What is checked
 
