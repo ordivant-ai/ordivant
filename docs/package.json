@@ -9,9 +9,10 @@
   },
   "scripts": {
     "dev": "vitepress dev .",
-    "build": "npm run i18n:check && vitepress build .",
+    "build": "npm run i18n:check && npm run markdown:check && vitepress build .",
     "preview": "vitepress preview . --host 127.0.0.1 --port 4174",
-    "i18n:check": "node ../scripts/check_docs_i18n.mjs"
+    "i18n:check": "node ../scripts/check_docs_i18n.mjs",
+    "markdown:check": "node ../scripts/check_docs_markdown.mjs"
   },
   "devDependencies": {
     "vitepress": "1.6.4"

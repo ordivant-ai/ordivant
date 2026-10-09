@@ -206,6 +206,15 @@ async function main() {
         check(`${locale.key}: ${document} HTTP`, response && response.ok(), String(response && response.status()));
         check(`${locale.key}: ${document} declared language`, await page.locator('html').getAttribute('lang') === locale.htmlLang);
         check(`${locale.key}: ${document} translated body`, blocks.length > 0 && issues.length === 0, issues.length ? issues.slice(0, 4) : { blocks: blocks.length });
+        const rawMarkdown = blocks.filter(block => block.text.includes('**'));
+        check(`${locale.key}: ${document} has no raw bold delimiters in prose`, rawMarkdown.length === 0, rawMarkdown.slice(0, 3));
+        if (document === 'roadmap.md') {
+          const featureList = page.locator('#delivered-in-v0-1 + ul > li');
+          const labels = await featureList.locator('strong').allTextContents();
+          check(`${locale.key}: roadmap renders all seven feature labels as bold`, await featureList.count() === 7 && labels.length === 7 && labels[0] === 'Work' && labels[1] === 'Knowledge', labels);
+          await page.locator('#delivered-in-v0-1').scrollIntoViewIfNeeded();
+          await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${locale.key}-roadmap.png`) });
+        }
         const screenshotResults = await page.locator('.vp-doc img[src*="/screenshots/"]').evaluateAll(async (images, suffix) => Promise.all(images.map(img => new Promise(resolve => {
           const result = () => resolve(img.naturalWidth >= 1200 && img.src.endsWith(`-${suffix}.png`) && Boolean(img.alt.trim()));
           if (img.complete) result();
