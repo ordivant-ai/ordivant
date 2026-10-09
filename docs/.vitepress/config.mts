@@ -7,6 +7,8 @@ const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const repoRoot = path.resolve(docsRoot, '..')
 const repository = 'https://github.com/ordivant-ai/ordivant'
 const base = process.env.DOCS_BASE ?? '/'
+// Preserve organization project-site bookmarks after moving to the root site.
+const legacyProjectRedirect = "if(location.hostname==='ordivant-ai.github.io'&&(location.pathname==='/ordivant'||location.pathname.startsWith('/ordivant/'))){const path=location.pathname.slice('/ordivant'.length)||'/';location.replace('https://ordivant-ai.github.io'+path+location.search+location.hash)}"
 
 const localeTheme = (prefix: string, language: 'zh-Hant' | 'en' | 'zh-Hans') => {
   const isEnglish = language === 'en'
@@ -136,7 +138,10 @@ export default defineConfig({
     en: { label: 'English', lang: 'en', title: 'Ordivant', description: 'An open-source, self-hosted collaboration platform for agents.', themeConfig: localeTheme('/en', 'en') },
     'zh-CN': { label: '简体中文', lang: 'zh-Hans', title: 'Ordivant', description: '开源、自行部署的 Agent 协作平台。', themeConfig: localeTheme('/zh-CN', 'zh-Hans') },
   },
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}logo.svg` }]],
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}logo.svg` }],
+    ['script', {}, legacyProjectRedirect],
+  ],
   sitemap: { hostname: 'https://ordivant-ai.github.io/' },
   markdown: {
     config(md) {

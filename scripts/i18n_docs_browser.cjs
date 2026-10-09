@@ -172,6 +172,21 @@ async function main() {
       check(`${locale.key}: mobile language links preserve article`, mobileHrefs.length === 2 && mobileExpected.every(href => mobileHrefs.includes(href)), mobileHrefs);
     }
 
+    if (new URL(base).hostname === 'ordivant-ai.github.io') {
+      await page.setViewportSize({ width: 1440, height: 1000 });
+      for (const locale of LOCALES) {
+        const legacyUrl = new URL(`ordivant/${locale.prefix}containers.html?source=bookmark#development`, base).href;
+        const target = new URL(`${locale.prefix}containers.html?source=bookmark#development`, base);
+        await page.goto(legacyUrl, { waitUntil: 'commit' });
+        await page.waitForURL(url => url.href === target.href, { waitUntil: 'networkidle' });
+        check(`${locale.key}: legacy project bookmark redirects intact`, page.url() === target.href && await page.locator('#development').count() === 1);
+        check(`${locale.key}: legacy project destination language`, await page.locator('html').getAttribute('lang') === locale.htmlLang);
+        await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${locale.key}-legacy-container.png`), fullPage: false });
+      }
+      await page.goto(new URL('ordivant/', base).href, { waitUntil: 'commit' });
+      await page.waitForURL(url => url.href === base, { waitUntil: 'networkidle' });
+      check('legacy project homepage redirects to root', page.url() === base);
+    }
     check('all locales: no page JavaScript errors', report.pageErrors.length === 0, report.pageErrors);
   } catch (error) {
     report.error = error.stack || error.message;
