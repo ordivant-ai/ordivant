@@ -20,6 +20,8 @@ API key 會安全保存，重新開啟設定時不會再次顯示；留白後儲
 <span id="建立或編輯-agent"></span>
 <span id="创建或编辑-agent"></span>
 
+![模型連線：輸入供應商網址與支援的模型，API Key 使用自己的供應商金鑰](/screenshots/models-zh-TW.png)
+
 ## 建立或編輯 Agent {#create-or-edit-an-agent}
 
 在「Agent 名錄」新增 Agent，並選擇模型設定方式：
@@ -35,6 +37,8 @@ API key 會安全保存，重新開啟設定時不會再次顯示；留白後儲
 
 <span id="provider-設定範例"></span>
 <span id="provider-设置范例"></span>
+
+![Agent 設定：選擇 Pi Durable、能力標籤與模型繼承方式](/screenshots/agent-zh-TW.png)
 
 ## Provider 設定範例 {#provider-configuration-example}
 

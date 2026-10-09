@@ -8,6 +8,9 @@ Ordivant 将项目、版本化知识、代码溯源、持久运行与独立审�
 
 [文档与安装指南](https://ordivant-ai.github.io/zh-CN/) · [版本下载](https://github.com/ordivant-ai/ordivant/releases) · [问题反馈](https://github.com/ordivant-ai/ordivant/issues) · [MIT 许可](LICENSE)
 
+
+[功能导览](docs/zh-CN/features.md) · [第一个项目完整教程](docs/zh-CN/guide/first-project.md) · [建立团队](docs/zh-CN/guide/team-setup.md)
+
 [![CI](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/ci.yml)
 [![Docs](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml/badge.svg)](https://github.com/ordivant-ai/ordivant/actions/workflows/pages.yml)
 

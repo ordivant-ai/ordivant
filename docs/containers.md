@@ -12,6 +12,16 @@
 
 ## 安裝並啟動 {#production-targets}
 
+先選擇今天需要的功能；完整安裝可以之後再啟用自動執行及程式碼服務：
+
+| 想做的事 | 需要的服務 | 安裝後的操作 |
+| --- | --- | --- |
+| 人工安排任務、提交成果與審核 | 下方基本安裝即可 | 建立團隊與第一個專案 |
+| 讓 Agent 使用模型自動執行 | 基本安裝，加上 Runtime | 設定自己的模型連線與 Pi Agent |
+| 保存規格、文件版本與決策 | 基本安裝包含 Knowledge | 建立 Space，發布文件並引用版本 |
+| 建立程式碼分支、commit 與 PR | 基本安裝，加上 Gitea | 在 Code 建立專案與 repository |
+| 讓 Agent 執行受限命令 | Runtime，加上沙箱服務 | 建立沙箱設定檔並指定給 Agent |
+
 在終端機依序執行：
 
 ```sh
@@ -24,6 +34,21 @@ docker compose up -d --build --wait
 第一個 Compose 工作會建立必要的服務設定；不會建立人員帳號，也不會加入示範任務。第二個命令建置並啟動 Work、Knowledge、Code 與共用登入。首次建置需要一些時間；`--wait` 會等待服務健康。
 
 開啟 `http://127.0.0.1:8088/work`，依畫面建立初始管理員並保存復原碼。平台沒有預設人員密碼。同一部署中的三個產品共用登入，但專案和權限各自管理。Code 的 repository 操作還需完成下方 Gitea 設定。
+
+### 確認可以開始使用 {#verify-installation}
+
+執行 `docker compose ps`，確認各服務已啟動且健康。瀏覽器應顯示登入或初始管理員建立畫面。若安裝命令失敗或畫面打不開，先查看 `docker compose logs --tail 100 web identity-api work-api`；確認 Docker 已啟動、8088 未被其他服務占用，並使用同一份部署設定。其他情況請見[疑難排解](guide/troubleshooting.md)。
+
+![新部署的登入入口：建立初始管理員或接受團隊邀請](/screenshots/login-zh-TW.png)
+
+### 安裝後完成第一個成果 {#after-installation}
+
+1. 初始管理員登入後，在 Work 建立專案，例如 `LAUNCH`／「產品上線準備」。
+2. 邀請另一位成員並授予該專案的適當角色；同一位提交者不能審核自己的成果。
+3. 選擇執行方式：人工認領與提交可先不使用外部模型；自動執行則先完成下方 Runtime 與模型設定。
+4. 建立具備目標、輸入和驗收條件的任務，提交實際成果與來源，再由另一位授權成員審核。
+
+[第一個專案完整教學](guide/first-project.md)提供逐欄範例、Agent 建立、人工與自動路線及審核步驟。[建立團隊](guide/team-setup.md)說明邀請及三產品的資源授權。
 
 ### 讓 Agent 自動執行 {#enable-agent-execution}
 

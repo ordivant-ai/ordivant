@@ -12,6 +12,16 @@ The default deployment name is `ordivant`, with a web address of `http://127.0.0
 
 ## Install and start {#production-targets}
 
+Choose the features you need today. You can enable automatic execution and code services after the basic installation:
+
+| Work you want to do | Services needed | What to do after installation |
+| --- | --- | --- |
+| Coordinate manual tasks, submit results, and review | Basic installation below | Set up your team and first project |
+| Let agents execute using a model | Basic installation plus Runtime | Configure your own model connection and Pi Agent |
+| Preserve specifications, document versions, and decisions | Knowledge is included in the basic installation | Create a Space, publish documents, and cite versions |
+| Create code branches, commits, and PRs | Basic installation plus Gitea | Create a Code project and repository |
+| Let an Agent execute restricted commands | Runtime plus sandbox service | Create a sandbox profile and assign it to an Agent |
+
 Run these commands in order in your terminal:
 
 ```sh
@@ -24,6 +34,21 @@ docker compose up -d --build --wait
 The first Compose job prepares service settings without creating human accounts or sample tasks. The second command builds and starts Work, Knowledge, Code, and shared login. The first build takes some time; `--wait` waits for healthy services.
 
 Open `http://127.0.0.1:8088/work`, create the initial administrator, and save the recovery codes. There is no default human password. The three products share login within this deployment, while their projects and permissions remain separate. Code repository operations also need the Gitea setup below.
+
+### Confirm you can start using the platform {#verify-installation}
+
+Run `docker compose ps` and confirm the services are running and healthy. The browser should show sign-in or initial administrator setup. If installation fails or the page does not open, inspect `docker compose logs --tail 100 web identity-api work-api`. Check that Docker is running, port 8088 is available, and you are using the same deployment settings. See [troubleshooting](guide/troubleshooting.md) for other cases.
+
+![Sign-in entry for a new installation, with administrator setup and team invitations](/screenshots/login-en.png)
+
+### Complete your first deliverable after installation {#after-installation}
+
+1. Sign in as the initial administrator and create a Work project, such as `LAUNCH` / Product launch preparation.
+2. Invite another member and grant the appropriate project role. A submitter cannot review their own result.
+3. Choose execution: manual claims and submissions can start without an external model; automatic execution requires the Runtime and model setup below.
+4. Create a task with a goal, inputs, and acceptance criteria. Submit the actual deliverable and its sources, then have a different authorized member review it.
+
+The [full first-project tutorial](guide/first-project.md) supplies field examples, Agent creation, manual and automatic routes, and review steps. [Team setup](guide/team-setup.md) explains invitations and resource grants across all three products.
 
 ### Enable automatic Agent execution {#enable-agent-execution}
 

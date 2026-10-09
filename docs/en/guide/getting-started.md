@@ -3,6 +3,8 @@
 
 # Getting started with Ordivant {#getting-started-with-ordivant}
 
+This page is a quick introduction. For your first workspace, follow the [complete first-project tutorial](first-project.md) to fill in project, Agent, and task fields, then complete submission and review. Administrators inviting members can use [team setup](team-setup.md) alongside it.
+
 Follow a product launch checklist example from signing in and creating a task through reviewing the result. Use your team's Ordivant URL. If you are self-hosting, finish installation first and open your platform address.
 
 <span id="準備環境"></span>
@@ -73,3 +75,7 @@ For the launch checklist, the executor submits a summary and evidence such as th
 - [Code: repositories and pull requests](code.md)
 - [Administrators, roles, and SSO](administration.md)
 - [Accounts and sign-in](../human-login.md)
+
+- [Full first-project tutorial](first-project.md)
+- [Team setup and invitations](team-setup.md)
+- [Feature guide](../features.md)

@@ -1,20 +1,24 @@
 ---
 layout: home
 title: Open-source agent collaboration platform
+description: Explore Ordivant tasks, agent runs, workflows, knowledge and code collaboration. Deploy your own platform and complete a first project with step-by-step guides.
 hero:
   name: Ordivant
   text: Get work done with your team and agents.
-  tagline: Plan tasks and workflows, organize project knowledge, and collaborate on code. Follow every run and review every result.
+  tagline: Turn goals into tasks and let agents execute with clear specifications and tools. Follow progress, preserve context, and review the evidence behind every result.
   image:
     src: /screenshots/work-en.png
     alt: Ordivant Work task workspace
   actions:
     - theme: brand
-      text: Get started
-      link: /en/guide/getting-started
+      text: Complete your first project
+      link: /en/guide/first-project
     - theme: alt
-      text: Self-host
+      text: Install with Docker Compose
       link: /en/containers
+    - theme: alt
+      text: Explore the screens
+      link: /en/#product-tour
 ---
 
 <span id="從規格-到經過驗收的成果"></span>
@@ -22,84 +26,129 @@ hero:
 
 ## From specifications to reviewed results {#from-specifications-to-reviewed-results}
 
-Ordivant is an open-source, self-hosted project collaboration platform for teams and agents. Describe the work, its inputs, and acceptance criteria, then assign it to a person or Agent. Your team can follow progress, discuss problems, save evidence, and have an independent reviewer confirm the result.
+Ordivant is an open-source, self-hosted project collaboration platform for teams and agents. It keeps **the work specification, execution history, deliverables, and team review** in the same project. Describe the goal and acceptance criteria, assign a person or Agent, inspect each attempt, and have an independent reviewer decide whether the work is complete.
 
-**Work** manages tasks, **Knowledge** preserves context, and optional **Code** handles code collaboration. They share human accounts while retaining separate projects and permissions. Deploy the suite or just the products you need.
+Start with a document preparation task and add models, tools, project knowledge, and automated workflows as needed. Your deployment and administrators control member access, the tools agents may use, and their execution environment.
+
+**This website contains product introductions and operating guides.** To use the platform, open your team's Ordivant URL or follow the [installation guide](./containers.md) to run your own instance. This website does not provide hosted accounts or a model service.
 
 ## What can you use Ordivant for? {#use-cases}
 
-- **Project and product delivery**: break a launch goal into tasks, assign owners, set dependencies and acceptance criteria, and track unfinished work.
-- **Team documentation and decisions**: organize requirements, operating guides, and decisions; cite a specific document version so the next person can find the reasoning.
-- **Agent collaboration and code delivery**: run agents with selected models and tools, inspect their runs, and submit documents or pull requests for review.
+| Work to complete | Inputs and coordination | Deliverables the team can inspect |
+| --- | --- | --- |
+| Prepare a product launch | Product specifications, service inventory, tasks, and dependencies | A launch checklist with owners, statuses, and evidence for each item |
+| Organize team knowledge | Operating guides, requirements, meeting decisions, and sources | Searchable documents, published versions, citations, and decision records |
+| Collaborate on code changes | Change goals, scope, acceptance criteria, and specification citations | Branches, commits, PRs, and test evidence linked to the relevant tasks |
+| Perform recurring work | Agent templates, repeatable steps, prerequisites, and execution input | Tasks, runs, submitted results, and review records for each workflow instance |
+
+For example, summarize release readiness every week: first organize the supplied information, identify gaps and questions, then wait for review before dependent work begins. To read an external system, an administrator first connects and authorizes its tool. Adding a URL does not automatically retrieve its contents.
 
 ## Explore the main features {#product-tour}
 
-These screenshots show the actual platform in a demonstration workspace. Sample tasks and DEMO runs illustrate the interface; they do not represent completed paid-model work.
+Switch products below to see the actual interface and the work it supports. Click a documentation screenshot to enlarge it, or view its original size to inspect the fields. The screens use demonstration data to show the features; DEMO runs illustrate operation and do not represent completed paid-model tasks.
 
-### Work: turn goals into tasks you can follow {#work-preview}
+<FeatureExplorer />
 
-Use the task list to manage priorities, dependencies, and progress. Each task can include a goal, inputs, scope, acceptance criteria, an assigned Agent, discussion, and result evidence. A different reviewer accepts the submission or requests changes; an execution ending alone does not complete the task.
+### Work: tasks, collaboration, and independent review {#work-preview}
 
-![Work task list showing demonstration tasks, statuses, priorities, and owners](/screenshots/work-en.png)
+Write a goal, inputs, scope, constraints, and acceptance criteria in the task specification. Set owners, priorities, and dependencies. Request help or delegate a child task when needed, preserving discussion and deliverables in context. Each task keeps its own submission and review history.
 
-[Learn about tasks, assignment, and review →](./guide/work.md)
+[Task and review guide](./guide/work.md) · [Help and delegation](./features.md#work-help-and-delegation)
 
-### Runs: see what an Agent actually did {#runs-preview}
+### Runs: agent execution and automation {#runs-preview}
 
-Inspect execution events, tool calls, outputs, and available usage data. Pause, resume, stop, or retry when intervention is needed. Save repeatable setups as Agent templates and combine them into workflows with dependencies. Administrators enable external tools and execution sandboxes.
+After dispatching to a Pi Agent, inspect status, events, tool results, outputs, and provider-reported usage in Runs. Authorized members can request pause, resume, stop, or retry. Save repeatable settings as Agent templates. Start workflows manually or on an interval; dependent steps wait for their prerequisites to pass review.
 
-![Run console showing the events and results of a demonstration execution](/screenshots/run-en.png)
+[Runs, templates, and workflows](./execution-usage.md) · [Model connections and Agent settings](./model-usage.md)
 
-[Learn about runs, templates, workflows, and tools →](./execution-usage.md)
+### Knowledge: document versions and decision sources {#knowledge-preview}
 
-### Knowledge: preserve your team's project context {#knowledge-preview}
+Organize documents in Spaces and search titles, bodies, and tags. Each publication preserves an immutable version. Tasks and PRs can cite an exact version so reviewers can inspect the information used. Decision records preserve the reasoning and sources behind a choice. Space permissions still control who can read a citation.
 
-Organize documents in Spaces, keep published versions, and search requirements and decisions. Citations can point to an exact version and passage, making it easier to review the information used by a task or code change. Updating a document does not rewrite earlier citations.
+[Documents, versions, search, and citations](./guide/knowledge.md)
 
-![Knowledge workspace showing demonstration documents, versions, and citations](/screenshots/knowledge-en.png)
+### Code: code delivery and pull requests {#code-preview}
 
-[Learn about documents, versions, decisions, and citations →](./guide/knowledge.md)
+With optional Gitea enabled, create repositories, branches, commits, and PRs in Code, attach task and document sources, and follow your team's code review process. Teams already using GitHub, GitLab, or Gitea can first configure Work's read-only connections for PR and check status.
 
-### Code: connect code changes to the work {#code-preview}
+[Code operating guide](./guide/code.md) · [Choose the products you need](./overview.md#four-service-boundaries)
 
-With Gitea enabled, create repositories, branches, commits, and pull requests in Code, and attach related task and specification sources. Teams already using GitHub or GitLab can keep those systems: Work can read PRs and checks from administrator-configured connections. Code is optional.
+## What does each team role do? {#team-roles}
 
-![Code workspace showing a demonstration repository and pull request](/screenshots/code-en.png)
+| Role | Daily work |
+| --- | --- |
+| Project lead | Create projects and specifications, split tasks, arrange dependencies and people, dispatch agents, and address blockers |
+| Executor | Complete the specification, ask questions, retain sources and deliverables, and submit for review |
+| Reviewer | Check results and evidence against the acceptance criteria, then accept or explain required changes |
+| Knowledge maintainer | Publish and update documents, record decisions, and provide traceable version citations |
+| Deployment and organization administrator | Configure accounts, resource access, models, enterprise SSO, tools, and sandboxes |
 
-[Learn about repositories, PRs, and review →](./guide/code.md)
+One account can sign in to all three products in the same deployment. Work projects, Knowledge Spaces, and Code projects each have separate access grants. Human accounts and Agents are different identities; creating an Agent does not grant a team member access. [Set up your team and invite members](./guide/team-setup.md)
 
 <span id="開始第一個專案"></span>
 <span id="开始第一个项目"></span>
 
-## Start with one small task {#start-your-first-project}
+## Complete your first project {#start-your-first-project}
 
-For example, prepare a product launch checklist:
+The full tutorial uses a product launch checklist. Create the LAUNCH project in an empty workspace, write an actionable specification, and complete submission and review. Choose either the Pi Agent route or manual execution.
 
-1. **Sign in and select a project**: open your team's Ordivant URL and sign in to Work with an invited account or enterprise identity.
-2. **Describe the deliverable**: add a task with product context, required checklist items, and acceptance criteria. Attach a Knowledge citation if a specification already exists.
-3. **Select an Agent and dispatch**: an administrator first configures the model connection and Agent. Follow progress and results in Runs. An unconfigured demonstration execution is labeled DEMO.
-4. **Review the result**: a different authorized reviewer checks the checklist and evidence, then accepts it or requests changes. The task completes only after acceptance.
+1. **Sign in and set up the team**: create the initial administrator for a new installation, or accept an invitation or enterprise sign-in for an existing team. Invite another member so execution and review belong to different people.
+2. **Create the project and context**: create Product launch preparation. Publish an existing specification to Knowledge and retain its version citation, or first put the necessary information in the task inputs.
+3. **Prepare the executor**: automatic work requires Runtime, your own model provider and key, and a Pi Agent with project access. The manual route can start without an external model.
+4. **Add a concrete task**: enter the goal, inputs, scope, constraints, and individual acceptance criteria. The tutorial supplies field-by-field examples and content you can copy.
+5. **Dispatch and follow progress**: select a Pi Agent in the task and dispatch it, then inspect Runs. A manual executor claims the task and prepares the actual checklist before submitting.
+6. **Inspect and independently review**: the executor submits a summary, checklist, and source evidence. A different authorized person accepts it or requests changes. Acceptance marks the task complete.
+7. **Arrange follow-up work**: set a dependency so the next task waits for this checklist to be accepted, then save repeatable Agent settings and steps as a template and workflow.
 
-[Follow the getting-started guide →](./guide/getting-started.md)
+![Result review showing the sample checklist, submitted evidence, and review decision](/screenshots/review-en.png)
+
+[Start the complete first-project tutorial →](./guide/first-project.md)
+
+## How do you write a task an Agent can use? {#writing-a-useful-task}
+
+Supply accessible information, then specify the deliverable format and boundaries. The tutorial's checklist specification follows these principles:
+
+| Field | Product launch checklist example |
+| --- | --- |
+| Goal | Organize the items to confirm before launch using the supplied product context |
+| Inputs and scope | Provide the current state of sign-in, backup, and user guides; prepare a checklist and identify gaps |
+| Constraints | Mark missing information as needing confirmation; do not claim checks or external changes were completed |
+| Acceptance criteria | Give each item an owner role, status, and source; cover sign-in, backup, and user instructions |
+| Evidence | Submit the actual checklist, source citations, and items still requiring human confirmation |
+
+When an Agent lacks information or a tool, add inputs, authorize the appropriate tool, or separate the work that requires a person. A reviewer checks actual deliverables after a model reply, submitted Run, or reported status. [See the full specification and submission examples](./guide/first-project.md)
+
+## Choose how to start {#choose-your-start}
+
+**Joining a team**: obtain the platform URL and invitation from your administrator and follow the [quick introduction](./guide/getting-started.md). If no project is visible, ask for access to the relevant resource.
+
+**Installing your own instance**: prepare Git and Docker Compose v2, follow the [deployment guide](./containers.md) to download, initialize, and start the services, then open the platform and create the initial administrator. Enable automatic Agent execution, Code, or sandboxes when you need them.
+
+**Adopting it in an organization**: arrange roles and resource access with [team setup](./guide/team-setup.md), then configure [enterprise SSO](./enterprise-sso.md), [models](./model-usage.md), and allowed [tools and sandboxes](./execution-usage.md#external-mcp-tools). Plan [backup and operations](./guide/operations.md) as well.
 
 ## Find the guide you need {#find-your-guide}
 
 | What you want to do | Start here |
 | --- | --- |
-| Join your team and sign in | [Accounts and invitations](./human-login.md) |
-| Create your first task | [Get started](./guide/getting-started.md) |
+| Understand how to use each feature | [Feature guide](./features.md) |
+| Complete a deliverable from an empty workspace | [Full first-project tutorial](./guide/first-project.md) |
+| Invite members and assign execution and review roles | [Set up your team](./guide/team-setup.md) |
 | Configure an API connection and Agent model | [Model settings](./model-usage.md) |
-| Manage members and access | [Permissions and organization](./guide/administration.md) |
-| Connect your company's login | [Enterprise SSO](./enterprise-sso.md) |
-| Install and preserve your own data | [Docker Compose deployment](./containers.md) · [Backup and operations](./guide/operations.md) |
+| Manage runs, templates, and multi-step work | [Execution and automation](./execution-usage.md) |
+| Publish documents, decisions, and citations | [Knowledge guide](./guide/knowledge.md) |
+| Submit code changes and PRs | [Code guide](./guide/code.md) |
+| Connect company sign-in and resource access | [Enterprise SSO](./enterprise-sso.md) · [Organization administration](./guide/administration.md) |
+| Install, upgrade, back up, and resolve problems | [Docker Compose](./containers.md) · [Operations](./guide/operations.md) · [Troubleshooting](./guide/troubleshooting.md) |
 
 <span id="部署在自己的環境"></span>
 <span id="部署在自己的环境"></span>
 
 ## Deploy in your own environment {#deploy-in-your-own-environment}
 
-Ordivant is **MIT licensed**, so you can use, modify, and deploy it. Run it on your computer or server with Docker Compose and manage your own data. Connect an existing enterprise OIDC provider, or use optional Keycloak integration for SAML and LDAP.
+Ordivant is **MIT licensed**. Use, modify, and deploy it yourself. Work, Knowledge, and Code can be deployed independently, and you manage the data. Shared sign-in supports local accounts and enterprise OIDC; optional Keycloak can bridge SAML and LDAP.
 
-This website contains introductions and operating guides; you deploy the platform yourself. The current version is the **v0.1.0 early public release**. Knowledge offers text search, Code requires Gitea for repository changes, and built-in CI, SCIM, and distributed execution are not yet available. External models can incur provider charges; DEMO does not call paid models.
+The current version is the **v0.1.0 early public release**. Knowledge offers text search, and Code needs Gitea for write operations. Vector search, built-in CI, SCIM, hard dollar budgets, and distributed execution are not yet available. Docker sandboxes have no network or host-directory access and use tools already present in the environment. Configure VM execution when stronger isolation is required.
 
-[Self-host →](./containers.md) · [Features and limits](./roadmap.md) · [GitHub source](https://github.com/ordivant-ai/ordivant)
+Provide and authorize your own model and tool connections; external providers may charge for use. Unconfigured DEMO runs illustrate the execution flow. For actual delivery, check results, sources, and provider usage.
+
+[Self-host →](./containers.md) · [Available features and plans](./roadmap.md) · [GitHub source](https://github.com/ordivant-ai/ordivant)
